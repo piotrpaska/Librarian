@@ -1,0 +1,1 @@
+Prosze postepowac zgodnie z poleceniami instalatora. Program bedzie zapisywac wszystkie dane do plikow .json w folderze programu.
