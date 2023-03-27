@@ -2,11 +2,11 @@ import json
 import datetime
 import prettytable
 
-# Functions
 activeHiresFile = 'active.json'
 historyFile = 'history.json'
 
 def addHire():
+    """Zapisywane dane to: imię, nazwisko, klasa, tytuł książki, data wypożyczenia, kaucja"""
     sure = 0
     hireData = {}
 
@@ -22,8 +22,10 @@ def addHire():
     hireData["bookTitle"] = input("Wpisz tytuł wypożyczonej książki: ")
 
     # ustawienie daty wypożyczenia
-    rentalDate = datetime.datetime.now()
-    hireData["rentalDate"] = str(f"{rentalDate.day}.{rentalDate.month}.{rentalDate.year} - {rentalDate.hour}:{rentalDate.minute}")
+    rentalDate = datetime.date.today()
+    maxReturnDate = rentalDate + datetime.timedelta(weeks=2)
+    hireData["rentalDate"] = str(f"{rentalDate.strftime('%d.%m.%y')}")
+    hireData["maxDate"] = str(f"{maxReturnDate.strftime('%d.%m.%y')}")
 
     deposit = input("Wpisz wartość kaucji (jeśli nie wpłacił kaucji kliknij ENTER): ")
 
@@ -32,8 +34,8 @@ def addHire():
     else:
         hireData["deposit"] = str(deposit) + "zl"
 
-    summary = prettytable.PrettyTable(['Imię', 'Nazwisko', 'Klasa', 'Tytuł książki', 'Data wypożyczenia', 'Kaucja'])
-    summary.add_row([hireData["name"], hireData["lastName"], hireData["class"], hireData["bookTitle"], hireData["rentalDate"], hireData["deposit"]])
+    summary = prettytable.PrettyTable(['Imię', 'Nazwisko', 'Klasa', 'Tytuł książki', 'Data wypożyczenia', 'Zwrot do', 'Kaucja'])
+    summary.add_row([hireData["name"], hireData["lastName"], hireData["class"], hireData["bookTitle"], hireData["rentalDate"], hireData["rentalDate"], hireData["deposit"]])
     print(summary)
 
     while True:
@@ -62,51 +64,6 @@ def addHire():
     elif sure == 0:
         print("Anulowano dodanie wypożyczenia")
 
-
-def viewActiveHires():
-    with open(activeHiresFile, 'r') as f:
-        jsonFile = json.load(f)
-    results = prettytable.PrettyTable(['Imię', 'Nazwisko', 'Klasa', 'Tytuł książki', 'Data wypożyczenia', 'Kaucja'])
-    results.title = 'Trwające wypożyczenia'
-    for item in jsonFile:
-        name = item["name"]
-        lastName = item["lastName"]
-        rentClass = item["class"]
-        bookTitle = item["bookTitle"]
-        rentalDate = item["rentalDate"]
-        deposit = item["deposit"]
-        results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate), deposit])
-    results.add_autoindex('ID')
-    if len(results.rows) == 0:
-        print()
-        print('Lista jest pusta')
-    else:
-        print(results)
-
-
-def viewHistoryHires():
-    with open(historyFile, 'r') as f:
-        jsonFile = json.load(f)
-    results = prettytable.PrettyTable(
-        ['Imię', 'Nazwisko', 'Klasa', 'Tytuł książki', 'Data wypożyczenia', 'Data zwrotu', 'Kaucja'])
-    results.title = 'Historia wypożyczeń'
-    for item in jsonFile:
-        name = item["name"]
-        lastName = item["lastName"]
-        rentClass = item["class"]
-        bookTitle = item["bookTitle"]
-        rentalDate = item["rentalDate"]
-        returnDate = item["returnDate"]
-        deposit = item["deposit"]
-        results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate), str(returnDate), deposit])
-    results.add_autoindex('ID')
-    if len(results.rows) == 0:
-        print()
-        print('Lista jest pusta')
-    else:
-        print(results)
-
-
 def endHire():
     viewActiveHires()
     new_data = []
@@ -132,8 +89,7 @@ def endHire():
     for entry in temp:
         if i == int(deleteOption):
             returnDate = datetime.datetime.now()
-            entry["returnDate"] = str(
-                f"{returnDate.day}.{returnDate.month}.{returnDate.year} - {returnDate.hour}:{returnDate.minute}")
+            entry["returnDate"] = str(f"{returnDate.day}.{returnDate.month}.{returnDate.year} - {returnDate.hour}:{returnDate.minute}")
             with open(historyFile, "r") as f:
                 temp = json.load(f)
                 temp.append(entry)
@@ -145,6 +101,53 @@ def endHire():
             i = i + 1
         with open(activeHiresFile, "w") as f:
             json.dump(new_data, f, indent=4)
+
+def viewActiveHires():
+    with open(activeHiresFile, 'r') as f:
+        jsonFile = json.load(f)
+    results = prettytable.PrettyTable(['Imię', 'Nazwisko', 'Klasa', 'Tytuł książki', 'Data wypożyczenia', 'Zwrot do', 'Kaucja'])
+    results.title = 'Trwające wypożyczenia'
+    for item in jsonFile:
+        name = item["name"]
+        lastName = item["lastName"]
+        rentClass = item["class"]
+        bookTitle = item["bookTitle"]
+        rentalDate = item["rentalDate"]
+        maxDate = item["maxDate"]
+        deposit = item["deposit"]
+        results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDate), deposit])
+    results.add_autoindex('ID')
+    if len(results.rows) == 0:
+        print()
+        print('Lista jest pusta')
+    else:
+        print(results)
+
+def viewHistoryHires():
+    with open(historyFile, 'r') as f:
+        jsonFile = json.load(f)
+    results = prettytable.PrettyTable(
+        ['Imię', 'Nazwisko', 'Klasa', 'Tytuł książki', 'Data wypożyczenia', 'Zwrot do', 'Data zwrotu', 'Kaucja'])
+    results.title = 'Historia wypożyczeń'
+    for item in jsonFile:
+        name = item["name"]
+        lastName = item["lastName"]
+        rentClass = item["class"]
+        bookTitle = item["bookTitle"]
+        rentalDate = item["rentalDate"]
+        maxDate = item["maxDate"]
+        returnDate = item["returnDate"]
+        deposit = item["deposit"]
+        results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDate),str(returnDate), deposit])
+    results.add_autoindex('ID')
+    if len(results.rows) == 0:
+        print()
+        print('Lista jest pusta')
+    else:
+        print(results)
+
+
+
 
 
 def activeSearch():
@@ -164,7 +167,7 @@ def activeSearch():
             continue
 
     phrase = input('Wprowadź szukaną frazę: ')
-    results = prettytable.PrettyTable(['Imię', 'Nazwisko', 'Klasa', 'Tytuł książki', 'Data wypożyczenia', 'Kaucja'])
+    results = prettytable.PrettyTable(['Imię', 'Nazwisko', 'Klasa', 'Tytuł książki', 'Data wypożyczenia', 'Zwrot do', 'Kaucja'])
     results.title = f'Szukana fraza: {phrase}'
     with open(activeHiresFile, 'r') as f:
         jsonFile = json.load(f)
@@ -175,20 +178,21 @@ def activeSearch():
         rentClass = item["class"]
         bookTitle = item["bookTitle"]
         rentalDate = item["rentalDate"]
+        maxDate = item["maxDate"]
         deposit = item["deposit"]
 
         if choice == 1:
             if str(phrase) in name:
-                results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate), deposit])
+                results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDate), deposit])
         if choice == 2:
             if str(phrase) in lastName:
-                results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate), deposit])
+                results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDate), deposit])
         if choice == 3:
             if str(phrase) in rentClass:
-                results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate), deposit])
+                results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDate), deposit])
         if choice == 4:
             if str(phrase) in bookTitle:
-                results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate), deposit])
+                results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDate), deposit])
 
     if len(results.rows) == 0:
         print()
@@ -213,7 +217,7 @@ def historySearch():
             continue
 
     phrase = input('Wprowadź szukaną frazę: ')
-    results = prettytable.PrettyTable(['Imię', 'Nazwisko', 'Klasa', 'Tytuł książki', 'Data wypożyczenia','Data zwrotu', 'Kaucja'])
+    results = prettytable.PrettyTable(['Imię', 'Nazwisko', 'Klasa', 'Tytuł książki', 'Data wypożyczenia', 'Zwrot do', 'Data zwrotu', 'Kaucja'])
     results.title = f'Szukana fraza: {phrase}'
     with open(historyFile, 'r') as f:
         jsonFile = json.load(f)
@@ -224,21 +228,22 @@ def historySearch():
         rentClass = item["class"]
         bookTitle = item["bookTitle"]
         rentalDate = item["rentalDate"]
+        maxDate = item["maxDate"]
         returnDate = item['returnDate']
         deposit = item["deposit"]
 
         if choice == 1:
             if str(phrase) in name:
-                results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate),str(returnDate), deposit])
+                results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDate),str(returnDate), deposit])
         if choice == 2:
             if str(phrase) in lastName:
-                results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate),str(returnDate), deposit])
+                results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDate),str(returnDate), deposit])
         if choice == 3:
             if str(phrase) in rentClass:
-                results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate),str(returnDate), deposit])
+                results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDate),str(returnDate), deposit])
         if choice == 4:
             if str(phrase) in bookTitle:
-                results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate),str(returnDate), deposit])
+                results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDate),str(returnDate), deposit])
 
     if len(results.rows) == 0:
         print()
