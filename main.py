@@ -3,10 +3,8 @@ import datetime
 import prettytable
 
 # Functions
-
 activeHiresFile = 'active.json'
 historyFile = 'history.json'
-
 
 def addHire():
     sure = 0
@@ -34,7 +32,7 @@ def addHire():
     else:
         hireData["deposit"] = str(deposit) + "zl"
 
-    summary = prettytable.PrettyTable(['Imię', 'Nazwisko', 'Klasa', 'Tytuł ksiązki', 'Data wypożyczenia', 'Kaucja'])
+    summary = prettytable.PrettyTable(['Imię', 'Nazwisko', 'Klasa', 'Tytuł książki', 'Data wypożyczenia', 'Kaucja'])
     summary.add_row([hireData["name"], hireData["lastName"], hireData["class"], hireData["bookTitle"], hireData["rentalDate"], hireData["deposit"]])
     print(summary)
 
@@ -43,7 +41,7 @@ def addHire():
             print("[1] - tak")
             print("[0] - nie")
 
-            sure = int(input("Napewno chcesz dodać nowego czytelnika? "))
+            sure = int(input("Na pewno chcesz dodać nowego czytelnika? "))
             if sure != 1 and sure != 0:
                 raise Exception
             break
@@ -68,7 +66,7 @@ def addHire():
 def viewActiveHires():
     with open(activeHiresFile, 'r') as f:
         jsonFile = json.load(f)
-    results = prettytable.PrettyTable(['Imię', 'Nazwisko', 'Klasa', 'Tytuł ksiązki', 'Data wypożyczenia', 'Kaucja'])
+    results = prettytable.PrettyTable(['Imię', 'Nazwisko', 'Klasa', 'Tytuł książki', 'Data wypożyczenia', 'Kaucja'])
     results.title = 'Trwające wypożyczenia'
     for item in jsonFile:
         name = item["name"]
@@ -153,7 +151,7 @@ def activeSearch():
     print('[1] - imię')
     print('[2] - nazwisko')
     print('[3] - klasa')
-    print('[4] - tytuł ksiązki')
+    print('[4] - tytuł książki')
 
     while True:
         try:
@@ -165,7 +163,7 @@ def activeSearch():
             print('Wprowadzone dane są niepoprawne. Spróbuj ponownie')
             continue
 
-    phrase = input('Wprowadź wszukaną frazę: ')
+    phrase = input('Wprowadź szukaną frazę: ')
     results = prettytable.PrettyTable(['Imię', 'Nazwisko', 'Klasa', 'Tytuł książki', 'Data wypożyczenia', 'Kaucja'])
     results.title = f'Szukana fraza: {phrase}'
     with open(activeHiresFile, 'r') as f:
@@ -202,7 +200,7 @@ def historySearch():
     print('[1] - imię')
     print('[2] - nazwisko')
     print('[3] - klasa')
-    print('[4] - tytuł ksiązki')
+    print('[4] - tytuł książki')
 
     while True:
         try:
@@ -214,7 +212,7 @@ def historySearch():
             print('Wprowadzone dane są niepoprawne. Spróbuj ponownie')
             continue
 
-    phrase = input('Wprowadź wszukaną frazę: ')
+    phrase = input('Wprowadź szukaną frazę: ')
     results = prettytable.PrettyTable(['Imię', 'Nazwisko', 'Klasa', 'Tytuł książki', 'Data wypożyczenia','Data zwrotu', 'Kaucja'])
     results.title = f'Szukana fraza: {phrase}'
     with open(historyFile, 'r') as f:
