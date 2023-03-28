@@ -4,7 +4,7 @@ import prettytable
 
 activeHiresFile = 'active.json'
 historyFile = 'history.json'
-dateFormat = '%d.%m.%y'
+dateFormat = "%d.%m.%Y"
 
 def addHire():
     """Zapisywane dane to: imię, nazwisko, klasa, tytuł książki, data wypożyczenia, kaucja"""
@@ -302,6 +302,34 @@ def addDeposit():
 
     print('Zmieniono kaucję')
 
+def viewTodayReturns():
+    results = prettytable.PrettyTable(['Imię', 'Nazwisko', 'Klasa', 'Tytuł książki', 'Data wypożyczenia', 'Zwrot do', 'Kaucja'])
+    results.title = 'Książki z dzisiejszym terminem'
+    with open(activeHiresFile, 'r') as f:
+        jsonFile = json.load(f)
+
+    for entry in jsonFile:
+        maxReturnDate = ''
+        name = entry["name"]
+        lastName = entry["lastName"]
+        rentClass = entry["class"]
+        bookTitle = entry["bookTitle"]
+        rentalDate = entry["rentalDate"]
+        maxDateSTR = entry["maxDate"]
+        deposit = entry["deposit"]
+
+        today = datetime.date.today().strftime(dateFormat)
+        if maxDateSTR != '14:10':
+            maxReturnDate = datetime.datetime.strptime(maxDateSTR, dateFormat).strftime(dateFormat)
+
+        print(today)
+        print(maxReturnDate)
+
+        if maxReturnDate == today or maxDateSTR == '14:10':
+            results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDateSTR), deposit])
+
+    print(results)
+
 while True:
     choice = 0
     print("----------------------------------------------------------------------------")
@@ -309,9 +337,10 @@ while True:
     print("[2] - Zakończ wypożyczenie")
     print("[3] - Zobacz listę wypożyczonych książek")
     print("[4] - Zobacz historię wypożyczeń")
-    print("[5] - Wyszukaj aktywne wypożyczenie")
-    print("[6] - Wyszukaj historię wypożyczeń")
-    print("[7] - dodaj lub zmień kaucję")
+    print("[5] - Przeszukaj aktywne wypożyczenie")
+    print("[6] - Przeszukaj historię wypożyczeń")
+    print("[7] - Dodaj lub zmień kaucję")
+    print("[8] - Książki z dzisiejszym terminem zwrotu")
     try:
         choice = int(input("Wybierz z listy: "))
     except Exception:
@@ -332,5 +361,7 @@ while True:
         historySearch()
     elif choice == 7:
         addDeposit()
+    elif choice == 8:
+        viewTodayReturns()
     else:
         print("Wprowadzone dane są niepoprawne. Spróbuj ponownie")
