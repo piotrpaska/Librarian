@@ -4,6 +4,7 @@ import prettytable
 
 activeHiresFile = 'active.json'
 historyFile = 'history.json'
+dateFormat = '%d.%m.%y'
 
 def addHire():
     """Zapisywane dane to: imię, nazwisko, klasa, tytuł książki, data wypożyczenia, kaucja"""
@@ -21,21 +22,26 @@ def addHire():
     # tytuł książki
     hireData["bookTitle"] = input("Wpisz tytuł wypożyczonej książki: ")
 
+    deposit = input("Wpisz wartość kaucji (jeśli nie wpłacił kaucji kliknij ENTER): ")
+    isDeposit = bool
+    if deposit == '':
+        hireData["deposit"] = 'Brak'
+        isDeposit = False
+    else:
+        hireData["deposit"] = str(deposit) + "zl"
+        isDeposit = True
+
     # ustawienie daty wypożyczenia
     rentalDate = datetime.date.today()
     maxReturnDate = rentalDate + datetime.timedelta(weeks=2)
-    hireData["rentalDate"] = str(f"{rentalDate.strftime('%d.%m.%y')}")
-    hireData["maxDate"] = str(f"{maxReturnDate.strftime('%d.%m.%y')}")
-
-    deposit = input("Wpisz wartość kaucji (jeśli nie wpłacił kaucji kliknij ENTER): ")
-
-    if deposit == '':
-        hireData["deposit"] = 'Brak'
+    hireData["rentalDate"] = str(f"{rentalDate.strftime(dateFormat)}")
+    if isDeposit:
+        hireData["maxDate"] = str(f"{maxReturnDate.strftime(dateFormat)}")
     else:
-        hireData["deposit"] = str(deposit) + "zl"
+        hireData["maxDate"] = '14:10'
 
     summary = prettytable.PrettyTable(['Imię', 'Nazwisko', 'Klasa', 'Tytuł książki', 'Data wypożyczenia', 'Zwrot do', 'Kaucja'])
-    summary.add_row([hireData["name"], hireData["lastName"], hireData["class"], hireData["bookTitle"], hireData["rentalDate"], hireData["rentalDate"], hireData["deposit"]])
+    summary.add_row([hireData["name"], hireData["lastName"], hireData["class"], hireData["bookTitle"], hireData["rentalDate"], hireData["maxDate"], hireData["deposit"]])
     print(summary)
 
     while True:
@@ -263,10 +269,13 @@ def addDeposit():
         idRange = range(1, int(dataLenght + 1))
         if int(objectChange) in idRange:
             deposit = input("Wpisz wartość kaucji (jeśli nie wpłacił kaucji kliknij ENTER): ")
+            isDeposit = bool
             if deposit == '':
                 deposit = 'Brak'
+                isDeposit = False
             else:
                 deposit = str(deposit) + "zl"
+                isDeposit = True
             break
         else:
             print("Wprowadzone dane są niepoprawne. Spróbuj ponownie")
@@ -275,6 +284,13 @@ def addDeposit():
     for entry in temp:
         if i == objectChange:
             entry["deposit"] = deposit
+            if isDeposit:
+                rentalDateSTR = entry["rentalDate"]
+                rentalDate = datetime.datetime.strptime(rentalDateSTR, dateFormat)
+                maxReturnDate = rentalDate + datetime.timedelta(weeks=2)
+                entry["maxDate"] = str(f"{maxReturnDate.strftime(dateFormat)}")
+            else:
+                entry["maxDate"] = '14:10'
             newData.append(entry)
             i = i + 1
         else:
