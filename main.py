@@ -1,6 +1,8 @@
 import json
 import datetime
 import prettytable
+import keyboard
+
 
 activeHiresFile = 'active.json'
 historyFile = 'history.json'
@@ -177,10 +179,6 @@ def viewHistoryHires():
     else:
         print(results)
 
-
-
-
-
 def activeSearch():
     print('[1] - imię')
     print('[2] - nazwisko')
@@ -309,6 +307,8 @@ def addDeposit():
         temp = json.load(f)
         dataLength = len(temp)
 
+    if dataLength <= 0:
+        return
     while True:
         objectChange = int(input('Wpisz ID wypożyczenia w którym chcesz dodać kaucję: '))
         idRange = range(1, int(dataLength + 1))
@@ -376,6 +376,77 @@ def viewTodayReturns():
     else:
         print(results)
 
+def extension():
+    newData = []
+    with open(activeHiresFile, 'r') as f:
+        temp = json.load(f)
+        dataLengthList = []
+        for item in temp:
+            if item["maxDate"] != '14:10':
+                dataLengthList.append(item)
+        dataLength = len(dataLengthList)
+
+    # View
+    view = prettytable.PrettyTable(['Imię', 'Nazwisko', 'Klasa', 'Tytuł książki', 'Data wypożyczenia', 'Zwrot do', 'Kaucja', 'Status'])
+    view.title = 'Trwające wypożyczenia'
+    for item in temp:
+        name = item["name"]
+        lastName = item["lastName"]
+        rentClass = item["class"]
+        bookTitle = item["bookTitle"]
+        rentalDateSTR = item["rentalDate"]
+        maxDateSTR = item["maxDate"]
+        deposit = item["deposit"]
+        overdue = ''
+        maxDate = None
+
+        # overdue
+        today = None
+        if maxDateSTR != '14:10':
+            # jeśli kaucja jest wpłacona
+            today = datetime.datetime.today().date()
+            maxDate = datetime.datetime.strptime(maxDateSTR, dateFormat).date()
+            if maxDate < today:
+                difference = today - maxDate
+                overdue = f'Przetrzymanie (Kara: {difference.days}zł)'
+            else:
+                overdue = 'Wypożyczona'
+            view.add_row([name, lastName, rentClass, bookTitle, str(rentalDateSTR), str(maxDateSTR), deposit, overdue])
+
+    view.add_autoindex('ID')
+    if len(view.rows) <= 0:
+        print()
+        print('Lista jest pusta')
+        return
+    else:
+        print(view)
+
+    while True:
+        objectChange = int(input('Wpisz ID wypożyczenia które chcesz przedłużyć: '))
+        idRange = range(1, int(dataLength + 1))
+        if int(objectChange) in idRange:
+            break
+        else:
+            print("Wprowadzone dane są niepoprawne. Spróbuj ponownie")
+
+    i = 1
+    for entry in temp:
+        if entry["maxDate"] != '14:10':
+            if i == objectChange:
+                maxDate = datetime.datetime.strptime(entry["maxDate"], dateFormat)
+                maxDate = maxDate + datetime.timedelta(weeks=2)
+                entry["maxDate"] = maxDate.strftime(dateFormat)
+                newData.append(entry)
+                i = i + 1
+            else:
+                newData.append(entry)
+                i = i + 1
+
+    with open(activeHiresFile, 'w') as f:
+        json.dump(newData, f, indent=4)
+
+    print('Przedłużono wypożyczenie')
+
 while True:
     choice = 0
     print("----------------------------------------------------------------------------")
@@ -409,5 +480,7 @@ while True:
         addDeposit()
     elif choice == 8:
         viewTodayReturns()
+    elif choice == 9:
+        extension()
     else:
         print("Wprowadzone dane są niepoprawne. Spróbuj ponownie")

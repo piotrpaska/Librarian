@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Librarian"
-#define MyAppVersion "1.2.0"
+#define MyAppVersion "1.3.0"
 #define MyAppPublisher "Codevision"
 #define MyAppURL "https://github.com/Piciu19/Libriarian"
 #define MyAppExeName "Librarian.exe"
@@ -23,11 +23,10 @@ DisableProgramGroupPage=yes
 LicenseFile=C:\Users\krzys\Desktop\It-Projects\Szkola\Biblioteka\Installer\License_files\license_file.txt
 InfoBeforeFile=C:\Users\krzys\Desktop\It-Projects\Szkola\Biblioteka\Installer\License_files\info_before_installation.txt
 InfoAfterFile=C:\Users\krzys\Desktop\It-Projects\Szkola\Biblioteka\Installer\License_files\info_after_installation.txt
-; Uncomment the following line to run in non administrative install mode (install for current user only.)
 ;PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=commandline
 OutputDir=C:\Users\krzys\Desktop\It-Projects\Szkola\Biblioteka\Installer\Installer
-OutputBaseFilename=librarian-setup(1.2.0)
+OutputBaseFilename=librarian-setup(1.3.0)
 SetupIconFile=C:\Users\krzys\Desktop\It-Projects\Szkola\Biblioteka\Installer\Icons\installer.ico
 Compression=lzma
 SolidCompression=yes
@@ -41,9 +40,9 @@ Name: "polish"; MessagesFile: "compiler:Languages\Polish.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "C:\Users\krzys\Desktop\It-Projects\Szkola\Biblioteka\Installer\exe\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Users\krzys\Desktop\It-Projects\Szkola\Biblioteka\active.json"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Users\krzys\Desktop\It-Projects\Szkola\Biblioteka\history.json"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Users\krzys\Desktop\It-Projects\Szkola\Biblioteka\Installer\Files\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Users\krzys\Desktop\It-Projects\Szkola\Biblioteka\Installer\Files\active.json"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Users\krzys\Desktop\It-Projects\Szkola\Biblioteka\Installer\Files\history.json"; DestDir: "{app}"; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
