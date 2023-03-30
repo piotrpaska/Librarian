@@ -2,26 +2,32 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Librarian"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "1.2.0"
 #define MyAppPublisher "Codevision"
-#define MyAppExeName "main.exe"
+#define MyAppURL "https://github.com/Piciu19/Libriarian"
+#define MyAppExeName "Librarian.exe"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application. Do not use the same AppId value in installers for other applications.
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
-AppId={{2DC375BE-1FC1-4087-8B36-9467B71BE99C}
+AppId={{DA993DE4-CA31-43CF-B7A0-750F85435A51}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 ;AppVerName={#MyAppName} {#MyAppVersion}
 AppPublisher={#MyAppPublisher}
+AppPublisherURL={#MyAppURL}
+AppSupportURL={#MyAppURL}
+AppUpdatesURL={#MyAppURL}
 DefaultDirName={autopf}\{#MyAppName}
-DefaultGroupName={#MyAppName}
+DisableProgramGroupPage=yes
+LicenseFile=C:\Users\krzys\Desktop\It-Projects\Szkola\Biblioteka\Installer\License_files\license_file.txt
 InfoBeforeFile=C:\Users\krzys\Desktop\It-Projects\Szkola\Biblioteka\Installer\License_files\info_before_installation.txt
 InfoAfterFile=C:\Users\krzys\Desktop\It-Projects\Szkola\Biblioteka\Installer\License_files\info_after_installation.txt
-; Remove the following line to run in administrative install mode (install for all users.)
-PrivilegesRequired=lowest
+; Uncomment the following line to run in non administrative install mode (install for current user only.)
+;PrivilegesRequired=lowest
+PrivilegesRequiredOverridesAllowed=commandline
 OutputDir=C:\Users\krzys\Desktop\It-Projects\Szkola\Biblioteka\Installer\Installer
-OutputBaseFilename=librarian-setup
+OutputBaseFilename=librarian-setup(1.2.0)
 SetupIconFile=C:\Users\krzys\Desktop\It-Projects\Szkola\Biblioteka\Installer\Icons\installer.ico
 Compression=lzma
 SolidCompression=yes
@@ -30,7 +36,6 @@ WizardStyle=modern
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "polish"; MessagesFile: "compiler:Languages\Polish.isl"
-Name: "russian"; MessagesFile: "compiler:Languages\Russian.isl"
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
@@ -42,8 +47,7 @@ Source: "C:\Users\krzys\Desktop\It-Projects\Szkola\Biblioteka\history.json"; Des
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
-Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
-Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"
+Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Run]

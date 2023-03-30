@@ -111,17 +111,42 @@ def endHire():
 def viewActiveHires():
     with open(activeHiresFile, 'r') as f:
         jsonFile = json.load(f)
-    results = prettytable.PrettyTable(['Imię', 'Nazwisko', 'Klasa', 'Tytuł książki', 'Data wypożyczenia', 'Zwrot do', 'Kaucja'])
+    results = prettytable.PrettyTable(['Imię', 'Nazwisko', 'Klasa', 'Tytuł książki', 'Data wypożyczenia', 'Zwrot do', 'Kaucja', 'Status'])
     results.title = 'Trwające wypożyczenia'
     for item in jsonFile:
         name = item["name"]
         lastName = item["lastName"]
         rentClass = item["class"]
         bookTitle = item["bookTitle"]
-        rentalDate = item["rentalDate"]
-        maxDate = item["maxDate"]
+        rentalDateSTR = item["rentalDate"]
+        maxDateSTR = item["maxDate"]
         deposit = item["deposit"]
-        results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDate), deposit])
+
+        overdue = ''
+        maxDate = None
+
+        #overdue
+        today = None
+        if maxDateSTR != '14:10':
+            #jeśli kaucja jest wpłacona
+            today = datetime.datetime.today().date()
+            maxDate = datetime.datetime.strptime(maxDateSTR, dateFormat).date()
+            if maxDate < today:
+                difference = today - maxDate
+                overdue = f'Przetrzymanie (Kara: {difference .days}zł)'
+            else:
+                overdue = 'Wypożyczona'
+        else:
+            # jeśli kaucja nie została wpłacona
+            rentalDate = datetime.datetime.strptime(rentalDateSTR, dateFormat).date()
+            today = datetime.datetime.today().date()
+            if rentalDate < today:
+                difference  = today - rentalDate
+                overdue = f'Przetrzymanie (Kara: {difference .days}zł)'
+            else:
+                overdue = 'Wypożyczona'
+
+        results.add_row([name, lastName, rentClass, bookTitle, str(rentalDateSTR), str(maxDateSTR), deposit, overdue])
     results.add_autoindex('ID')
     if len(results.rows) == 0:
         print()
@@ -173,7 +198,7 @@ def activeSearch():
             continue
 
     phrase = input('Wprowadź szukaną frazę: ')
-    results = prettytable.PrettyTable(['Imię', 'Nazwisko', 'Klasa', 'Tytuł książki', 'Data wypożyczenia', 'Zwrot do', 'Kaucja'])
+    results = prettytable.PrettyTable(['Imię', 'Nazwisko', 'Klasa', 'Tytuł książki', 'Data wypożyczenia', 'Zwrot do', 'Kaucja', 'Status'])
     results.title = f'Szukana fraza: {phrase}'
     with open(activeHiresFile, 'r') as f:
         jsonFile = json.load(f)
@@ -183,22 +208,42 @@ def activeSearch():
         lastName = item["lastName"]
         rentClass = item["class"]
         bookTitle = item["bookTitle"]
-        rentalDate = item["rentalDate"]
-        maxDate = item["maxDate"]
+        rentalDateSTR = item["rentalDate"]
+        maxDateSTR = item["maxDate"]
         deposit = item["deposit"]
+
+        overdue = ''
+        maxDate = None
+        today = None
+        if maxDateSTR != '14:10':
+            today = datetime.datetime.today().date()
+            maxDate = datetime.datetime.strptime(maxDateSTR, dateFormat).date()
+            if maxDate < today:
+                difference = today - maxDate
+                overdue = f'Przetrzymanie (Kara: {difference.days}zł)'
+            else:
+                overdue = 'Wypożyczona'
+        else:
+            rentalDate = datetime.datetime.strptime(rentalDateSTR, dateFormat).date()
+            today = datetime.datetime.today().date()
+            if rentalDate < today:
+                difference = today - rentalDate
+                overdue = f'Przetrzymanie (Kara: {difference.days}zł)'
+            else:
+                overdue = 'Wypożyczona'
 
         if choice == 1:
             if str(phrase) in name:
-                results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDate), deposit])
+                results.add_row([name, lastName, rentClass, bookTitle, str(rentalDateSTR), str(maxDateSTR), deposit, overdue])
         if choice == 2:
             if str(phrase) in lastName:
-                results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDate), deposit])
+                results.add_row([name, lastName, rentClass, bookTitle, str(rentalDateSTR), str(maxDateSTR), deposit, overdue])
         if choice == 3:
             if str(phrase) in rentClass:
-                results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDate), deposit])
+                results.add_row([name, lastName, rentClass, bookTitle, str(rentalDateSTR), str(maxDateSTR), deposit, overdue])
         if choice == 4:
             if str(phrase) in bookTitle:
-                results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDate), deposit])
+                results.add_row([name, lastName, rentClass, bookTitle, str(rentalDateSTR), str(maxDateSTR), deposit, overdue])
 
     if len(results.rows) == 0:
         print()
@@ -262,11 +307,11 @@ def addDeposit():
     newData = []
     with open(activeHiresFile, 'r') as f:
         temp = json.load(f)
-        dataLenght = len(temp)
+        dataLength = len(temp)
 
     while True:
         objectChange = int(input('Wpisz ID wypożyczenia w którym chcesz dodać kaucję: '))
-        idRange = range(1, int(dataLenght + 1))
+        idRange = range(1, int(dataLength + 1))
         if int(objectChange) in idRange:
             deposit = input("Wpisz wartość kaucji (jeśli nie wpłacił kaucji kliknij ENTER): ")
             isDeposit = bool
@@ -322,13 +367,14 @@ def viewTodayReturns():
         if maxDateSTR != '14:10':
             maxReturnDate = datetime.datetime.strptime(maxDateSTR, dateFormat).strftime(dateFormat)
 
-        print(today)
-        print(maxReturnDate)
-
         if maxReturnDate == today or maxDateSTR == '14:10':
             results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDateSTR), deposit])
 
-    print(results)
+    if len(results.rows) == 0:
+        print()
+        print('Lista jest pusta')
+    else:
+        print(results)
 
 while True:
     choice = 0
