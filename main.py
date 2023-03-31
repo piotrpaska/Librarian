@@ -1,7 +1,8 @@
 import json
 import datetime
 import prettytable
-import keyboard
+# TODO dodanie reagowania na escape
+# TODO ulepszenie menu
 
 
 activeHiresFile = 'active.json'
@@ -458,6 +459,7 @@ while True:
     print("[6] - Przeszukaj historię wypożyczeń")
     print("[7] - Dodaj lub zmień kaucję")
     print("[8] - Książki z dzisiejszym terminem zwrotu")
+    print("[9] - Przedłużenie wypożyczenia")
     try:
         choice = int(input("Wybierz z listy: "))
     except Exception:

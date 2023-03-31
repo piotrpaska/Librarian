@@ -4,13 +4,13 @@
 #define MyAppName "Librarian"
 #define MyAppVersion "1.3.0"
 #define MyAppPublisher "Codevision"
-#define MyAppURL "https://github.com/Piciu19/Libriarian"
+#define MyAppURL "https://github.com/Piciu19/Librarian"
 #define MyAppExeName "Librarian.exe"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application. Do not use the same AppId value in installers for other applications.
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
-AppId={{DA993DE4-CA31-43CF-B7A0-750F85435A51}
+AppId={{FD29BA41-6BC6-435D-B929-9BADFE7D3DD7}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 ;AppVerName={#MyAppName} {#MyAppVersion}
@@ -23,10 +23,11 @@ DisableProgramGroupPage=yes
 LicenseFile=C:\Users\krzys\Desktop\It-Projects\Szkola\Biblioteka\Installer\License_files\license_file.txt
 InfoBeforeFile=C:\Users\krzys\Desktop\It-Projects\Szkola\Biblioteka\Installer\License_files\info_before_installation.txt
 InfoAfterFile=C:\Users\krzys\Desktop\It-Projects\Szkola\Biblioteka\Installer\License_files\info_after_installation.txt
-;PrivilegesRequired=lowest
+; Remove the following line to run in administrative install mode (install for all users.)
+PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=commandline
 OutputDir=C:\Users\krzys\Desktop\It-Projects\Szkola\Biblioteka\Installer\Installer
-OutputBaseFilename=librarian-setup(1.3.0)
+OutputBaseFilename=librarian-setup-1.3.0
 SetupIconFile=C:\Users\krzys\Desktop\It-Projects\Szkola\Biblioteka\Installer\Icons\installer.ico
 Compression=lzma
 SolidCompression=yes
@@ -35,6 +36,7 @@ WizardStyle=modern
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "polish"; MessagesFile: "compiler:Languages\Polish.isl"
+Name: "russian"; MessagesFile: "compiler:Languages\Russian.isl"
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
