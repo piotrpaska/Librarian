@@ -81,6 +81,9 @@ def endHire():
         temp = json.load(f)
         data_length = len(temp)
 
+    if data_length <= 0:
+        return
+
     while True:
         try:
             print("Aby wybrać wypożyczenie które chcesz zakończyć wpisz ID tego wypożyczenia")
@@ -451,38 +454,50 @@ def extension():
 while True:
     choice = 0
     print("----------------------------------------------------------------------------")
-    print("[1] - Dodaj wypożyczoną książkę")
+    print("[1] - Dodaj wypożyczenie")
     print("[2] - Zakończ wypożyczenie")
-    print("[3] - Zobacz listę wypożyczonych książek")
-    print("[4] - Zobacz historię wypożyczeń")
-    print("[5] - Przeszukaj aktywne wypożyczenie")
-    print("[6] - Przeszukaj historię wypożyczeń")
-    print("[7] - Dodaj lub zmień kaucję")
-    print("[8] - Książki z dzisiejszym terminem zwrotu")
-    print("[9] - Przedłużenie wypożyczenia")
+    print("[3] - Wypożyczone książki")
+    print("[4] - Zażądaj wypożyczeniami")
+    print("[5] - Wyświetl książki z dzisiejszą datą zwrotu")
+
     try:
         choice = int(input("Wybierz z listy: "))
+        print()
+        if choice == 1:
+            addHire()
+        elif choice == 2:
+            endHire()
+        elif choice == 3:
+            print('[1] - Wyświetl trwające wypożyczenia')
+            print('[2] - Wyświetl historię wypożyczeń')
+            print('[3] - Przeszukaj trwające wypożyczenia')
+            print('[4] - Przeszukaj historię wypożyczeń')
+            choice = int(input("Wybierz z listy: "))
+            print()
+            if choice == 1:
+                viewActiveHires()
+            elif choice == 2:
+                viewHistoryHires()
+            elif choice == 3:
+                activeSearch()
+            elif choice == 4:
+                historySearch()
+            else:
+                raise Exception
+        elif choice == 5:
+            print('[1] - Zmień lub dodaj kaucję')
+            print('[2] - Przedłuż wypożyczenie')
+            choice = int(input("Wybierz z listy: "))
+            print()
+            if choice == 1:
+                addDeposit()
+            elif choice == 2:
+                extension()
+            else:
+                raise Exception
+        elif choice == 6:
+            viewTodayReturns()
+        else:
+            raise Exception
     except Exception:
-        print("Wprowadzone dane są niepoprawne. Spróbuj ponownie")
-    print()
-
-    if choice == 1:
-        addHire()
-    elif choice == 2:
-        endHire()
-    elif choice == 3:
-        viewActiveHires()
-    elif choice == 4:
-        viewHistoryHires()
-    elif choice == 5:
-        activeSearch()
-    elif choice == 6:
-        historySearch()
-    elif choice == 7:
-        addDeposit()
-    elif choice == 8:
-        viewTodayReturns()
-    elif choice == 9:
-        extension()
-    else:
         print("Wprowadzone dane są niepoprawne. Spróbuj ponownie")
