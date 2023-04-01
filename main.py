@@ -2,8 +2,6 @@ import json
 import datetime
 import prettytable
 # TODO dodanie reagowania na escape
-# TODO ulepszenie menu
-
 
 activeHiresFile = 'active.json'
 historyFile = 'history.json'
