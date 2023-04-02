@@ -1,7 +1,10 @@
 import json
 import datetime
 import prettytable
-# TODO dodanie reagowania na escape
+import msvcrt
+import os
+
+# TODO powrót do wcześniejszego wprowadzenia danych
 
 activeHiresFile = 'active.json'
 historyFile = 'history.json'
@@ -13,24 +16,126 @@ def addHire():
     hireData = {}
 
     # imię
-    hireData["name"] = input("Wpisz imię: ")
+    print("Wpisz imię: ", end='', flush=True)  # use print instead of input to avoid blocking
+    name = ""
+    while True:
+        if msvcrt.kbhit():
+            key = ord(msvcrt.getch())
+            if key == 27:  # escape key
+                print()
+                os.system('cls')
+                return  # exit function
+            elif key == 13:  # enter key
+                print()
+                break  # exit loop
+            elif key == 8:  # backspace key
+                if len(name) > 0:
+                    name = name[:-1]
+                    print(f"\rWpisz imię: {name} {''}\b", end='', flush=True)
+            else:
+                name += chr(key)
+                print(chr(key), end='', flush=True)
+
+    hireData["name"] = name
 
     # nazwisko
-    hireData["lastName"] = input("Wpisz nazwisko: ")
+    print("Wpisz nazwisko: ", end='', flush=True)  # use print instead of input to avoid blocking
+    lastName = ""
+    while True:
+        if msvcrt.kbhit():
+            key = ord(msvcrt.getch())
+            if key == 27:  # escape key
+                print()
+                os.system('cls')
+                return  # exit function
+            elif key == 13:  # enter key
+                print()
+                break  # exit loop
+            elif key == 8:  # backspace key
+                if len(lastName) > 0:
+                    lastName = lastName[:-1]
+                    print(f"\rWpisz nazwisko: {lastName} {''}\b", end='', flush=True)
+            else:
+                lastName += chr(key)
+                print(chr(key), end='', flush=True)
 
-    hireData["class"] = input("Podaj klasę czytelnika (np. 2a): ")
+    hireData["lastName"] = lastName
+
+    print("Podaj klasę czytelnika (np. 2a): ", end='', flush=True)  # use print instead of input to avoid blocking
+    klasa = ""
+    while True:
+        if msvcrt.kbhit():
+            key = ord(msvcrt.getch())
+            if key == 27:  # escape key
+                print()
+                os.system('cls')
+                return  # exit function
+            elif key == 13:  # enter key
+                print()
+                break  # exit loop
+            elif key == 8:  # backspace key
+                if len(klasa) > 0:
+                    klasa = klasa[:-1]
+                    print(f"\rPodaj klasę czytelnika (np. 2a): {klasa} {''}\b", end='', flush=True)
+            else:
+                klasa += chr(key)
+                print(chr(key), end='', flush=True)
+
+    hireData["klasa"] = klasa
 
     # tytuł książki
-    hireData["bookTitle"] = input("Wpisz tytuł wypożyczonej książki: ")
+    print("Wpisz tytuł wypożyczonej książki: ", end='', flush=True)  # use print instead of input to avoid blocking
+    bookTitle = ""
+    while True:
+        if msvcrt.kbhit():
+            key = ord(msvcrt.getch())
+            if key == 27:  # escape key
+                print()
+                os.system('cls')
+                return  # exit function
+            elif key == 13:  # enter key
+                print()
+                break  # exit loop
+            elif key == 8:  # backspace key
+                if len(bookTitle) > 0:
+                    bookTitle = bookTitle[:-1]
+                    print(f"\rWpisz tytuł wypożyczonej książki: {bookTitle} {''}\b", end='', flush=True)
+            else:
+                bookTitle += chr(key)
+                print(chr(key), end='', flush=True)
 
-    deposit = input("Wpisz wartość kaucji (jeśli nie wpłacił kaucji kliknij ENTER): ")
+    hireData["bookTitle"] = bookTitle
+
+    print("Wpisz wartość kaucji (jeśli nie wpłacił kaucji kliknij ENTER): ", end='', flush=True)  # use print instead of input to avoid blocking
+    deposit = ""
+    while True:
+        if msvcrt.kbhit():
+            key = ord(msvcrt.getch())
+            if key == 27:  # escape key
+                print()
+                os.system('cls')
+                return  # exit function
+            elif key == 13:  # enter key
+                print()
+                break  # exit loop
+            elif key == 8:  # backspace key
+                if len(deposit) > 0:
+                    deposit = deposit[:-1]
+                    print(f"\rWpisz wartość kaucji (jeśli nie wpłacił kaucji kliknij ENTER): {deposit} {''}\b", end='', flush=True)
+            else:
+                deposit += chr(key)
+                print(chr(key), end='', flush=True)
+
     isDeposit = bool
     if deposit == '':
-        hireData["deposit"] = 'Brak'
+        deposit = 'Brak'
+        hireData["deposit"] = deposit
         isDeposit = False
+        print(deposit)
     else:
         hireData["deposit"] = str(deposit) + "zl"
         isDeposit = True
+        print(deposit)
 
     # ustawienie daty wypożyczenia
     rentalDate = datetime.date.today()
@@ -42,7 +147,7 @@ def addHire():
         hireData["maxDate"] = '14:10'
 
     summary = prettytable.PrettyTable(['Imię', 'Nazwisko', 'Klasa', 'Tytuł książki', 'Data wypożyczenia', 'Zwrot do', 'Kaucja'])
-    summary.add_row([hireData["name"], hireData["lastName"], hireData["class"], hireData["bookTitle"], hireData["rentalDate"], hireData["maxDate"], hireData["deposit"]])
+    summary.add_row([hireData["name"], hireData["lastName"], hireData["klasa"], hireData["bookTitle"], hireData["rentalDate"], hireData["maxDate"], hireData["deposit"]])
     print(summary)
 
     while True:
@@ -120,7 +225,7 @@ def viewActiveHires():
     for item in jsonFile:
         name = item["name"]
         lastName = item["lastName"]
-        rentClass = item["class"]
+        rentClass = item["klasa"]
         bookTitle = item["bookTitle"]
         rentalDateSTR = item["rentalDate"]
         maxDateSTR = item["maxDate"]
@@ -167,7 +272,7 @@ def viewHistoryHires():
     for item in jsonFile:
         name = item["name"]
         lastName = item["lastName"]
-        rentClass = item["class"]
+        rentClass = item["klasa"]
         bookTitle = item["bookTitle"]
         rentalDate = item["rentalDate"]
         maxDate = item["maxDate"]
@@ -206,7 +311,7 @@ def activeSearch():
 
         name = item["name"]
         lastName = item["lastName"]
-        rentClass = item["class"]
+        rentClass = item["klasa"]
         bookTitle = item["bookTitle"]
         rentalDateSTR = item["rentalDate"]
         maxDateSTR = item["maxDate"]
@@ -276,7 +381,7 @@ def historySearch():
 
         name = item["name"]
         lastName = item["lastName"]
-        rentClass = item["class"]
+        rentClass = item["klasa"]
         bookTitle = item["bookTitle"]
         rentalDate = item["rentalDate"]
         maxDate = item["maxDate"]
@@ -359,7 +464,7 @@ def viewTodayReturns():
         maxReturnDate = ''
         name = entry["name"]
         lastName = entry["lastName"]
-        rentClass = entry["class"]
+        rentClass = entry["klasa"]
         bookTitle = entry["bookTitle"]
         rentalDate = entry["rentalDate"]
         maxDateSTR = entry["maxDate"]
@@ -394,7 +499,7 @@ def extension():
     for item in temp:
         name = item["name"]
         lastName = item["lastName"]
-        rentClass = item["class"]
+        rentClass = item["klasa"]
         bookTitle = item["bookTitle"]
         rentalDateSTR = item["rentalDate"]
         maxDateSTR = item["maxDate"]
@@ -458,44 +563,41 @@ while True:
     print("[4] - Zażądaj wypożyczeniami")
     print("[5] - Wyświetl książki z dzisiejszą datą zwrotu")
 
-    try:
+    choice = int(input("Wybierz z listy: "))
+    print()
+    if choice == 1:
+        addHire()
+    elif choice == 2:
+        endHire()
+    elif choice == 3:
+        print('[1] - Wyświetl trwające wypożyczenia')
+        print('[2] - Wyświetl historię wypożyczeń')
+        print('[3] - Przeszukaj trwające wypożyczenia')
+        print('[4] - Przeszukaj historię wypożyczeń')
         choice = int(input("Wybierz z listy: "))
         print()
         if choice == 1:
-            addHire()
+            viewActiveHires()
         elif choice == 2:
-            endHire()
+            viewHistoryHires()
         elif choice == 3:
-            print('[1] - Wyświetl trwające wypożyczenia')
-            print('[2] - Wyświetl historię wypożyczeń')
-            print('[3] - Przeszukaj trwające wypożyczenia')
-            print('[4] - Przeszukaj historię wypożyczeń')
-            choice = int(input("Wybierz z listy: "))
-            print()
-            if choice == 1:
-                viewActiveHires()
-            elif choice == 2:
-                viewHistoryHires()
-            elif choice == 3:
-                activeSearch()
-            elif choice == 4:
-                historySearch()
-            else:
-                raise Exception
-        elif choice == 5:
-            print('[1] - Zmień lub dodaj kaucję')
-            print('[2] - Przedłuż wypożyczenie')
-            choice = int(input("Wybierz z listy: "))
-            print()
-            if choice == 1:
-                addDeposit()
-            elif choice == 2:
-                extension()
-            else:
-                raise Exception
-        elif choice == 6:
-            viewTodayReturns()
+            activeSearch()
+        elif choice == 4:
+            historySearch()
         else:
-            raise Exception
-    except Exception:
+            print("Wprowadzone dane są niepoprawne. Spróbuj ponownie")
+    elif choice == 4:
+        print('[1] - Zmień lub dodaj kaucję')
+        print('[2] - Przedłuż wypożyczenie')
+        choice = int(input("Wybierz z listy: "))
+        print()
+        if choice == 1:
+            addDeposit()
+        elif choice == 2:
+            extension()
+        else:
+            print("Wprowadzone dane są niepoprawne. Spróbuj ponownie")
+    elif choice == 5:
+        viewTodayReturns()
+    else:
         print("Wprowadzone dane są niepoprawne. Spróbuj ponownie")
