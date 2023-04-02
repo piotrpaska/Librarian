@@ -131,11 +131,9 @@ def addHire():
         deposit = 'Brak'
         hireData["deposit"] = deposit
         isDeposit = False
-        print(deposit)
     else:
         hireData["deposit"] = str(deposit) + "zl"
         isDeposit = True
-        print(deposit)
 
     # ustawienie daty wypożyczenia
     rentalDate = datetime.date.today()
@@ -187,18 +185,30 @@ def endHire():
     if data_length <= 0:
         return
 
+    delOptRange = range(1, int(data_length + 1))
+    print(f"Wybierz ID 1-{data_length}: ", end='', flush=True)  # use print instead of input to avoid blocking
+    deleteOption = ""
     while True:
-        try:
-            print("Aby wybrać wypożyczenie które chcesz zakończyć wpisz ID tego wypożyczenia")
-            deleteOption = input(f"Wybierz ID 1-{data_length}: ")
-            delOptRange = range(1, int(data_length + 1))
-            if int(deleteOption) in delOptRange:
-                print("Wypożyczenie zakończone")
-                break
+        if msvcrt.kbhit():
+            key = ord(msvcrt.getch())
+            if key == 27:  # escape key
+                print()
+                os.system('cls')
+                return  # exit function
+            elif key == 13:  # enter key
+                if int(deleteOption) in delOptRange:
+                    print()
+                    print("Wypożyczenie zakończone")
+                    break# exit loop
+                else:
+                    continue
+            elif key == 8:  # backspace key
+                if len(deleteOption) > 0:
+                    deleteOption = deleteOption[:-1]
+                    print(f"\rWybierz ID 1-{data_length}: {deleteOption} {''}\b", end='', flush=True)
             else:
-                print("Wprowadzone dane są niepoprawne. Spróbuj ponownie")
-        except Exception:
-            print("To nie jest liczba")
+                deleteOption += chr(key)
+                print(chr(key), end='', flush=True)
 
     i = 1
     for entry in temp:
@@ -563,41 +573,43 @@ while True:
     print("[4] - Zażądaj wypożyczeniami")
     print("[5] - Wyświetl książki z dzisiejszą datą zwrotu")
 
-    choice = int(input("Wybierz z listy: "))
+    choice = input("Wybierz z listy: ")
     print()
-    if choice == 1:
+    if choice == '1':
         addHire()
-    elif choice == 2:
+    elif choice == '2':
         endHire()
-    elif choice == 3:
+    elif choice == '3':
         print('[1] - Wyświetl trwające wypożyczenia')
         print('[2] - Wyświetl historię wypożyczeń')
         print('[3] - Przeszukaj trwające wypożyczenia')
         print('[4] - Przeszukaj historię wypożyczeń')
-        choice = int(input("Wybierz z listy: "))
+        choice = input("Wybierz z listy: ")
         print()
-        if choice == 1:
+        if choice == '1':
             viewActiveHires()
-        elif choice == 2:
+        elif choice == '2':
             viewHistoryHires()
-        elif choice == 3:
+        elif choice == '3':
             activeSearch()
-        elif choice == 4:
+        elif choice == '4':
             historySearch()
         else:
             print("Wprowadzone dane są niepoprawne. Spróbuj ponownie")
     elif choice == 4:
         print('[1] - Zmień lub dodaj kaucję')
         print('[2] - Przedłuż wypożyczenie')
-        choice = int(input("Wybierz z listy: "))
+        choice = input("Wybierz z listy: ")
         print()
-        if choice == 1:
+        if choice == '1':
             addDeposit()
-        elif choice == 2:
+        elif choice == '2':
             extension()
         else:
             print("Wprowadzone dane są niepoprawne. Spróbuj ponownie")
-    elif choice == 5:
+    elif choice == '5':
         viewTodayReturns()
+    elif choice == 'cls':
+        os.system('cls')
     else:
         print("Wprowadzone dane są niepoprawne. Spróbuj ponownie")
