@@ -405,17 +405,49 @@ def historySearch():
     print('[3] - klasa')
     print('[4] - tytuł książki')
 
+    print("Po czym chcesz szukać: ", end='', flush=True)  # use print instead of input to avoid blocking
+    choice = ""
     while True:
-        try:
-            choice = int(input('Po czym chcesz szukać: '))
-            if choice not in range(1, 4):
-                raise Exception
-            break
-        except Exception:
-            print('Wprowadzone dane są niepoprawne. Spróbuj ponownie')
-            continue
+        if msvcrt.kbhit():
+            key = ord(msvcrt.getch())
+            if key == 27:  # escape key
+                print()
+                os.system('cls')
+                return  # exit function
+            elif key == 13:  # enter key
+                if int(choice) in range(1, 5):
+                    print()
+                    break  # exit loop
+                else:
+                    continue
+            elif key == 8:  # backspace key
+                if len(choice) > 0:
+                    choice = choice[:-1]
+                    print(f"\rPo czym chcesz szukać: {choice} {''}\b", end='', flush=True)
+            else:
+                choice += chr(key)
+                print(chr(key), end='', flush=True)
 
-    phrase = input('Wprowadź szukaną frazę: ')
+    print("Wprowadź szukaną frazę: ", end='', flush=True)  # use print instead of input to avoid blocking
+    phrase = ""
+    while True:
+        if msvcrt.kbhit():
+            key = ord(msvcrt.getch())
+            if key == 27:  # escape key
+                print()
+                os.system('cls')
+                return  # exit function
+            elif key == 13:  # enter key
+                print()
+                phrase = phrase
+                break  # exit loop
+            elif key == 8:  # backspace key
+                if len(phrase) > 0:
+                    phrase = phrase[:-1]
+                    print(f"\rWprowadź szukaną frazę: {phrase} {''}\b", end='', flush=True)
+            else:
+                phrase += chr(key)
+                print(chr(key), end='', flush=True)
     results = prettytable.PrettyTable(['Imię', 'Nazwisko', 'Klasa', 'Tytuł książki', 'Data wypożyczenia', 'Zwrot do', 'Data zwrotu', 'Kaucja'])
     results.title = f'Szukana fraza: {phrase}'
     with open(historyFile, 'r') as f:
@@ -431,16 +463,16 @@ def historySearch():
         returnDate = item['returnDate']
         deposit = item["deposit"]
 
-        if choice == 1:
+        if choice == str("1"):
             if str(phrase) in name:
                 results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDate),str(returnDate), deposit])
-        if choice == 2:
+        if choice == str("2"):
             if str(phrase) in lastName:
                 results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDate),str(returnDate), deposit])
-        if choice == 3:
+        if choice == str("3"):
             if str(phrase) in rentClass:
                 results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDate),str(returnDate), deposit])
-        if choice == 4:
+        if choice == str("4"):
             if str(phrase) in bookTitle:
                 results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDate),str(returnDate), deposit])
 
