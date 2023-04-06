@@ -4,8 +4,6 @@ import prettytable
 import msvcrt
 import os
 
-# TODO powrót do wcześniejszego wprowadzenia danych
-
 activeHiresFile = 'active.json'
 historyFile = 'history.json'
 dateFormat = "%d.%m.%Y"
@@ -491,25 +489,60 @@ def addDeposit():
 
     if dataLength <= 0:
         return
+    print("Wpisz ID wypożyczenia w którym chcesz dodać kaucję: ", end='',
+          flush=True)  # use print instead of input to avoid blocking
+    objectChange = ""
     while True:
-        objectChange = int(input('Wpisz ID wypożyczenia w którym chcesz dodać kaucję: '))
-        idRange = range(1, int(dataLength + 1))
-        if int(objectChange) in idRange:
-            deposit = input("Wpisz wartość kaucji (jeśli nie wpłacił kaucji kliknij ENTER): ")
-            isDeposit = bool
-            if deposit == '':
-                deposit = 'Brak'
-                isDeposit = False
+        if msvcrt.kbhit():
+            key = ord(msvcrt.getch())
+            if key == 27:  # escape key
+                print()
+                os.system('cls')
+                return  # exit function
+            elif key == 13:  # enter key
+                idRange = range(1, int(dataLength + 1))
+                if int(objectChange) in idRange:
+                    print()
+                    break  # exit loop
+            elif key == 8:  # backspace key
+                if len(objectChange) > 0:
+                    objectChange = objectChange[:-1]
+                    print(f"\rWpisz ID wypożyczenia w którym chcesz dodać kaucję: {objectChange} {''}\b", end='',
+                          flush=True)
             else:
-                deposit = str(deposit) + "zl"
-                isDeposit = True
-            break
-        else:
-            print("Wprowadzone dane są niepoprawne. Spróbuj ponownie")
+                objectChange += chr(key)
+                print(chr(key), end='', flush=True)
+
+    print("Wpisz wartość kaucji (jeśli nie wpłacił kaucji kliknij ENTER): ", end='',flush=True)  # use print instead of input to avoid blocking
+    deposit = ""
+    while True:
+        if msvcrt.kbhit():
+            key = ord(msvcrt.getch())
+            if key == 27:  # escape key
+                print()
+                os.system('cls')
+                return  # exit function
+            elif key == 13:  # enter key
+                print()
+                break  # exit loop
+            elif key == 8:  # backspace key
+                if len(deposit) > 0:
+                    deposit = deposit[:-1]
+                    print(f"\rWpisz wartość kaucji (jeśli nie wpłacił kaucji kliknij ENTER): {deposit} {''}\b", end='',flush=True)
+            else:
+                deposit += chr(key)
+                print(chr(key), end='', flush=True)
+
+    if deposit == '':
+        deposit = "Brak"
+        isDeposit = False
+    else:
+        deposit = str(deposit) + "zl"
+        isDeposit = True
 
     i = 1
     for entry in temp:
-        if i == objectChange:
+        if i == int(objectChange):
             entry["deposit"] = deposit
             if isDeposit:
                 rentalDateSTR = entry["rentalDate"]
@@ -635,7 +668,7 @@ while True:
     print("[1] - Dodaj wypożyczenie")
     print("[2] - Zakończ wypożyczenie")
     print("[3] - Wypożyczone książki")
-    print("[4] - Zażądaj wypożyczeniami")
+    print("[4] - Zarządzaj wypożyczeniami")
     print("[5] - Wyświetl książki z dzisiejszą datą zwrotu")
 
     choice = input("Wybierz z listy: ")
@@ -661,7 +694,7 @@ while True:
             historySearch()
         else:
             print("Wprowadzone dane są niepoprawne. Spróbuj ponownie")
-    elif choice == 4:
+    elif choice == "4":
         print('[1] - Zmień lub dodaj kaucję')
         print('[2] - Przedłuż wypożyczenie')
         choice = input("Wybierz z listy: ")
