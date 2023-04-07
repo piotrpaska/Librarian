@@ -648,7 +648,6 @@ def historySearch():
     else:
         print(results)
 
-# TODO add mongoDB to addDeposit
 def addDeposit():
     viewActiveHires()
     newData = []
@@ -754,29 +753,47 @@ def addDeposit():
                 continue
     print('Zmieniono kaucję')
 
-# TODO add mongoDB to viewTodayReturns
 def viewTodayReturns():
     results = prettytable.PrettyTable(['Imię', 'Nazwisko', 'Klasa', 'Tytuł książki', 'Data wypożyczenia', 'Zwrot do', 'Kaucja'])
     results.title = 'Książki z dzisiejszym terminem'
     with open(activeHiresFile, 'r') as f:
         jsonFile = json.load(f)
 
-    for entry in jsonFile:
-        maxReturnDate = ''
-        name = entry["name"]
-        lastName = entry["lastName"]
-        rentClass = entry["klasa"]
-        bookTitle = entry["bookTitle"]
-        rentalDate = entry["rentalDate"]
-        maxDateSTR = entry["maxDate"]
-        deposit = entry["deposit"]
+    if isJson:
+        for entry in jsonFile:
+            maxReturnDate = ''
+            name = entry["name"]
+            lastName = entry["lastName"]
+            rentClass = entry["klasa"]
+            bookTitle = entry["bookTitle"]
+            rentalDate = entry["rentalDate"]
+            maxDateSTR = entry["maxDate"]
+            deposit = entry["deposit"]
 
-        today = datetime.date.today().strftime(dateFormat)
-        if maxDateSTR != '14:10':
-            maxReturnDate = datetime.datetime.strptime(maxDateSTR, dateFormat).strftime(dateFormat)
+            today = datetime.date.today().strftime(dateFormat)
+            if maxDateSTR != '14:10':
+                maxReturnDate = datetime.datetime.strptime(maxDateSTR, dateFormat).strftime(dateFormat)
 
-        if maxReturnDate == today or maxDateSTR == '14:10':
-            results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDateSTR), deposit])
+            if maxReturnDate == today or maxDateSTR == '14:10':
+                results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDateSTR), deposit])
+    else:
+        entries = activeCollection.find()
+        for entry in entries:
+            maxReturnDate = ''
+            name = entry["name"]
+            lastName = entry["lastName"]
+            rentClass = entry["klasa"]
+            bookTitle = entry["bookTitle"]
+            rentalDate = entry["rentalDate"]
+            maxDateSTR = entry["maxDate"]
+            deposit = entry["deposit"]
+
+            today = datetime.date.today().strftime(dateFormat)
+            if maxDateSTR != '14:10':
+                maxReturnDate = datetime.datetime.strptime(maxDateSTR, dateFormat).strftime(dateFormat)
+
+            if maxReturnDate == today or maxDateSTR == '14:10':
+                results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDateSTR), deposit])
 
     if len(results.rows) == 0:
         print()
