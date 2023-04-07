@@ -207,10 +207,9 @@ def endHire():
         else:
             data_length = activeCollection.count_documents({})
 
-    if isJson:
-        delOptRange = range(1, int(data_length + 1))
-    else:
-        delOptRange = range(1, int(data_length + 1))
+    if data_length <= 0:
+        return
+
     print(f"Wybierz ID 1-{data_length}: ", end='', flush=True)  # use print instead of input to avoid blocking
     deleteOption = ""
     while True:
@@ -221,6 +220,7 @@ def endHire():
                 os.system('cls')
                 return  # exit function
             elif key == 13:  # enter key
+                delOptRange = range(1, int(data_length + 1))
                 if int(deleteOption) in delOptRange:
                     print()
                     print("Wypożyczenie zakończone")
@@ -236,8 +236,6 @@ def endHire():
                 print(chr(key), end='', flush=True)
 
     if isJson:
-        if data_length <= 0:
-            return
         i = 1
         for entry in temp:
             if i == int(deleteOption):
@@ -384,7 +382,6 @@ def viewHistoryHires():
     else:
         print(results)
 
-# TODO add mongoDB to activeSearch
 def activeSearch():
     print('[1] - imię')
     print('[2] - nazwisko')
@@ -537,7 +534,6 @@ def activeSearch():
     else:
         print(results)
 
-# TODO add mongoDB to historySearch
 def historySearch():
     print('[1] - imię')
     print('[2] - nazwisko')
@@ -658,10 +654,14 @@ def addDeposit():
     newData = []
     with open(activeHiresFile, 'r') as f:
         temp = json.load(f)
-        dataLength = len(temp)
+        if isJson:
+            dataLength = len(temp)
+        else:
+            dataLength = activeCollection.count_documents({})
 
     if dataLength <= 0:
         return
+
     print("Wpisz ID wypożyczenia w którym chcesz dodać kaucję: ", end='',
           flush=True)  # use print instead of input to avoid blocking
     objectChange = ""
@@ -696,8 +696,9 @@ def addDeposit():
                 os.system('cls')
                 return  # exit function
             elif key == 13:  # enter key
-                print()
-                break  # exit loop
+                if deposit == '' or deposit.isdigit() == True:
+                    print()
+                    break  # exit loop
             elif key == 8:  # backspace key
                 if len(deposit) > 0:
                     deposit = deposit[:-1]
@@ -713,26 +714,44 @@ def addDeposit():
         deposit = str(deposit) + "zl"
         isDeposit = True
 
-    i = 1
-    for entry in temp:
-        if i == int(objectChange):
-            entry["deposit"] = deposit
-            if isDeposit:
-                rentalDateSTR = entry["rentalDate"]
-                rentalDate = datetime.datetime.strptime(rentalDateSTR, dateFormat)
-                maxReturnDate = rentalDate + datetime.timedelta(weeks=2)
-                entry["maxDate"] = str(f"{maxReturnDate.strftime(dateFormat)}")
+    if isJson:
+        i = 1
+        for entry in temp:
+            if i == int(objectChange):
+                entry["deposit"] = deposit
+                if isDeposit:
+                    rentalDateSTR = entry["rentalDate"]
+                    rentalDate = datetime.datetime.strptime(rentalDateSTR, dateFormat)
+                    maxReturnDate = rentalDate + datetime.timedelta(weeks=2)
+                    entry["maxDate"] = str(f"{maxReturnDate.strftime(dateFormat)}")
+                else:
+                    entry["maxDate"] = '14:10'
+                newData.append(entry)
+                i = i + 1
             else:
-                entry["maxDate"] = '14:10'
-            newData.append(entry)
-            i = i + 1
-        else:
-            newData.append(entry)
-            i = i + 1
+                newData.append(entry)
+                i = i + 1
 
-    with open(activeHiresFile, 'w') as f:
-        json.dump(newData,f, indent=4)
-
+        with open(activeHiresFile, 'w') as f:
+            json.dump(newData,f, indent=4)
+    else:
+        entries = activeCollection.find()
+        i = 1
+        for entry in entries:
+            if i == int(objectChange):
+                if isDeposit:
+                    rentalDateSTR = entry["rentalDate"]
+                    rentalDate = datetime.datetime.strptime(rentalDateSTR, dateFormat)
+                    maxReturnDate = rentalDate + datetime.timedelta(weeks=2)
+                    maxDate = str(f"{maxReturnDate.strftime(dateFormat)}")
+                else:
+                    maxDate = '14:10'
+                updates = {
+                    "$set": {"deposit": deposit, "maxDate": maxDate}
+                }
+                activeCollection.update_one(entry, update=updates)
+            else:
+                continue
     print('Zmieniono kaucję')
 
 # TODO add mongoDB to viewTodayReturns
