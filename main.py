@@ -635,19 +635,37 @@ def extension():
         return
     else:
         print(view)
+    # End of view
 
+    print("Wpisz ID wypożyczenia które chcesz przedłużyć: ", end='',
+          flush=True)  # use print instead of input to avoid blocking
+    objectChange = ""
     while True:
-        objectChange = int(input('Wpisz ID wypożyczenia które chcesz przedłużyć: '))
-        idRange = range(1, int(dataLength + 1))
-        if int(objectChange) in idRange:
-            break
-        else:
-            print("Wprowadzone dane są niepoprawne. Spróbuj ponownie")
+        if msvcrt.kbhit():
+            key = ord(msvcrt.getch())
+            if key == 27:  # escape key
+                print()
+                os.system('cls')
+                return  # exit function
+            elif key == 13:  # enter key
+                idRange = range(1, int(dataLength + 1))
+                if int(objectChange) in idRange:
+                    print()
+                    break  # exit loop
+                else:
+                    continue
+            elif key == 8:  # backspace key
+                if len(objectChange) > 0:
+                    objectChange = objectChange[:-1]
+                    print(f"\rWpisz ID wypożyczenia które chcesz przedłużyć: {objectChange} {''}\b", end='', flush=True)
+            else:
+                objectChange += chr(key)
+                print(chr(key), end='', flush=True)
 
     i = 1
     for entry in temp:
         if entry["maxDate"] != '14:10':
-            if i == objectChange:
+            if i == int(objectChange):
                 maxDate = datetime.datetime.strptime(entry["maxDate"], dateFormat)
                 maxDate = maxDate + datetime.timedelta(weeks=2)
                 entry["maxDate"] = maxDate.strftime(dateFormat)
@@ -656,6 +674,8 @@ def extension():
             else:
                 newData.append(entry)
                 i = i + 1
+        else:
+            newData.append(entry)
 
     with open(activeHiresFile, 'w') as f:
         json.dump(newData, f, indent=4)

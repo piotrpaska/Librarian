@@ -1,5 +1,5 @@
-    print("Wybierz ID 1-{data_length}: ", end='', flush=True)  # use print instead of input to avoid blocking
-    deleteOption = ""
+    print("Wpisz ID wypożyczenia które chcesz przedłużyć: ", end='', flush=True)  # use print instead of input to avoid blocking
+    objectChange = ""
     while True:
         if msvcrt.kbhit():
             key = ord(msvcrt.getch())
@@ -11,11 +11,11 @@
                 print()
                 break  # exit loop
             elif key == 8:  # backspace key
-                if len(deleteOption) > 0:
-                    deleteOption = deleteOption[:-1]
-                    print(f"\rWybierz ID 1-{data_length}: {deleteOption} {''}\b", end='', flush=True)
+                if len(objectChange) > 0:
+                    objectChange = objectChange[:-1]
+                    print(f"\rWpisz ID wypożyczenia które chcesz przedłużyć: {objectChange} {''}\b", end='', flush=True)
             else:
-                deleteOption += chr(key)
+                objectChange += chr(key)
                 print(chr(key), end='', flush=True)
 
-    hireData["deleteOption"] = deleteOption
+    hireData["objectChange"] = objectChange
