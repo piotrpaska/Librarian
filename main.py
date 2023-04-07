@@ -3,10 +3,28 @@ import datetime
 import prettytable
 import msvcrt
 import os
+from dotenv import load_dotenv, find_dotenv
+import pymongo
 
 activeHiresFile = 'active.json'
 historyFile = 'history.json'
 dateFormat = "%d.%m.%Y"
+
+
+load_dotenv(find_dotenv())
+user = os.environ.get("MONGODB_USER")
+password = os.environ.get("MONGODB_PASSWORD")
+connectionString = f"mongodb+srv://{user}:{password}@librarian.3akhsbc.mongodb.net/?retryWrites=true&w=majority"
+client = pymongo.MongoClient(connectionString)
+db = client.Prymus
+activeCollection = db.activeRents
+historyCollection = db.historyRents
+
+isJson = bool
+if os.environ.get('JSON') == 'True':
+    isJson = True
+else:
+    isJson = False
 
 def addHire():
     """Zapisywane dane to: imię, nazwisko, klasa, tytuł książki, data wypożyczenia, kaucja"""
@@ -159,18 +177,24 @@ def addHire():
             print("Wprowadzone dane są niepoprawne. Spróbuj ponownie")
             continue
 
-    if sure == 1:
-        try:
-            with open(activeHiresFile, "r") as f:
-                temp = json.load(f)
-                temp.append(hireData)
-            with open(activeHiresFile, "w") as f:
-                json.dump(temp, f, indent=4)
-            print("Wypożyczenie dodane")
-        except Exception as error:
-            print(error)
-    elif sure == 0:
-        print("Anulowano dodanie wypożyczenia")
+    if isJson:
+        if sure == 1:
+            try:
+                with open(activeHiresFile, "r") as f:
+                    temp = json.load(f)
+                    temp.append(hireData)
+                with open(activeHiresFile, "w") as f:
+                    json.dump(temp, f, indent=4)
+                print("Wypożyczenie dodane")
+            except Exception as error:
+                print(error)
+        elif sure == 0:
+            print("Anulowano dodanie wypożyczenia")
+    else:
+        if sure == 1:
+            activeCollection.insert_one(hireData)
+        elif sure == 0:
+            print("Anulowano dodanie wypożyczenia")
 
 def endHire():
     viewActiveHires()
@@ -212,7 +236,7 @@ def endHire():
     for entry in temp:
         if i == int(deleteOption):
             returnDate = datetime.datetime.now()
-            entry["returnDate"] = str(f"{returnDate.day}.{returnDate.month}.{returnDate.year} - {returnDate.hour}:{returnDate.minute}")
+            entry["returnDate"] = str(f"{returnDate.day}.{returnDate.month}.{returnDate.year}")
             with open(historyFile, "r") as f:
                 temp = json.load(f)
                 temp.append(entry)
@@ -230,40 +254,78 @@ def viewActiveHires():
         jsonFile = json.load(f)
     results = prettytable.PrettyTable(['Imię', 'Nazwisko', 'Klasa', 'Tytuł książki', 'Data wypożyczenia', 'Zwrot do', 'Kaucja', 'Status'])
     results.title = 'Trwające wypożyczenia'
-    for item in jsonFile:
-        name = item["name"]
-        lastName = item["lastName"]
-        rentClass = item["klasa"]
-        bookTitle = item["bookTitle"]
-        rentalDateSTR = item["rentalDate"]
-        maxDateSTR = item["maxDate"]
-        deposit = item["deposit"]
+    if isJson:
+        for item in jsonFile:
+            name = item["name"]
+            lastName = item["lastName"]
+            rentClass = item["klasa"]
+            bookTitle = item["bookTitle"]
+            rentalDateSTR = item["rentalDate"]
+            maxDateSTR = item["maxDate"]
+            deposit = item["deposit"]
 
-        overdue = ''
-        maxDate = None
+            overdue = ''
+            maxDate = None
 
-        #overdue
-        today = None
-        if maxDateSTR != '14:10':
-            #jeśli kaucja jest wpłacona
-            today = datetime.datetime.today().date()
-            maxDate = datetime.datetime.strptime(maxDateSTR, dateFormat).date()
-            if maxDate < today:
-                difference = today - maxDate
-                overdue = f'Przetrzymanie (Kara: {difference .days}zł)'
+            #overdue
+            today = None
+            if maxDateSTR != '14:10':
+                #jeśli kaucja jest wpłacona
+                today = datetime.datetime.today().date()
+                maxDate = datetime.datetime.strptime(maxDateSTR, dateFormat).date()
+                if maxDate < today:
+                    difference = today - maxDate
+                    overdue = f'Przetrzymanie (Kara: {difference .days}zł)'
+                else:
+                    overdue = 'Wypożyczona'
             else:
-                overdue = 'Wypożyczona'
-        else:
-            # jeśli kaucja nie została wpłacona
-            rentalDate = datetime.datetime.strptime(rentalDateSTR, dateFormat).date()
-            today = datetime.datetime.today().date()
-            if rentalDate < today:
-                difference  = today - rentalDate
-                overdue = f'Przetrzymanie (Kara: {difference .days}zł)'
-            else:
-                overdue = 'Wypożyczona'
+                # jeśli kaucja nie została wpłacona
+                rentalDate = datetime.datetime.strptime(rentalDateSTR, dateFormat).date()
+                today = datetime.datetime.today().date()
+                if rentalDate < today:
+                    difference  = today - rentalDate
+                    overdue = f'Przetrzymanie (Kara: {difference .days}zł)'
+                else:
+                    overdue = 'Wypożyczona'
 
-        results.add_row([name, lastName, rentClass, bookTitle, str(rentalDateSTR), str(maxDateSTR), deposit, overdue])
+            results.add_row([name, lastName, rentClass, bookTitle, str(rentalDateSTR), str(maxDateSTR), deposit, overdue])
+    else:
+        entries = activeCollection.find()
+        for item in entries:
+            name = item["name"]
+            lastName = item["lastName"]
+            rentClass = item["klasa"]
+            bookTitle = item["bookTitle"]
+            rentalDateSTR = item["rentalDate"]
+            maxDateSTR = item["maxDate"]
+            deposit = item["deposit"]
+
+            overdue = ''
+            maxDate = None
+
+            # overdue
+            today = None
+            if maxDateSTR != '14:10':
+                # jeśli kaucja jest wpłacona
+                today = datetime.datetime.today().date()
+                maxDate = datetime.datetime.strptime(maxDateSTR, dateFormat).date()
+                if maxDate < today:
+                    difference = today - maxDate
+                    overdue = f'Przetrzymanie (Kara: {difference.days}zł)'
+                else:
+                    overdue = 'Wypożyczona'
+            else:
+                # jeśli kaucja nie została wpłacona
+                rentalDate = datetime.datetime.strptime(rentalDateSTR, dateFormat).date()
+                today = datetime.datetime.today().date()
+                if rentalDate < today:
+                    difference = today - rentalDate
+                    overdue = f'Przetrzymanie (Kara: {difference.days}zł)'
+                else:
+                    overdue = 'Wypożyczona'
+
+            results.add_row(
+                [name, lastName, rentClass, bookTitle, str(rentalDateSTR), str(maxDateSTR), deposit, overdue])
     results.add_autoindex('ID')
     if len(results.rows) == 0:
         print()
@@ -277,16 +339,30 @@ def viewHistoryHires():
     results = prettytable.PrettyTable(
         ['Imię', 'Nazwisko', 'Klasa', 'Tytuł książki', 'Data wypożyczenia', 'Zwrot do', 'Data zwrotu', 'Kaucja'])
     results.title = 'Historia wypożyczeń'
-    for item in jsonFile:
-        name = item["name"]
-        lastName = item["lastName"]
-        rentClass = item["klasa"]
-        bookTitle = item["bookTitle"]
-        rentalDate = item["rentalDate"]
-        maxDate = item["maxDate"]
-        returnDate = item["returnDate"]
-        deposit = item["deposit"]
-        results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDate),str(returnDate), deposit])
+    if isJson:
+        for item in jsonFile:
+            name = item["name"]
+            lastName = item["lastName"]
+            rentClass = item["klasa"]
+            bookTitle = item["bookTitle"]
+            rentalDate = item["rentalDate"]
+            maxDate = item["maxDate"]
+            returnDate = item["returnDate"]
+            deposit = item["deposit"]
+            results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDate),str(returnDate), deposit])
+    else:
+        entries = historyCollection.find()
+        for item in entries:
+            name = item["name"]
+            lastName = item["lastName"]
+            rentClass = item["klasa"]
+            bookTitle = item["bookTitle"]
+            rentalDate = item["rentalDate"]
+            maxDate = item["maxDate"]
+            returnDate = item["returnDate"]
+            deposit = item["deposit"]
+            results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDate),str(returnDate), deposit])
+
     results.add_autoindex('ID')
     if len(results.rows) == 0:
         print()
