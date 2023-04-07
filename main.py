@@ -439,48 +439,97 @@ def activeSearch():
     with open(activeHiresFile, 'r') as f:
         jsonFile = json.load(f)
 
-    for item in jsonFile:
+    if isJson:
+        for item in jsonFile:
 
-        name = item["name"]
-        lastName = item["lastName"]
-        rentClass = item["klasa"]
-        bookTitle = item["bookTitle"]
-        rentalDateSTR = item["rentalDate"]
-        maxDateSTR = item["maxDate"]
-        deposit = item["deposit"]
+            name = item["name"]
+            lastName = item["lastName"]
+            rentClass = item["klasa"]
+            bookTitle = item["bookTitle"]
+            rentalDateSTR = item["rentalDate"]
+            maxDateSTR = item["maxDate"]
+            deposit = item["deposit"]
 
-        overdue = ''
-        maxDate = None
-        today = None
-        if maxDateSTR != '14:10':
-            today = datetime.datetime.today().date()
-            maxDate = datetime.datetime.strptime(maxDateSTR, dateFormat).date()
-            if maxDate < today:
-                difference = today - maxDate
-                overdue = f'Przetrzymanie (Kara: {difference.days}zł)'
+            overdue = ''
+            maxDate = None
+            today = None
+            if maxDateSTR != '14:10':
+                today = datetime.datetime.today().date()
+                maxDate = datetime.datetime.strptime(maxDateSTR, dateFormat).date()
+                if maxDate < today:
+                    difference = today - maxDate
+                    overdue = f'Przetrzymanie (Kara: {difference.days}zł)'
+                else:
+                    overdue = 'Wypożyczona'
             else:
-                overdue = 'Wypożyczona'
-        else:
-            rentalDate = datetime.datetime.strptime(rentalDateSTR, dateFormat).date()
-            today = datetime.datetime.today().date()
-            if rentalDate < today:
-                difference = today - rentalDate
-                overdue = f'Przetrzymanie (Kara: {difference.days}zł)'
-            else:
-                overdue = 'Wypożyczona'
+                rentalDate = datetime.datetime.strptime(rentalDateSTR, dateFormat).date()
+                today = datetime.datetime.today().date()
+                if rentalDate < today:
+                    difference = today - rentalDate
+                    overdue = f'Przetrzymanie (Kara: {difference.days}zł)'
+                else:
+                    overdue = 'Wypożyczona'
 
-        if choice == str("1"):
-            if str(phrase) in name:
-                results.add_row([name, lastName, rentClass, bookTitle, str(rentalDateSTR), str(maxDateSTR), deposit, overdue])
-        if choice == str("2"):
-            if str(phrase) in lastName:
-                results.add_row([name, lastName, rentClass, bookTitle, str(rentalDateSTR), str(maxDateSTR), deposit, overdue])
-        if choice == str("3"):
-            if str(phrase) in rentClass:
-                results.add_row([name, lastName, rentClass, bookTitle, str(rentalDateSTR), str(maxDateSTR), deposit, overdue])
-        if choice == str("4"):
-            if str(phrase) in bookTitle:
-                results.add_row([name, lastName, rentClass, bookTitle, str(rentalDateSTR), str(maxDateSTR), deposit, overdue])
+            if choice == str("1"):
+                if str(phrase) in name:
+                    results.add_row([name, lastName, rentClass, bookTitle, str(rentalDateSTR), str(maxDateSTR), deposit, overdue])
+            if choice == str("2"):
+                if str(phrase) in lastName:
+                    results.add_row([name, lastName, rentClass, bookTitle, str(rentalDateSTR), str(maxDateSTR), deposit, overdue])
+            if choice == str("3"):
+                if str(phrase) in rentClass:
+                    results.add_row([name, lastName, rentClass, bookTitle, str(rentalDateSTR), str(maxDateSTR), deposit, overdue])
+            if choice == str("4"):
+                if str(phrase) in bookTitle:
+                    results.add_row([name, lastName, rentClass, bookTitle, str(rentalDateSTR), str(maxDateSTR), deposit, overdue])
+    else:
+        entries = activeCollection.find()
+        for item in entries:
+
+            name = item["name"]
+            lastName = item["lastName"]
+            rentClass = item["klasa"]
+            bookTitle = item["bookTitle"]
+            rentalDateSTR = item["rentalDate"]
+            maxDateSTR = item["maxDate"]
+            deposit = item["deposit"]
+
+            overdue = ''
+            maxDate = None
+            today = None
+            if maxDateSTR != '14:10':
+                today = datetime.datetime.today().date()
+                maxDate = datetime.datetime.strptime(maxDateSTR, dateFormat).date()
+                if maxDate < today:
+                    difference = today - maxDate
+                    overdue = f'Przetrzymanie (Kara: {difference.days}zł)'
+                else:
+                    overdue = 'Wypożyczona'
+            else:
+                rentalDate = datetime.datetime.strptime(rentalDateSTR, dateFormat).date()
+                today = datetime.datetime.today().date()
+                if rentalDate < today:
+                    difference = today - rentalDate
+                    overdue = f'Przetrzymanie (Kara: {difference.days}zł)'
+                else:
+                    overdue = 'Wypożyczona'
+
+            if choice == str("1"):
+                if str(phrase) in name:
+                    results.add_row(
+                        [name, lastName, rentClass, bookTitle, str(rentalDateSTR), str(maxDateSTR), deposit, overdue])
+            if choice == str("2"):
+                if str(phrase) in lastName:
+                    results.add_row(
+                        [name, lastName, rentClass, bookTitle, str(rentalDateSTR), str(maxDateSTR), deposit, overdue])
+            if choice == str("3"):
+                if str(phrase) in rentClass:
+                    results.add_row(
+                        [name, lastName, rentClass, bookTitle, str(rentalDateSTR), str(maxDateSTR), deposit, overdue])
+            if choice == str("4"):
+                if str(phrase) in bookTitle:
+                    results.add_row(
+                        [name, lastName, rentClass, bookTitle, str(rentalDateSTR), str(maxDateSTR), deposit, overdue])
 
     if len(results.rows) <= 0:
         print()
@@ -542,29 +591,60 @@ def historySearch():
     results.title = f'Szukana fraza: {phrase}'
     with open(historyFile, 'r') as f:
         jsonFile = json.load(f)
-    for item in jsonFile:
 
-        name = item["name"]
-        lastName = item["lastName"]
-        rentClass = item["klasa"]
-        bookTitle = item["bookTitle"]
-        rentalDate = item["rentalDate"]
-        maxDate = item["maxDate"]
-        returnDate = item['returnDate']
-        deposit = item["deposit"]
+    if isJson:
+        for item in jsonFile:
 
-        if choice == str("1"):
-            if str(phrase) in name:
-                results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDate),str(returnDate), deposit])
-        if choice == str("2"):
-            if str(phrase) in lastName:
-                results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDate),str(returnDate), deposit])
-        if choice == str("3"):
-            if str(phrase) in rentClass:
-                results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDate),str(returnDate), deposit])
-        if choice == str("4"):
-            if str(phrase) in bookTitle:
-                results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDate),str(returnDate), deposit])
+            name = item["name"]
+            lastName = item["lastName"]
+            rentClass = item["klasa"]
+            bookTitle = item["bookTitle"]
+            rentalDate = item["rentalDate"]
+            maxDate = item["maxDate"]
+            returnDate = item['returnDate']
+            deposit = item["deposit"]
+
+            if choice == str("1"):
+                if str(phrase) in name:
+                    results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDate),str(returnDate), deposit])
+            if choice == str("2"):
+                if str(phrase) in lastName:
+                    results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDate),str(returnDate), deposit])
+            if choice == str("3"):
+                if str(phrase) in rentClass:
+                    results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDate),str(returnDate), deposit])
+            if choice == str("4"):
+                if str(phrase) in bookTitle:
+                    results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDate),str(returnDate), deposit])
+    else:
+        entries = historyCollection.find()
+        for item in entries:
+
+            name = item["name"]
+            lastName = item["lastName"]
+            rentClass = item["klasa"]
+            bookTitle = item["bookTitle"]
+            rentalDate = item["rentalDate"]
+            maxDate = item["maxDate"]
+            returnDate = item['returnDate']
+            deposit = item["deposit"]
+
+            if choice == str("1"):
+                if str(phrase) in name:
+                    results.add_row(
+                        [name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDate), str(returnDate), deposit])
+            if choice == str("2"):
+                if str(phrase) in lastName:
+                    results.add_row(
+                        [name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDate), str(returnDate), deposit])
+            if choice == str("3"):
+                if str(phrase) in rentClass:
+                    results.add_row(
+                        [name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDate), str(returnDate), deposit])
+            if choice == str("4"):
+                if str(phrase) in bookTitle:
+                    results.add_row(
+                        [name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDate), str(returnDate), deposit])
 
     if len(results.rows) == 0:
         print()
