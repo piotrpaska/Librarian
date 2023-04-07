@@ -114,8 +114,9 @@ def addHire():
                 os.system('cls')
                 return  # exit function
             elif key == 13:  # enter key
-                print()
-                break  # exit loop
+                if deposit == '' or deposit.isdigit() == True:
+                    print()
+                    break  # exit loop
             elif key == 8:  # backspace key
                 if len(deposit) > 0:
                     deposit = deposit[:-1]
@@ -126,8 +127,7 @@ def addHire():
 
     isDeposit = bool
     if deposit == '':
-        deposit = 'Brak'
-        hireData["deposit"] = deposit
+        hireData["deposit"] = 'Brak'
         isDeposit = False
     else:
         hireData["deposit"] = str(deposit) + "zl"
