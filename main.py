@@ -202,12 +202,15 @@ def endHire():
 
     with open(activeHiresFile, "r") as f:
         temp = json.load(f)
-        data_length = len(temp)
+        if isJson:
+            data_length = len(temp)
+        else:
+            data_length = activeCollection.count_documents({})
 
-    if data_length <= 0:
-        return
-
-    delOptRange = range(1, int(data_length + 1))
+    if isJson:
+        delOptRange = range(1, int(data_length + 1))
+    else:
+        delOptRange = range(1, int(data_length + 1))
     print(f"Wybierz ID 1-{data_length}: ", end='', flush=True)  # use print instead of input to avoid blocking
     deleteOption = ""
     while True:
@@ -232,29 +235,42 @@ def endHire():
                 deleteOption += chr(key)
                 print(chr(key), end='', flush=True)
 
-    i = 1
-    for entry in temp:
-        if i == int(deleteOption):
-            returnDate = datetime.datetime.now()
-            entry["returnDate"] = str(f"{returnDate.day}.{returnDate.month}.{returnDate.year}")
-            with open(historyFile, "r") as f:
-                temp = json.load(f)
-                temp.append(entry)
-            with open(historyFile, "w") as f:
-                json.dump(temp, f, indent=4)
-            i = i + 1
-        else:
-            new_data.append(entry)
-            i = i + 1
-        with open(activeHiresFile, "w") as f:
-            json.dump(new_data, f, indent=4)
+    if isJson:
+        if data_length <= 0:
+            return
+        i = 1
+        for entry in temp:
+            if i == int(deleteOption):
+                returnDate = datetime.datetime.now()
+                entry["returnDate"] = str(f"{returnDate.day}.{returnDate.month}.{returnDate.year}")
+                with open(historyFile, "r") as f:
+                    temp = json.load(f)
+                    temp.append(entry)
+                with open(historyFile, "w") as f:
+                    json.dump(temp, f, indent=4)
+                i = i + 1
+            else:
+                new_data.append(entry)
+                i = i + 1
+            with open(activeHiresFile, "w") as f:
+                json.dump(new_data, f, indent=4)
+    else:
+        i = 1
+        for entry in activeCollection.find():
+            if i == int(deleteOption):
+                activeCollection.delete_one(entry)
+                returnDate = datetime.datetime.now()
+                entry["returnDate"] = str(f"{returnDate.day}.{returnDate.month}.{returnDate.year}")
+                historyCollection.insert_one(entry)
+            else:
+                continue
 
 def viewActiveHires():
-    with open(activeHiresFile, 'r') as f:
-        jsonFile = json.load(f)
     results = prettytable.PrettyTable(['Imię', 'Nazwisko', 'Klasa', 'Tytuł książki', 'Data wypożyczenia', 'Zwrot do', 'Kaucja', 'Status'])
     results.title = 'Trwające wypożyczenia'
     if isJson:
+        with open(activeHiresFile, 'r') as f:
+            jsonFile = json.load(f)
         for item in jsonFile:
             name = item["name"]
             lastName = item["lastName"]
@@ -300,10 +316,9 @@ def viewActiveHires():
             maxDateSTR = item["maxDate"]
             deposit = item["deposit"]
 
+            # overdue
             overdue = ''
             maxDate = None
-
-            # overdue
             today = None
             if maxDateSTR != '14:10':
                 # jeśli kaucja jest wpłacona
@@ -316,16 +331,15 @@ def viewActiveHires():
                     overdue = 'Wypożyczona'
             else:
                 # jeśli kaucja nie została wpłacona
-                rentalDate = datetime.datetime.strptime(rentalDateSTR, dateFormat).date()
                 today = datetime.datetime.today().date()
+                rentalDate = datetime.datetime.strptime(rentalDateSTR, dateFormat).date()
                 if rentalDate < today:
                     difference = today - rentalDate
                     overdue = f'Przetrzymanie (Kara: {difference.days}zł)'
                 else:
                     overdue = 'Wypożyczona'
 
-            results.add_row(
-                [name, lastName, rentClass, bookTitle, str(rentalDateSTR), str(maxDateSTR), deposit, overdue])
+            results.add_row([name, lastName, rentClass, bookTitle, str(rentalDateSTR), str(maxDateSTR), deposit, overdue])
     results.add_autoindex('ID')
     if len(results.rows) == 0:
         print()
@@ -334,12 +348,12 @@ def viewActiveHires():
         print(results)
 
 def viewHistoryHires():
-    with open(historyFile, 'r') as f:
-        jsonFile = json.load(f)
     results = prettytable.PrettyTable(
         ['Imię', 'Nazwisko', 'Klasa', 'Tytuł książki', 'Data wypożyczenia', 'Zwrot do', 'Data zwrotu', 'Kaucja'])
     results.title = 'Historia wypożyczeń'
     if isJson:
+        with open(historyFile, 'r') as f:
+            jsonFile = json.load(f)
         for item in jsonFile:
             name = item["name"]
             lastName = item["lastName"]
@@ -370,6 +384,7 @@ def viewHistoryHires():
     else:
         print(results)
 
+# TODO add mongoDB to activeSearch
 def activeSearch():
     print('[1] - imię')
     print('[2] - nazwisko')
@@ -473,6 +488,7 @@ def activeSearch():
     else:
         print(results)
 
+# TODO add mongoDB to historySearch
 def historySearch():
     print('[1] - imię')
     print('[2] - nazwisko')
@@ -556,6 +572,7 @@ def historySearch():
     else:
         print(results)
 
+# TODO add mongoDB to addDeposit
 def addDeposit():
     viewActiveHires()
     newData = []
@@ -638,6 +655,7 @@ def addDeposit():
 
     print('Zmieniono kaucję')
 
+# TODO add mongoDB to viewTodayReturns
 def viewTodayReturns():
     results = prettytable.PrettyTable(['Imię', 'Nazwisko', 'Klasa', 'Tytuł książki', 'Data wypożyczenia', 'Zwrot do', 'Kaucja'])
     results.title = 'Książki z dzisiejszym terminem'
@@ -667,6 +685,7 @@ def viewTodayReturns():
     else:
         print(results)
 
+# TODO add mongoDB to extension
 def extension():
     newData = []
     with open(activeHiresFile, 'r') as f:
