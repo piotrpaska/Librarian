@@ -801,34 +801,61 @@ def viewTodayReturns():
     else:
         print(results)
 
-# TODO add mongoDB to extension
 def extension():
     newData = []
     with open(activeHiresFile, 'r') as f:
         temp = json.load(f)
         dataLengthList = []
-        for item in temp:
-            if item["maxDate"] != '14:10':
-                dataLengthList.append(item)
-        dataLength = len(dataLengthList)
+        if isJson:
+            for item in temp:
+                if item["maxDate"] != '14:10':
+                    dataLengthList.append(item)
+            dataLength = len(dataLengthList)
+        else:
+            dataLength = activeCollection.count_documents({"maxDate":{"$not":"14:10"}})
+            entries = activeCollection.find({"maxDate": {"$not": "14:10"}})
 
     # View
     view = prettytable.PrettyTable(['Imię', 'Nazwisko', 'Klasa', 'Tytuł książki', 'Data wypożyczenia', 'Zwrot do', 'Kaucja', 'Status'])
     view.title = 'Trwające wypożyczenia'
-    for item in temp:
-        name = item["name"]
-        lastName = item["lastName"]
-        rentClass = item["klasa"]
-        bookTitle = item["bookTitle"]
-        rentalDateSTR = item["rentalDate"]
-        maxDateSTR = item["maxDate"]
-        deposit = item["deposit"]
-        overdue = ''
-        maxDate = None
+    if isJson:
+        for item in temp:
+            name = item["name"]
+            lastName = item["lastName"]
+            rentClass = item["klasa"]
+            bookTitle = item["bookTitle"]
+            rentalDateSTR = item["rentalDate"]
+            maxDateSTR = item["maxDate"]
+            deposit = item["deposit"]
+            overdue = ''
+            maxDate = None
 
-        # overdue
-        today = None
-        if maxDateSTR != '14:10':
+            # overdue
+            today = None
+            if maxDateSTR != '14:10':
+                # jeśli kaucja jest wpłacona
+                today = datetime.datetime.today().date()
+                maxDate = datetime.datetime.strptime(maxDateSTR, dateFormat).date()
+                if maxDate < today:
+                    difference = today - maxDate
+                    overdue = f'Przetrzymanie (Kara: {difference.days}zł)'
+                else:
+                    overdue = 'Wypożyczona'
+                view.add_row([name, lastName, rentClass, bookTitle, str(rentalDateSTR), str(maxDateSTR), deposit, overdue])
+    else:
+        for item in entries:
+            name = item["name"]
+            lastName = item["lastName"]
+            rentClass = item["klasa"]
+            bookTitle = item["bookTitle"]
+            rentalDateSTR = item["rentalDate"]
+            maxDateSTR = item["maxDate"]
+            deposit = item["deposit"]
+            overdue = ''
+            maxDate = None
+
+            # overdue
+            today = None
             # jeśli kaucja jest wpłacona
             today = datetime.datetime.today().date()
             maxDate = datetime.datetime.strptime(maxDateSTR, dateFormat).date()
@@ -837,7 +864,8 @@ def extension():
                 overdue = f'Przetrzymanie (Kara: {difference.days}zł)'
             else:
                 overdue = 'Wypożyczona'
-            view.add_row([name, lastName, rentClass, bookTitle, str(rentalDateSTR), str(maxDateSTR), deposit, overdue])
+            view.add_row(
+                [name, lastName, rentClass, bookTitle, str(rentalDateSTR), str(maxDateSTR), deposit, overdue])
 
     view.add_autoindex('ID')
     if len(view.rows) <= 0:
@@ -874,8 +902,25 @@ def extension():
                 print(chr(key), end='', flush=True)
 
     i = 1
-    for entry in temp:
-        if entry["maxDate"] != '14:10':
+    if isJson:
+        for entry in temp:
+            if entry["maxDate"] != '14:10':
+                if i == int(objectChange):
+                    maxDate = datetime.datetime.strptime(entry["maxDate"], dateFormat)
+                    maxDate = maxDate + datetime.timedelta(weeks=2)
+                    entry["maxDate"] = maxDate.strftime(dateFormat)
+                    newData.append(entry)
+                    i = i + 1
+                else:
+                    newData.append(entry)
+                    i = i + 1
+            else:
+                newData.append(entry)
+
+        with open(activeHiresFile, 'w') as f:
+            json.dump(newData, f, indent=4)
+    else:
+        for entry in entries:
             if i == int(objectChange):
                 maxDate = datetime.datetime.strptime(entry["maxDate"], dateFormat)
                 maxDate = maxDate + datetime.timedelta(weeks=2)
@@ -883,13 +928,7 @@ def extension():
                 newData.append(entry)
                 i = i + 1
             else:
-                newData.append(entry)
-                i = i + 1
-        else:
-            newData.append(entry)
-
-    with open(activeHiresFile, 'w') as f:
-        json.dump(newData, f, indent=4)
+                continue
 
     print('Przedłużono wypożyczenie')
 
