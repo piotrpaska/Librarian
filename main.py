@@ -205,7 +205,6 @@ def endHire():
             data_length = len(temp)
     else:
         documentIDs = viewActiveHires()
-        print(documentIDs)
         data_length = activeCollection.count_documents({})
 
     if data_length <= 0:
@@ -653,20 +652,21 @@ def historySearch():
         print(results)
 
 def addDeposit():
-    viewActiveHires()
-    with open(activeHiresFile, 'r') as f:
-        temp = json.load(f)
-        if isJson:
-            dataLength = len(temp)
-        else:
-            dataLength = activeCollection.count_documents({})
+    if isJson:
+        with open(activeHiresFile, "r") as f:
+            viewActiveHires()
+            temp = json.load(f)
+            data_length = len(temp)
+    else:
+        documentIDs = viewActiveHires()
+        data_length = activeCollection.count_documents({})
 
-    if dataLength <= 0:
+    if data_length <= 0:
         return
 
     print("Wpisz ID wypożyczenia w którym chcesz dodać kaucję: ", end='',
           flush=True)  # use print instead of input to avoid blocking
-    objectChange = ""
+    documentChoice = ""
     while True:
         if msvcrt.kbhit():
             key = ord(msvcrt.getch())
@@ -675,17 +675,17 @@ def addDeposit():
                 os.system('cls')
                 return  # exit function
             elif key == 13:  # enter key
-                idRange = range(1, int(dataLength + 1))
-                if int(objectChange) in idRange:
+                idRange = range(1, int(data_length + 1))
+                if int(documentChoice) in idRange:
                     print()
                     break  # exit loop
             elif key == 8:  # backspace key
-                if len(objectChange) > 0:
-                    objectChange = objectChange[:-1]
-                    print(f"\rWpisz ID wypożyczenia w którym chcesz dodać kaucję: {objectChange} {''}\b", end='',
+                if len(documentChoice) > 0:
+                    documentChoice = documentChoice[:-1]
+                    print(f"\rWpisz ID wypożyczenia w którym chcesz dodać kaucję: {documentChoice} {''}\b", end='',
                           flush=True)
             else:
-                objectChange += chr(key)
+                documentChoice += chr(key)
                 print(chr(key), end='', flush=True)
 
     print("Wpisz wartość kaucji (jeśli nie wpłacił kaucji kliknij ENTER): ", end='',flush=True)  # use print instead of input to avoid blocking
@@ -720,7 +720,7 @@ def addDeposit():
         newData = []
         i = 1
         for entry in temp:
-            if i == int(objectChange):
+            if i == int(documentChoice):
                 entry["deposit"] = deposit
                 if isDeposit:
                     rentalDateSTR = entry["rentalDate"]
@@ -738,23 +738,18 @@ def addDeposit():
         with open(activeHiresFile, 'w') as f:
             json.dump(newData,f, indent=4)
     else:
-        entries = activeCollection.find()
-        i = 1
-        for entry in entries:
-            if i == int(objectChange):
-                if isDeposit:
-                    rentalDateSTR = entry["rentalDate"]
-                    rentalDate = datetime.datetime.strptime(rentalDateSTR, dateFormat)
-                    maxReturnDate = rentalDate + datetime.timedelta(weeks=2)
-                    maxDate = str(f"{maxReturnDate.strftime(dateFormat)}")
-                else:
-                    maxDate = '14:10'
-                updates = {
-                    "$set": {"deposit": deposit, "maxDate": maxDate}
-                }
-                activeCollection.update_one(entry, update=updates)
-            else:
-                continue
+        chosenDocument = activeCollection.find_one({'_id': documentIDs[int(documentChoice) - 1]["_id"]})
+        if isDeposit:
+            rentalDateSTR = chosenDocument["rentalDate"]
+            rentalDate = datetime.datetime.strptime(rentalDateSTR, dateFormat)
+            maxReturnDate = rentalDate + datetime.timedelta(weeks=2)
+            maxDate = str(f"{maxReturnDate.strftime(dateFormat)}")
+        else:
+            maxDate = '14:10'
+        updates = {
+            "$set": {"deposit": deposit, "maxDate": maxDate}
+        }
+        activeCollection.update_one({"_id": chosenDocument["_id"]}, update=updates)
     print('Zmieniono kaucję')
 
 def viewTodayReturns():
