@@ -801,7 +801,6 @@ def viewTodayReturns():
         print(results)
 
 def extension():
-    newData = []
     with open(activeHiresFile, 'r') as f:
         temp = json.load(f)
         dataLengthList = []
@@ -811,13 +810,14 @@ def extension():
                     dataLengthList.append(item)
             dataLength = len(dataLengthList)
         else:
-            dataLength = activeCollection.count_documents({"maxDate":{"$not":"14:10"}})
-            entries = activeCollection.find({"maxDate": {"$not": "14:10"}})
+            dataLength = activeCollection.count_documents({ "maxDate": { "$not": { "$eq": "14:10" } } })
+            entries = activeCollection.find({ "maxDate": { "$not": { "$eq": "14:10" } } })
 
     # View
     view = prettytable.PrettyTable(['Imię', 'Nazwisko', 'Klasa', 'Tytuł książki', 'Data wypożyczenia', 'Zwrot do', 'Kaucja', 'Status'])
     view.title = 'Trwające wypożyczenia'
     if isJson:
+        newData = []
         for item in temp:
             name = item["name"]
             lastName = item["lastName"]
@@ -842,6 +842,7 @@ def extension():
                     overdue = 'Wypożyczona'
                 view.add_row([name, lastName, rentClass, bookTitle, str(rentalDateSTR), str(maxDateSTR), deposit, overdue])
     else:
+        documentIDs = []
         for item in entries:
             name = item["name"]
             lastName = item["lastName"]
@@ -863,8 +864,9 @@ def extension():
                 overdue = f'Przetrzymanie (Kara: {difference.days}zł)'
             else:
                 overdue = 'Wypożyczona'
-            view.add_row(
-                [name, lastName, rentClass, bookTitle, str(rentalDateSTR), str(maxDateSTR), deposit, overdue])
+
+            view.add_row([name, lastName, rentClass, bookTitle, str(rentalDateSTR), str(maxDateSTR), deposit, overdue])
+            documentIDs.append(item)
 
     view.add_autoindex('ID')
     if len(view.rows) <= 0:
@@ -877,7 +879,7 @@ def extension():
 
     print("Wpisz ID wypożyczenia które chcesz przedłużyć: ", end='',
           flush=True)  # use print instead of input to avoid blocking
-    objectChange = ""
+    documentChoice = ""
     while True:
         if msvcrt.kbhit():
             key = ord(msvcrt.getch())
@@ -887,24 +889,24 @@ def extension():
                 return  # exit function
             elif key == 13:  # enter key
                 idRange = range(1, int(dataLength + 1))
-                if int(objectChange) in idRange:
+                if int(documentChoice) in idRange:
                     print()
                     break  # exit loop
                 else:
                     continue
             elif key == 8:  # backspace key
-                if len(objectChange) > 0:
-                    objectChange = objectChange[:-1]
-                    print(f"\rWpisz ID wypożyczenia które chcesz przedłużyć: {objectChange} {''}\b", end='', flush=True)
+                if len(documentChoice) > 0:
+                    documentChoice = documentChoice[:-1]
+                    print(f"\rWpisz ID wypożyczenia które chcesz przedłużyć: {documentChoice} {''}\b", end='', flush=True)
             else:
-                objectChange += chr(key)
+                documentChoice += chr(key)
                 print(chr(key), end='', flush=True)
 
-    i = 1
     if isJson:
+        i = 1
         for entry in temp:
             if entry["maxDate"] != '14:10':
-                if i == int(objectChange):
+                if i == int(documentChoice):
                     maxDate = datetime.datetime.strptime(entry["maxDate"], dateFormat)
                     maxDate = maxDate + datetime.timedelta(weeks=2)
                     entry["maxDate"] = maxDate.strftime(dateFormat)
@@ -919,15 +921,14 @@ def extension():
         with open(activeHiresFile, 'w') as f:
             json.dump(newData, f, indent=4)
     else:
-        for entry in entries:
-            if i == int(objectChange):
-                maxDate = datetime.datetime.strptime(entry["maxDate"], dateFormat)
-                maxDate = maxDate + datetime.timedelta(weeks=2)
-                entry["maxDate"] = maxDate.strftime(dateFormat)
-                newData.append(entry)
-                i = i + 1
-            else:
-                continue
+        maxDate = ''
+        chosenDocument = activeCollection.find_one({'_id': documentIDs[int(documentChoice) - 1]["_id"]})
+        maxDate = datetime.datetime.strptime(chosenDocument["maxDate"], dateFormat)
+        maxDate = maxDate + datetime.timedelta(weeks=2)
+        updates = {
+            "$set": {"maxDate": maxDate.strftime(dateFormat)}
+        }
+        activeCollection.update_one({"_id": chosenDocument["_id"]}, update=updates)
 
     print('Przedłużono wypożyczenie')
 
