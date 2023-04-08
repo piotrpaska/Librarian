@@ -5,6 +5,7 @@ import msvcrt
 import os
 from dotenv import load_dotenv, find_dotenv
 import pymongo
+import keyboard
 
 activeHiresFile = 'active.json'
 historyFile = 'history.json'
@@ -197,21 +198,21 @@ def addHire():
             print("Anulowano dodanie wypożyczenia")
 
 def endHire():
-    viewActiveHires()
-    new_data = []
-
-    with open(activeHiresFile, "r") as f:
-        temp = json.load(f)
-        if isJson:
+    if isJson:
+        with open(activeHiresFile, "r") as f:
+            viewActiveHires()
+            temp = json.load(f)
             data_length = len(temp)
-        else:
-            data_length = activeCollection.count_documents({})
+    else:
+        documentIDs = viewActiveHires()
+        print(documentIDs)
+        data_length = activeCollection.count_documents({})
 
     if data_length <= 0:
         return
 
     print(f"Wybierz ID 1-{data_length}: ", end='', flush=True)  # use print instead of input to avoid blocking
-    deleteOption = ""
+    documentChoice = ""
     while True:
         if msvcrt.kbhit():
             key = ord(msvcrt.getch())
@@ -221,24 +222,25 @@ def endHire():
                 return  # exit function
             elif key == 13:  # enter key
                 delOptRange = range(1, int(data_length + 1))
-                if int(deleteOption) in delOptRange:
+                if int(documentChoice) in delOptRange:
                     print()
                     print("Wypożyczenie zakończone")
                     break# exit loop
                 else:
                     continue
             elif key == 8:  # backspace key
-                if len(deleteOption) > 0:
-                    deleteOption = deleteOption[:-1]
-                    print(f"\rWybierz ID 1-{data_length}: {deleteOption} {''}\b", end='', flush=True)
+                if len(documentChoice) > 0:
+                    documentChoice = documentChoice[:-1]
+                    print(f"\rWybierz ID 1-{data_length}: {documentChoice} {''}\b", end='', flush=True)
             else:
-                deleteOption += chr(key)
+                documentChoice += chr(key)
                 print(chr(key), end='', flush=True)
 
     if isJson:
+        new_data = []
         i = 1
         for entry in temp:
-            if i == int(deleteOption):
+            if i == int(documentChoice):
                 returnDate = datetime.datetime.now()
                 entry["returnDate"] = str(f"{returnDate.day}.{returnDate.month}.{returnDate.year}")
                 with open(historyFile, "r") as f:
@@ -253,15 +255,11 @@ def endHire():
             with open(activeHiresFile, "w") as f:
                 json.dump(new_data, f, indent=4)
     else:
-        i = 1
-        for entry in activeCollection.find():
-            if i == int(deleteOption):
-                activeCollection.delete_one(entry)
-                returnDate = datetime.datetime.now()
-                entry["returnDate"] = str(f"{returnDate.day}.{returnDate.month}.{returnDate.year}")
-                historyCollection.insert_one(entry)
-            else:
-                continue
+        chosenDocument = activeCollection.find_one({'_id': documentIDs[int(documentChoice) - 1]["_id"]})
+        returnDate = datetime.datetime.now()
+        chosenDocument["returnDate"] = str(f"{returnDate.day}.{returnDate.month}.{returnDate.year}")
+        historyCollection.insert_one(chosenDocument)
+        activeCollection.delete_one({'_id': chosenDocument['_id']})
 
 def viewActiveHires():
     results = prettytable.PrettyTable(['Imię', 'Nazwisko', 'Klasa', 'Tytuł książki', 'Data wypożyczenia', 'Zwrot do', 'Kaucja', 'Status'])
@@ -304,8 +302,10 @@ def viewActiveHires():
 
             results.add_row([name, lastName, rentClass, bookTitle, str(rentalDateSTR), str(maxDateSTR), deposit, overdue])
     else:
+        documentIDs = []
         entries = activeCollection.find()
         for item in entries:
+            documentIDs.append(item) # pamiatac o numeracji od 0 w tablicy IDkow a od 1 w tabeli co się wyswietla !!!!
             name = item["name"]
             lastName = item["lastName"]
             rentClass = item["klasa"]
@@ -338,12 +338,16 @@ def viewActiveHires():
                     overdue = 'Wypożyczona'
 
             results.add_row([name, lastName, rentClass, bookTitle, str(rentalDateSTR), str(maxDateSTR), deposit, overdue])
+
     results.add_autoindex('ID')
     if len(results.rows) == 0:
         print()
         print('Lista jest pusta')
     else:
         print(results)
+
+    if not isJson:
+       return documentIDs
 
 def viewHistoryHires():
     results = prettytable.PrettyTable(
@@ -650,7 +654,6 @@ def historySearch():
 
 def addDeposit():
     viewActiveHires()
-    newData = []
     with open(activeHiresFile, 'r') as f:
         temp = json.load(f)
         if isJson:
@@ -714,6 +717,7 @@ def addDeposit():
         isDeposit = True
 
     if isJson:
+        newData = []
         i = 1
         for entry in temp:
             if i == int(objectChange):
