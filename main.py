@@ -27,6 +27,7 @@ def mongoPreconfiguration():
         user = os.environ.get("MONGODB_USER")
         password = os.environ.get("MONGODB_PASSWORD")
         if user == 'None' and password == 'None':
+            print('Konfiguracja dostępu do bazy danych')
             user = input("Podaj nazwę użytkownika: ")
             password = maskpass.askpass(prompt='Podaj hasło do bazy danych MongoDB: ', mask='*')
             dotenv.set_key(dotenv_path, "MONGODB_USER", user)
@@ -995,5 +996,10 @@ while True:
         viewTodayReturns()
     elif choice == 'cls':
         os.system('cls')
+    elif choice == 'config':
+        os.system('cls')
+        dotenv.set_key(dotenv.find_dotenv(), "MONGODB_USER", 'None')
+        dotenv.set_key(dotenv.find_dotenv(), "MONGODB_PASSWORD", 'None')
+        mongoPreconfiguration()
     else:
         print("Wprowadzone dane są niepoprawne. Spróbuj ponownie")
