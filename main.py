@@ -3,30 +3,43 @@ import datetime
 import prettytable
 import msvcrt
 import os
-from dotenv import load_dotenv, find_dotenv
+import dotenv
 import pymongo
-import keyboard
+import maskpass
+
+global isJson
+global activeCollection
+global historyCollection
 
 activeHiresFile = 'active.json'
 historyFile = 'history.json'
 dateFormat = "%d.%m.%Y"
 
+def mongoPreconfiguration():
+    global isJson
+    dotenv.load_dotenv(dotenv.find_dotenv())
+    dotenv_path = dotenv.find_dotenv()
+    if os.environ.get('JSON') == 'True':
+        isJson = True
+    else:
+        isJson = False
+    if not isJson:
+        user = os.environ.get("MONGODB_USER")
+        password = os.environ.get("MONGODB_PASSWORD")
+        if user == 'None' and password == 'None':
+            user = input("Podaj nazwę użytkownika: ")
+            password = maskpass.askpass(prompt='Podaj hasło do bazy danych MongoDB: ', mask='*')
+            dotenv.set_key(dotenv_path, "MONGODB_USER", user)
+            dotenv.set_key(dotenv_path, "MONGODB_PASSWORD", password)
+        connectionString = f"mongodb+srv://{user}:{password}@librarian.3akhsbc.mongodb.net/?retryWrites=true&w=majority"
+        client = pymongo.MongoClient(connectionString)
+        db = client.Prymus
+        global activeCollection
+        global historyCollection
+        activeCollection = db.activeRents
+        historyCollection = db.historyRents
 
-load_dotenv(find_dotenv())
-user = os.environ.get("MONGODB_USER")
-password = os.environ.get("MONGODB_PASSWORD")
-connectionString = f"mongodb+srv://{user}:{password}@librarian.3akhsbc.mongodb.net/?retryWrites=true&w=majority"
-client = pymongo.MongoClient(connectionString)
-db = client.Prymus
-activeCollection = db.activeRents
-historyCollection = db.historyRents
-
-isJson = bool
-if os.environ.get('JSON') == 'True':
-    isJson = True
-else:
-    isJson = False
-
+        print(f"ZALOGOWANO JAKO {user}")
 def addHire():
     """Zapisywane dane to: imię, nazwisko, klasa, tytuł książki, data wypożyczenia, kaucja"""
     sure = 0
@@ -194,6 +207,7 @@ def addHire():
     else:
         if sure == 1:
             activeCollection.insert_one(hireData)
+            print('Dodano wypożyczenie')
         elif sure == 0:
             print("Anulowano dodanie wypożyczenia")
 
@@ -259,6 +273,7 @@ def endHire():
         chosenDocument["returnDate"] = str(f"{returnDate.day}.{returnDate.month}.{returnDate.year}")
         historyCollection.insert_one(chosenDocument)
         activeCollection.delete_one({'_id': chosenDocument['_id']})
+        print('Zakończono wypożyczenie')
 
 def viewActiveHires():
     results = prettytable.PrettyTable(['Imię', 'Nazwisko', 'Klasa', 'Tytuł książki', 'Data wypożyczenia', 'Zwrot do', 'Kaucja', 'Status'])
@@ -932,6 +947,7 @@ def extension():
 
     print('Przedłużono wypożyczenie')
 
+mongoPreconfiguration()
 while True:
     choice = 0
     print("----------------------------------------------------------------------------")
