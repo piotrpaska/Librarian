@@ -1,7 +1,5 @@
 import json
 import datetime
-
-import colorama
 import prettytable
 import msvcrt
 import os
@@ -12,6 +10,8 @@ from colorama import Fore, Style, Back
 
 # Mongo variables
 global isJson
+global client
+global db
 global activeCollection
 global historyCollection
 
@@ -21,16 +21,15 @@ historyFile = 'history.json'
 dateFormat = "%d.%m.%Y"
 
 def mongoPreconfiguration():
-    dotenv.load_dotenv(dotenv.find_dotenv())
     dotenv_path = dotenv.find_dotenv()
     global isJson
-    if os.environ.get('JSON') == 'True':
+    if dotenv.get_key(dotenv_path, 'JSON') == 'True':
         isJson = True
     else:
         isJson = False
     if not isJson:
-        user = os.environ.get("MONGODB_USER")
-        password = os.environ.get("MONGODB_PASSWORD")
+        user = dotenv.get_key(dotenv_path, 'MONGODB_USER')
+        password = dotenv.get_key(dotenv_path, 'MONGODB_PASSWORD')
         if user == 'None' and password == 'None':
             print(f'{Style.BRIGHT}Konfiguracja dostępu do bazy danych{Style.RESET_ALL}')
             user = input("Podaj nazwę użytkownika: ")
@@ -40,10 +39,12 @@ def mongoPreconfiguration():
 
         try:
             connectionString = f"mongodb+srv://{user}:{password}@librarian.3akhsbc.mongodb.net/?retryWrites=true&w=majority"
-            client = pymongo.MongoClient(connectionString)
-            db = client.Prymus
+            global client
+            global db
             global activeCollection
             global historyCollection
+            client = pymongo.MongoClient(connectionString)
+            db = client.Prymus
             activeCollection = db.activeRents
             historyCollection = db.historyRents
         except Exception as error:
