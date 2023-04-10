@@ -1,11 +1,14 @@
 import json
 import datetime
+
+import colorama
 import prettytable
 import msvcrt
 import os
 import dotenv
 import pymongo
 import maskpass
+from colorama import Fore, Style, Back
 
 # Mongo variables
 global isJson
@@ -29,7 +32,7 @@ def mongoPreconfiguration():
         user = os.environ.get("MONGODB_USER")
         password = os.environ.get("MONGODB_PASSWORD")
         if user == 'None' and password == 'None':
-            print('Konfiguracja dostępu do bazy danych')
+            print(f'{Style.BRIGHT}Konfiguracja dostępu do bazy danych{Style.RESET_ALL}')
             user = input("Podaj nazwę użytkownika: ")
             password = maskpass.askpass(prompt='Podaj hasło do bazy danych MongoDB: ', mask='*')
             dotenv.set_key(dotenv_path, "MONGODB_USER", user)
@@ -44,10 +47,10 @@ def mongoPreconfiguration():
             activeCollection = db.activeRents
             historyCollection = db.historyRents
         except Exception as error:
-            print(error)
+            print(Fore.RED + str(error) + Style.RESET_ALL)
         else:
             os.system('cls')
-            print(f"ZALOGOWANO JAKO {user}")
+            print(f"{Style.BRIGHT}ZALOGOWANO JAKO {Fore.GREEN}{user}{Style.RESET_ALL}")
 def addHire():
     """Zapisywane dane to: imię, nazwisko, klasa, tytuł książki, data wypożyczenia, kaucja"""
     sure = 0
@@ -207,21 +210,21 @@ def addHire():
                     temp.append(hireData)
                 with open(activeHiresFile, "w") as f:
                     json.dump(temp, f, indent=4)
-                print("Wypożyczenie dodane")
+                print(f'{Fore.GREEN}Dodano wypożyczenie{Style.RESET_ALL}')
             except Exception as error:
-                print(error)
+                print(Fore.RED + str(error) + Style.RESET_ALL)
         elif sure == 0:
-            print("Anulowano dodanie wypożyczenia")
+            print(f"{Fore.GREEN}Anulowano dodanie wypożyczenia{Style.RESET_ALL}")
     else:
         if sure == 1:
             try:
                 activeCollection.insert_one(hireData)
             except Exception as error:
-                print(error)
+                print(Fore.RED + str(error) + Style.RESET_ALL)
             else:
-                print('Dodano wypożyczenie')
+                print(f'{Fore.GREEN}Dodano wypożyczenie{Style.RESET_ALL}')
         elif sure == 0:
-            print("Anulowano dodanie wypożyczenia")
+            print(f"{Fore.GREEN}Anulowano dodanie wypożyczenia{Style.RESET_ALL}")
 
 def endHire():
     if isJson:
@@ -234,7 +237,7 @@ def endHire():
         try:
             data_length = activeCollection.count_documents({})
         except Exception as error:
-            print(error)
+            print(Fore.RED + str(error) + Style.RESET_ALL)
 
     if data_length <= 0:
         return
@@ -282,6 +285,7 @@ def endHire():
                 i = i + 1
             with open(activeHiresFile, "w") as f:
                 json.dump(new_data, f, indent=4)
+        print(f'{Fore.GREEN}Zakończono wypożyczenie{Style.RESET_ALL}')
     else:
         try:
             chosenDocument = activeCollection.find_one({'_id': documentIDs[int(documentChoice) - 1]["_id"]})
@@ -290,9 +294,9 @@ def endHire():
             historyCollection.insert_one(chosenDocument)
             activeCollection.delete_one({'_id': chosenDocument['_id']})
         except Exception as error:
-            print(error)
+            print(Fore.RED + str(error) + Style.RESET_ALL)
         else:
-            print('Zakończono wypożyczenie')
+            print(f'{Fore.GREEN}Zakończono wypożyczenie{Style.RESET_ALL}')
 
 def viewActiveHires():
     results = prettytable.PrettyTable(['Imię', 'Nazwisko', 'Klasa', 'Tytuł książki', 'Data wypożyczenia', 'Zwrot do', 'Kaucja', 'Status'])
@@ -320,18 +324,18 @@ def viewActiveHires():
                 maxDate = datetime.datetime.strptime(maxDateSTR, dateFormat).date()
                 if maxDate < today:
                     difference = today - maxDate
-                    overdue = f'Przetrzymanie (Kara: {difference .days}zł)'
+                    overdue = f'{Style.BRIGHT}{Fore.RED}Przetrzymanie (Kara: {difference .days}zł){Style.RESET_ALL}'
                 else:
-                    overdue = 'Wypożyczona'
+                    overdue = f'{Fore.GREEN}Wypożyczona{Style.RESET_ALL}'
             else:
                 # jeśli kaucja nie została wpłacona
                 rentalDate = datetime.datetime.strptime(rentalDateSTR, dateFormat).date()
                 today = datetime.datetime.today().date()
                 if rentalDate < today:
                     difference  = today - rentalDate
-                    overdue = f'Przetrzymanie (Kara: {difference .days}zł)'
+                    overdue = f'{Style.BRIGHT}{Fore.RED}Przetrzymanie (Kara: {difference .days}zł){Style.RESET_ALL}'
                 else:
-                    overdue = 'Wypożyczona'
+                    overdue = f'{Fore.GREEN}Wypożyczona{Style.RESET_ALL}'
 
             results.add_row([name, lastName, rentClass, bookTitle, str(rentalDateSTR), str(maxDateSTR), deposit, overdue])
     else:
@@ -339,7 +343,7 @@ def viewActiveHires():
         try:
             entries = activeCollection.find()
         except Exception as error:
-            print(error)
+            print(Fore.RED + str(error) + Style.RESET_ALL)
         for item in entries:
             documentIDs.append(item) # pamiatac o numeracji od 0 w tablicy IDkow a od 1 w tabeli co się wyswietla !!!!
             name = item["name"]
@@ -360,18 +364,18 @@ def viewActiveHires():
                 maxDate = datetime.datetime.strptime(maxDateSTR, dateFormat).date()
                 if maxDate < today:
                     difference = today - maxDate
-                    overdue = f'Przetrzymanie (Kara: {difference.days}zł)'
+                    overdue = f'{Style.BRIGHT}{Fore.RED}Przetrzymanie (Kara: {difference .days}zł){Style.RESET_ALL}'
                 else:
-                    overdue = 'Wypożyczona'
+                    overdue = f'{Fore.GREEN}Wypożyczona{Style.RESET_ALL}'
             else:
                 # jeśli kaucja nie została wpłacona
                 today = datetime.datetime.today().date()
                 rentalDate = datetime.datetime.strptime(rentalDateSTR, dateFormat).date()
                 if rentalDate < today:
                     difference = today - rentalDate
-                    overdue = f'Przetrzymanie (Kara: {difference.days}zł)'
+                    overdue = f'{Style.BRIGHT}{Fore.RED}Przetrzymanie (Kara: {difference .days}zł){Style.RESET_ALL}'
                 else:
-                    overdue = 'Wypożyczona'
+                    overdue = f'{Fore.GREEN}Wypożyczona{Style.RESET_ALL}'
 
             results.add_row([name, lastName, rentClass, bookTitle, str(rentalDateSTR), str(maxDateSTR), deposit, overdue])
 
@@ -406,7 +410,7 @@ def viewHistoryHires():
         try:
             entries = historyCollection.find()
         except Exception as error:
-            print(error)
+            print(Fore.RED + str(error) + Style.RESET_ALL)
         for item in entries:
             name = item["name"]
             lastName = item["lastName"]
@@ -498,17 +502,17 @@ def activeSearch():
                 maxDate = datetime.datetime.strptime(maxDateSTR, dateFormat).date()
                 if maxDate < today:
                     difference = today - maxDate
-                    overdue = f'Przetrzymanie (Kara: {difference.days}zł)'
+                    overdue = f'{Style.BRIGHT}{Fore.RED}Przetrzymanie (Kara: {difference .days}zł){Style.RESET_ALL}'
                 else:
-                    overdue = 'Wypożyczona'
+                    overdue = f'{Fore.GREEN}Wypożyczona{Style.RESET_ALL}'
             else:
                 rentalDate = datetime.datetime.strptime(rentalDateSTR, dateFormat).date()
                 today = datetime.datetime.today().date()
                 if rentalDate < today:
                     difference = today - rentalDate
-                    overdue = f'Przetrzymanie (Kara: {difference.days}zł)'
+                    overdue = f'{Style.BRIGHT}{Fore.RED}Przetrzymanie (Kara: {difference .days}zł){Style.RESET_ALL}'
                 else:
-                    overdue = 'Wypożyczona'
+                    overdue = f'{Fore.GREEN}Wypożyczona{Style.RESET_ALL}'
 
             if choice == str("1"):
                 if str(phrase) in name:
@@ -526,7 +530,7 @@ def activeSearch():
         try:
             entries = activeCollection.find()
         except Exception as error:
-            print(error)
+            print(Fore.RED + str(error) + Style.RESET_ALL)
         for item in entries:
 
             name = item["name"]
@@ -545,17 +549,17 @@ def activeSearch():
                 maxDate = datetime.datetime.strptime(maxDateSTR, dateFormat).date()
                 if maxDate < today:
                     difference = today - maxDate
-                    overdue = f'Przetrzymanie (Kara: {difference.days}zł)'
+                    overdue = f'{Style.BRIGHT}{Fore.RED}Przetrzymanie (Kara: {difference .days}zł){Style.RESET_ALL}'
                 else:
-                    overdue = 'Wypożyczona'
+                    overdue = f'{Fore.GREEN}Wypożyczona{Style.RESET_ALL}'
             else:
                 rentalDate = datetime.datetime.strptime(rentalDateSTR, dateFormat).date()
                 today = datetime.datetime.today().date()
                 if rentalDate < today:
                     difference = today - rentalDate
-                    overdue = f'Przetrzymanie (Kara: {difference.days}zł)'
+                    overdue = f'{Style.BRIGHT}{Fore.RED}Przetrzymanie (Kara: {difference .days}zł){Style.RESET_ALL}'
                 else:
-                    overdue = 'Wypożyczona'
+                    overdue = f'{Fore.GREEN}Wypożyczona{Style.RESET_ALL}'
 
             if choice == str("1"):
                 if str(phrase) in name:
@@ -662,7 +666,7 @@ def historySearch():
         try:
             entries = historyCollection.find()
         except Exception as error:
-            print(error)
+            print(Fore.RED + str(error) + Style.RESET_ALL)
         for item in entries:
 
             name = item["name"]
@@ -708,7 +712,7 @@ def addDeposit():
         try:
             data_length = activeCollection.count_documents({})
         except Exception as error:
-            print(error)
+            print(Fore.RED + str(error) + Style.RESET_ALL)
 
     if data_length <= 0:
         return
@@ -802,12 +806,12 @@ def addDeposit():
             }
             activeCollection.update_one({"_id": chosenDocument["_id"]}, update=updates)
         except Exception as error:
-            print(error)
+            print(Fore.RED + str(error) + Style.RESET_ALL)
         else:
-            print('Zmieniono kaucję')
+            print(f'{Fore.GREEN}Zmieniono kaucję{Style.RESET_ALL}')
 
 def viewTodayReturns():
-    results = prettytable.PrettyTable(['Imię', 'Nazwisko', 'Klasa', 'Tytuł książki', 'Data wypożyczenia', 'Zwrot do', 'Kaucja'])
+    results = prettytable.PrettyTable(['Imię', 'Nazwisko', 'Klasa', 'Tytuł książki', 'Data wypożyczenia', 'Zwrot do', 'Kaucja', 'Status'])
     results.title = 'Książki z dzisiejszym terminem'
     with open(activeHiresFile, 'r') as f:
         jsonFile = json.load(f)
@@ -822,34 +826,65 @@ def viewTodayReturns():
             rentalDate = entry["rentalDate"]
             maxDateSTR = entry["maxDate"]
             deposit = entry["deposit"]
+            overdue = ''
+            maxDate = None
+
+            # overdue
+            today = None
+            # jeśli kaucja jest wpłacona
+            today = datetime.datetime.today().date()
+            maxDate = datetime.datetime.strptime(maxDateSTR, dateFormat).date()
+            if maxDate < today:
+                difference = today - maxDate
+                overdue = f'{Style.BRIGHT}{Fore.RED}Przetrzymanie (Kara: {difference.days}zł){Style.RESET_ALL}'
+            else:
+                overdue = f'{Fore.GREEN}Wypożyczona{Style.RESET_ALL}'
 
             today = datetime.date.today().strftime(dateFormat)
             if maxDateSTR != '14:10':
                 maxReturnDate = datetime.datetime.strptime(maxDateSTR, dateFormat).strftime(dateFormat)
 
-            if maxReturnDate == today or maxDateSTR == '14:10':
-                results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDateSTR), deposit])
+            if maxReturnDate <= today or maxDateSTR == '14:10':
+                results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDateSTR), deposit, overdue])
     else:
         try:
             entries = activeCollection.find()
         except Exception as error:
-            print(error)
+            print(Fore.RED + str(error) + Style.RESET_ALL)
         for entry in entries:
             maxReturnDate = ''
             name = entry["name"]
             lastName = entry["lastName"]
             rentClass = entry["klasa"]
             bookTitle = entry["bookTitle"]
-            rentalDate = entry["rentalDate"]
+            rentalDateSTR = entry["rentalDate"]
             maxDateSTR = entry["maxDate"]
             deposit = entry["deposit"]
-
-            today = datetime.date.today().strftime(dateFormat)
+            # overdue
+            overdue = ''
+            maxDate = None
+            today = None
             if maxDateSTR != '14:10':
-                maxReturnDate = datetime.datetime.strptime(maxDateSTR, dateFormat).strftime(dateFormat)
+                # jeśli kaucja jest wpłacona
+                today = datetime.datetime.today().date()
+                maxDate = datetime.datetime.strptime(maxDateSTR, dateFormat).date()
+                if maxDate < today:
+                    difference = today - maxDate
+                    overdue = f'{Style.BRIGHT}{Fore.RED}Przetrzymanie (Kara: {difference.days}zł){Style.RESET_ALL}'
+                else:
+                    overdue = f'{Fore.GREEN}Wypożyczona{Style.RESET_ALL}'
+            else:
+                # jeśli kaucja nie została wpłacona
+                today = datetime.datetime.today().date()
+                rentalDate = datetime.datetime.strptime(rentalDateSTR, dateFormat).date()
+                if rentalDate < today:
+                    difference = today - rentalDate
+                    overdue = f'{Style.BRIGHT}{Fore.RED}Przetrzymanie (Kara: {difference.days}zł){Style.RESET_ALL}'
+                else:
+                    overdue = f'{Fore.GREEN}Wypożyczona{Style.RESET_ALL}'
 
-            if maxReturnDate == today or maxDateSTR == '14:10':
-                results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDateSTR), deposit])
+            results.add_row(
+                [name, lastName, rentClass, bookTitle, str(rentalDateSTR), str(maxDateSTR), deposit, overdue])
 
     if len(results.rows) == 0:
         print()
@@ -871,7 +906,7 @@ def extension():
                 dataLength = activeCollection.count_documents({ "maxDate": { "$not": { "$eq": "14:10" } } })
                 entries = activeCollection.find({ "maxDate": { "$not": { "$eq": "14:10" } } })
             except Exception as error:
-                print(error)
+                print(Fore.RED + str(error) + Style.RESET_ALL)
 
     # View
     view = prettytable.PrettyTable(['Imię', 'Nazwisko', 'Klasa', 'Tytuł książki', 'Data wypożyczenia', 'Zwrot do', 'Kaucja', 'Status'])
@@ -897,9 +932,9 @@ def extension():
                 maxDate = datetime.datetime.strptime(maxDateSTR, dateFormat).date()
                 if maxDate < today:
                     difference = today - maxDate
-                    overdue = f'Przetrzymanie (Kara: {difference.days}zł)'
+                    overdue = f'{Style.BRIGHT}{Fore.RED}Przetrzymanie (Kara: {difference .days}zł){Style.RESET_ALL}'
                 else:
-                    overdue = 'Wypożyczona'
+                    overdue = f'{Fore.GREEN}Wypożyczona{Style.RESET_ALL}'
                 view.add_row([name, lastName, rentClass, bookTitle, str(rentalDateSTR), str(maxDateSTR), deposit, overdue])
     else:
         documentIDs = []
@@ -921,9 +956,9 @@ def extension():
             maxDate = datetime.datetime.strptime(maxDateSTR, dateFormat).date()
             if maxDate < today:
                 difference = today - maxDate
-                overdue = f'Przetrzymanie (Kara: {difference.days}zł)'
+                overdue = f'{Style.BRIGHT}{Fore.RED}Przetrzymanie (Kara: {difference .days}zł){Style.RESET_ALL}'
             else:
-                overdue = 'Wypożyczona'
+                overdue = f'{Fore.GREEN}Wypożyczona{Style.RESET_ALL}'
 
             view.add_row([name, lastName, rentClass, bookTitle, str(rentalDateSTR), str(maxDateSTR), deposit, overdue])
             documentIDs.append(item)
@@ -992,9 +1027,9 @@ def extension():
             }
             activeCollection.update_one({"_id": chosenDocument["_id"]}, update=updates)
         except Exception as error:
-            print(error)
+            print(Fore.RED + str(error) + Style.RESET_ALL)
         else:
-            print('Przedłużono wypożyczenie')
+            print(f'{Fore.GREEN}Przedłużono wypożyczenie{Style.RESET_ALL}')
 
 mongoPreconfiguration()
 while True:
