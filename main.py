@@ -7,18 +7,20 @@ import dotenv
 import pymongo
 import maskpass
 
+# Mongo variables
 global isJson
 global activeCollection
 global historyCollection
 
+# Json variables
 activeHiresFile = 'active.json'
 historyFile = 'history.json'
 dateFormat = "%d.%m.%Y"
 
 def mongoPreconfiguration():
-    global isJson
     dotenv.load_dotenv(dotenv.find_dotenv())
     dotenv_path = dotenv.find_dotenv()
+    global isJson
     if os.environ.get('JSON') == 'True':
         isJson = True
     else:
@@ -32,15 +34,20 @@ def mongoPreconfiguration():
             password = maskpass.askpass(prompt='Podaj hasło do bazy danych MongoDB: ', mask='*')
             dotenv.set_key(dotenv_path, "MONGODB_USER", user)
             dotenv.set_key(dotenv_path, "MONGODB_PASSWORD", password)
-        connectionString = f"mongodb+srv://{user}:{password}@librarian.3akhsbc.mongodb.net/?retryWrites=true&w=majority"
-        client = pymongo.MongoClient(connectionString)
-        db = client.Prymus
-        global activeCollection
-        global historyCollection
-        activeCollection = db.activeRents
-        historyCollection = db.historyRents
 
-        print(f"ZALOGOWANO JAKO {user}")
+        try:
+            connectionString = f"mongodb+srv://{user}:{password}@librarian.3akhsbc.mongodb.net/?retryWrites=true&w=majority"
+            client = pymongo.MongoClient(connectionString)
+            db = client.Prymus
+            global activeCollection
+            global historyCollection
+            activeCollection = db.activeRents
+            historyCollection = db.historyRents
+        except Exception as error:
+            print(error)
+        else:
+            os.system('cls')
+            print(f"ZALOGOWANO JAKO {user}")
 def addHire():
     """Zapisywane dane to: imię, nazwisko, klasa, tytuł książki, data wypożyczenia, kaucja"""
     sure = 0
@@ -207,8 +214,12 @@ def addHire():
             print("Anulowano dodanie wypożyczenia")
     else:
         if sure == 1:
-            activeCollection.insert_one(hireData)
-            print('Dodano wypożyczenie')
+            try:
+                activeCollection.insert_one(hireData)
+            except Exception as error:
+                print(error)
+            else:
+                print('Dodano wypożyczenie')
         elif sure == 0:
             print("Anulowano dodanie wypożyczenia")
 
@@ -220,7 +231,10 @@ def endHire():
             data_length = len(temp)
     else:
         documentIDs = viewActiveHires()
-        data_length = activeCollection.count_documents({})
+        try:
+            data_length = activeCollection.count_documents({})
+        except Exception as error:
+            print(error)
 
     if data_length <= 0:
         return
@@ -269,12 +283,16 @@ def endHire():
             with open(activeHiresFile, "w") as f:
                 json.dump(new_data, f, indent=4)
     else:
-        chosenDocument = activeCollection.find_one({'_id': documentIDs[int(documentChoice) - 1]["_id"]})
-        returnDate = datetime.datetime.now()
-        chosenDocument["returnDate"] = str(f"{returnDate.day}.{returnDate.month}.{returnDate.year}")
-        historyCollection.insert_one(chosenDocument)
-        activeCollection.delete_one({'_id': chosenDocument['_id']})
-        print('Zakończono wypożyczenie')
+        try:
+            chosenDocument = activeCollection.find_one({'_id': documentIDs[int(documentChoice) - 1]["_id"]})
+            returnDate = datetime.datetime.now()
+            chosenDocument["returnDate"] = str(f"{returnDate.day}.{returnDate.month}.{returnDate.year}")
+            historyCollection.insert_one(chosenDocument)
+            activeCollection.delete_one({'_id': chosenDocument['_id']})
+        except Exception as error:
+            print(error)
+        else:
+            print('Zakończono wypożyczenie')
 
 def viewActiveHires():
     results = prettytable.PrettyTable(['Imię', 'Nazwisko', 'Klasa', 'Tytuł książki', 'Data wypożyczenia', 'Zwrot do', 'Kaucja', 'Status'])
@@ -318,7 +336,10 @@ def viewActiveHires():
             results.add_row([name, lastName, rentClass, bookTitle, str(rentalDateSTR), str(maxDateSTR), deposit, overdue])
     else:
         documentIDs = []
-        entries = activeCollection.find()
+        try:
+            entries = activeCollection.find()
+        except Exception as error:
+            print(error)
         for item in entries:
             documentIDs.append(item) # pamiatac o numeracji od 0 w tablicy IDkow a od 1 w tabeli co się wyswietla !!!!
             name = item["name"]
@@ -382,7 +403,10 @@ def viewHistoryHires():
             deposit = item["deposit"]
             results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDate),str(returnDate), deposit])
     else:
-        entries = historyCollection.find()
+        try:
+            entries = historyCollection.find()
+        except Exception as error:
+            print(error)
         for item in entries:
             name = item["name"]
             lastName = item["lastName"]
@@ -499,7 +523,10 @@ def activeSearch():
                 if str(phrase) in bookTitle:
                     results.add_row([name, lastName, rentClass, bookTitle, str(rentalDateSTR), str(maxDateSTR), deposit, overdue])
     else:
-        entries = activeCollection.find()
+        try:
+            entries = activeCollection.find()
+        except Exception as error:
+            print(error)
         for item in entries:
 
             name = item["name"]
@@ -632,7 +659,10 @@ def historySearch():
                 if str(phrase) in bookTitle:
                     results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDate),str(returnDate), deposit])
     else:
-        entries = historyCollection.find()
+        try:
+            entries = historyCollection.find()
+        except Exception as error:
+            print(error)
         for item in entries:
 
             name = item["name"]
@@ -675,7 +705,10 @@ def addDeposit():
             data_length = len(temp)
     else:
         documentIDs = viewActiveHires()
-        data_length = activeCollection.count_documents({})
+        try:
+            data_length = activeCollection.count_documents({})
+        except Exception as error:
+            print(error)
 
     if data_length <= 0:
         return
@@ -753,20 +786,25 @@ def addDeposit():
 
         with open(activeHiresFile, 'w') as f:
             json.dump(newData,f, indent=4)
+        print('Zmieniono kaucję')
     else:
-        chosenDocument = activeCollection.find_one({'_id': documentIDs[int(documentChoice) - 1]["_id"]})
-        if isDeposit:
-            rentalDateSTR = chosenDocument["rentalDate"]
-            rentalDate = datetime.datetime.strptime(rentalDateSTR, dateFormat)
-            maxReturnDate = rentalDate + datetime.timedelta(weeks=2)
-            maxDate = str(f"{maxReturnDate.strftime(dateFormat)}")
+        try:
+            chosenDocument = activeCollection.find_one({'_id': documentIDs[int(documentChoice) - 1]["_id"]})
+            if isDeposit:
+                rentalDateSTR = chosenDocument["rentalDate"]
+                rentalDate = datetime.datetime.strptime(rentalDateSTR, dateFormat)
+                maxReturnDate = rentalDate + datetime.timedelta(weeks=2)
+                maxDate = str(f"{maxReturnDate.strftime(dateFormat)}")
+            else:
+                maxDate = '14:10'
+            updates = {
+                "$set": {"deposit": deposit, "maxDate": maxDate}
+            }
+            activeCollection.update_one({"_id": chosenDocument["_id"]}, update=updates)
+        except Exception as error:
+            print(error)
         else:
-            maxDate = '14:10'
-        updates = {
-            "$set": {"deposit": deposit, "maxDate": maxDate}
-        }
-        activeCollection.update_one({"_id": chosenDocument["_id"]}, update=updates)
-    print('Zmieniono kaucję')
+            print('Zmieniono kaucję')
 
 def viewTodayReturns():
     results = prettytable.PrettyTable(['Imię', 'Nazwisko', 'Klasa', 'Tytuł książki', 'Data wypożyczenia', 'Zwrot do', 'Kaucja'])
@@ -792,7 +830,10 @@ def viewTodayReturns():
             if maxReturnDate == today or maxDateSTR == '14:10':
                 results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDateSTR), deposit])
     else:
-        entries = activeCollection.find()
+        try:
+            entries = activeCollection.find()
+        except Exception as error:
+            print(error)
         for entry in entries:
             maxReturnDate = ''
             name = entry["name"]
@@ -826,8 +867,11 @@ def extension():
                     dataLengthList.append(item)
             dataLength = len(dataLengthList)
         else:
-            dataLength = activeCollection.count_documents({ "maxDate": { "$not": { "$eq": "14:10" } } })
-            entries = activeCollection.find({ "maxDate": { "$not": { "$eq": "14:10" } } })
+            try:
+                dataLength = activeCollection.count_documents({ "maxDate": { "$not": { "$eq": "14:10" } } })
+                entries = activeCollection.find({ "maxDate": { "$not": { "$eq": "14:10" } } })
+            except Exception as error:
+                print(error)
 
     # View
     view = prettytable.PrettyTable(['Imię', 'Nazwisko', 'Klasa', 'Tytuł książki', 'Data wypożyczenia', 'Zwrot do', 'Kaucja', 'Status'])
@@ -936,17 +980,21 @@ def extension():
 
         with open(activeHiresFile, 'w') as f:
             json.dump(newData, f, indent=4)
+        print('Przedłużono wypożyczenie')
     else:
-        maxDate = ''
-        chosenDocument = activeCollection.find_one({'_id': documentIDs[int(documentChoice) - 1]["_id"]})
-        maxDate = datetime.datetime.strptime(chosenDocument["maxDate"], dateFormat)
-        maxDate = maxDate + datetime.timedelta(weeks=2)
-        updates = {
-            "$set": {"maxDate": maxDate.strftime(dateFormat)}
-        }
-        activeCollection.update_one({"_id": chosenDocument["_id"]}, update=updates)
-
-    print('Przedłużono wypożyczenie')
+        try:
+            maxDate = ''
+            chosenDocument = activeCollection.find_one({'_id': documentIDs[int(documentChoice) - 1]["_id"]})
+            maxDate = datetime.datetime.strptime(chosenDocument["maxDate"], dateFormat)
+            maxDate = maxDate + datetime.timedelta(weeks=2)
+            updates = {
+                "$set": {"maxDate": maxDate.strftime(dateFormat)}
+            }
+            activeCollection.update_one({"_id": chosenDocument["_id"]}, update=updates)
+        except Exception as error:
+            print(error)
+        else:
+            print('Przedłużono wypożyczenie')
 
 mongoPreconfiguration()
 while True:
