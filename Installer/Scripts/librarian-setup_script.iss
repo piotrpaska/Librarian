@@ -45,6 +45,7 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Source: "C:\Users\krzys\Desktop\It-Projects\Szkola\Biblioteka\Installer\Files\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\krzys\Desktop\It-Projects\Szkola\Biblioteka\Installer\Files\active.json"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\krzys\Desktop\It-Projects\Szkola\Biblioteka\Installer\Files\history.json"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Users\krzys\Desktop\It-Projects\Szkola\Biblioteka\Installer\Files\.env"; DestDir: "{app}"; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
