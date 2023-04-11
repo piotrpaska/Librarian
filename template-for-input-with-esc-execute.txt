@@ -1,0 +1,21 @@
+    print("Wybierz ID 1-{data_length}: ", end='', flush=True)  # use print instead of input to avoid blocking
+    deleteOption = ""
+    while True:
+        if msvcrt.kbhit():
+            key = ord(msvcrt.getch())
+            if key == 27:  # escape key
+                print()
+                os.system('cls')
+                return  # exit function
+            elif key == 13:  # enter key
+                print()
+                break  # exit loop
+            elif key == 8:  # backspace key
+                if len(deleteOption) > 0:
+                    deleteOption = deleteOption[:-1]
+                    print(f"\rWybierz ID 1-{data_length}: {deleteOption} {''}\b", end='', flush=True)
+            else:
+                deleteOption += chr(key)
+                print(chr(key), end='', flush=True)
+
+    hireData["deleteOption"] = deleteOption
