@@ -884,8 +884,13 @@ def viewTodayReturns():
                 else:
                     overdue = f'{Fore.GREEN}Wypożyczona{Style.RESET_ALL}'
 
-            results.add_row(
-                [name, lastName, rentClass, bookTitle, str(rentalDateSTR), str(maxDateSTR), deposit, overdue])
+            today = datetime.date.today().strftime(dateFormat)
+            if maxDateSTR != '14:10':
+                maxReturnDate = datetime.datetime.strptime(maxDateSTR, dateFormat).strftime(dateFormat)
+
+            if maxReturnDate <= today or maxDateSTR == '14:10':
+                results.add_row(
+                    [name, lastName, rentClass, bookTitle, str(rentalDateSTR), str(maxDateSTR), deposit, overdue])
 
     if len(results.rows) == 0:
         print()
