@@ -1,0 +1,38 @@
+name: Testowanie i sprawdzenie włąsciwej bazy danych w pliku main.py
+
+on:
+  pull_request_target:
+    branches:
+      - '*'
+
+jobs:
+  testowanie-i-aktualizacja:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Pobierz repozytorium
+        uses: actions/checkout@v2
+
+      - name: Skonfiguruj Pythona
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.11'
+
+      - name: Zainstaluj zależności
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Uruchom testy
+        run: |
+          pytest
+
+      - name: Sprawdzenie poprawnej bazy danych
+        if: ${{ success() && github.event.pull_request.head.repo.full_name == github.repository && steps.testowanie-i-aktualizacja.outputs.exit-code == 0 && env.GITHUB_TOKEN }}
+        run: |
+          sed -i 's/db = client.Testing/db = client.Prymus/g' main.py
+          git add main.py
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git commit -m "Changed db to Prymus"
+          git push
