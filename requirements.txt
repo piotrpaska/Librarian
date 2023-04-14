@@ -1,0 +1,6 @@
+datetime
+prettytable
+python-dotenv
+pymongo[srv]
+maskpass
+colorama
