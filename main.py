@@ -43,7 +43,7 @@ def mongoPreconfiguration():
             global activeCollection
             global historyCollection
             client = pymongo.MongoClient(connectionString)
-            db = client.Prymus
+            db = client.Testing
             activeCollection = db.activeRents
             historyCollection = db.historyRents
         except Exception as error:
@@ -313,6 +313,16 @@ def endHire():
                 if len(documentChoice) > 0:
                     documentChoice = documentChoice[:-1]
                     print(f"\rWybierz ID 1-{data_length}: {documentChoice} {''}\b", end='', flush=True)
+            elif key == 224:  # special keys (arrows, function keys, etc.)
+                key = ord(msvcrt.getch())  # get the second part of the key (e.g. arrow up is 72)
+                if key == 72:  # arrow up
+                    continue
+                elif key == 80:  # arrow down
+                    continue
+                elif key == 75:  # arrow left
+                    continue
+                elif key == 77:  # arrow right
+                    continue
             else:
                 documentChoice += chr(key)
                 print(chr(key), end='', flush=True)
