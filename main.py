@@ -514,6 +514,16 @@ def activeSearch():
                 if len(choice) > 0:
                     choice = choice[:-1]
                     print(f"\rPo czym chcesz szukać: {choice} {''}\b", end='', flush=True)
+            elif key == 224:  # special keys (arrows, function keys, etc.)
+                key = ord(msvcrt.getch())  # get the second part of the key (e.g. arrow up is 72)
+                if key == 72:  # arrow up
+                    continue
+                elif key == 80:  # arrow down
+                    continue
+                elif key == 75:  # arrow left
+                    continue
+                elif key == 77:  # arrow right
+                    continue
             else:
                 choice += chr(key)
                 print(chr(key), end='', flush=True)
@@ -535,6 +545,16 @@ def activeSearch():
                 if len(phrase) > 0:
                     phrase = phrase[:-1]
                     print(f"\rWprowadź szukaną frazę: {phrase} {''}\b", end='', flush=True)
+            elif key == 224:  # special keys (arrows, function keys, etc.)
+                key = ord(msvcrt.getch())  # get the second part of the key (e.g. arrow up is 72)
+                if key == 72:  # arrow up
+                    continue
+                elif key == 80:  # arrow down
+                    continue
+                elif key == 75:  # arrow left
+                    continue
+                elif key == 77:  # arrow right
+                    continue
             else:
                 phrase += chr(key)
                 print(chr(key), end='', flush=True)
@@ -669,6 +689,16 @@ def historySearch():
                 if len(choice) > 0:
                     choice = choice[:-1]
                     print(f"\rPo czym chcesz szukać: {choice} {''}\b", end='', flush=True)
+            elif key == 224:  # special keys (arrows, function keys, etc.)
+                key = ord(msvcrt.getch())  # get the second part of the key (e.g. arrow up is 72)
+                if key == 72:  # arrow up
+                    continue
+                elif key == 80:  # arrow down
+                    continue
+                elif key == 75:  # arrow left
+                    continue
+                elif key == 77:  # arrow right
+                    continue
             else:
                 choice += chr(key)
                 print(chr(key), end='', flush=True)
@@ -690,6 +720,16 @@ def historySearch():
                 if len(phrase) > 0:
                     phrase = phrase[:-1]
                     print(f"\rWprowadź szukaną frazę: {phrase} {''}\b", end='', flush=True)
+            elif key == 224:  # special keys (arrows, function keys, etc.)
+                key = ord(msvcrt.getch())  # get the second part of the key (e.g. arrow up is 72)
+                if key == 72:  # arrow up
+                    continue
+                elif key == 80:  # arrow down
+                    continue
+                elif key == 75:  # arrow left
+                    continue
+                elif key == 77:  # arrow right
+                    continue
             else:
                 phrase += chr(key)
                 print(chr(key), end='', flush=True)
