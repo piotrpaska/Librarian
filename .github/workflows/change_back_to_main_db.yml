@@ -11,7 +11,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Update database client
-        run: sed -i 's/db = client.Prymus/db = client.Testing/' main.py
+        run: sed -i 's/db = client.Testing/db = client.Prymus/' main.py
 
       - name: Commit changes
         run: |
