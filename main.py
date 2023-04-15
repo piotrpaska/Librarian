@@ -315,6 +315,16 @@ def endHire():
                 if len(documentChoice) > 0:
                     documentChoice = documentChoice[:-1]
                     print(f"\rWybierz ID 1-{data_length}: {documentChoice} {''}\b", end='', flush=True)
+            elif key == 224:  # special keys (arrows, function keys, etc.)
+                key = ord(msvcrt.getch())
+                if key == 72:  # up arrow key
+                    continue
+                elif key == 80:  # down arrow key
+                    continue
+                elif key == 75:  # left arrow key
+                    continue
+                elif key == 77:  # right arrow key
+                    continue
             else:
                 documentChoice += chr(key)
                 print(chr(key), end='', flush=True)
