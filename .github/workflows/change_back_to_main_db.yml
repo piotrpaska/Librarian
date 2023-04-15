@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  change-db-target:
+  change-db-target-to-Prymus:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
