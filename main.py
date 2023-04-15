@@ -44,6 +44,7 @@ def mongoPreconfiguration():
             global activeCollection
             global historyCollection
             client = pymongo.MongoClient(connectionString)
+            # TODO Check target database
             db = client.Testing
             activeCollection = db.activeRents
             historyCollection = db.historyRents
@@ -74,6 +75,16 @@ def addHire():
                 if len(name) > 0:
                     name = name[:-1]
                     print(f"\rWpisz imię: {name} {''}\b", end='', flush=True)
+            elif key == 224:  # special keys (arrows, function keys, etc.)
+                key = ord(msvcrt.getch())
+                if key == 72:  # up arrow key
+                    continue
+                elif key == 80:  # down arrow key
+                    continue
+                elif key == 75:  # left arrow key
+                    continue
+                elif key == 77:  # right arrow key
+                    continue
             else:
                 name += chr(key)
                 print(chr(key), end='', flush=True)
@@ -97,6 +108,16 @@ def addHire():
                 if len(lastName) > 0:
                     lastName = lastName[:-1]
                     print(f"\rWpisz nazwisko: {lastName} {''}\b", end='', flush=True)
+            elif key == 224:  # special keys (arrows, function keys, etc.)
+                key = ord(msvcrt.getch())
+                if key == 72:  # up arrow key
+                    continue
+                elif key == 80:  # down arrow key
+                    continue
+                elif key == 75:  # left arrow key
+                    continue
+                elif key == 77:  # right arrow key
+                    continue
             else:
                 lastName += chr(key)
                 print(chr(key), end='', flush=True)
@@ -119,6 +140,16 @@ def addHire():
                 if len(klasa) > 0:
                     klasa = klasa[:-1]
                     print(f"\rPodaj klasę czytelnika (np. 2a): {klasa} {''}\b", end='', flush=True)
+            elif key == 224:  # special keys (arrows, function keys, etc.)
+                key = ord(msvcrt.getch())
+                if key == 72:  # up arrow key
+                    continue
+                elif key == 80:  # down arrow key
+                    continue
+                elif key == 75:  # left arrow key
+                    continue
+                elif key == 77:  # right arrow key
+                    continue
             else:
                 klasa += chr(key)
                 print(chr(key), end='', flush=True)
@@ -142,6 +173,16 @@ def addHire():
                 if len(bookTitle) > 0:
                     bookTitle = bookTitle[:-1]
                     print(f"\rWpisz tytuł wypożyczonej książki: {bookTitle} {''}\b", end='', flush=True)
+            elif key == 224:  # special keys (arrows, function keys, etc.)
+                key = ord(msvcrt.getch())
+                if key == 72:  # up arrow key
+                    continue
+                elif key == 80:  # down arrow key
+                    continue
+                elif key == 75:  # left arrow key
+                    continue
+                elif key == 77:  # right arrow key
+                    continue
             else:
                 bookTitle += chr(key)
                 print(chr(key), end='', flush=True)
@@ -165,6 +206,16 @@ def addHire():
                 if len(deposit) > 0:
                     deposit = deposit[:-1]
                     print(f"\rWpisz wartość kaucji (jeśli nie wpłacił kaucji kliknij ENTER): {deposit} {''}\b", end='', flush=True)
+            elif key == 224:  # special keys (arrows, function keys, etc.)
+                key = ord(msvcrt.getch())
+                if key == 72:  # up arrow key
+                    continue
+                elif key == 80:  # down arrow key
+                    continue
+                elif key == 75:  # left arrow key
+                    continue
+                elif key == 77:  # right arrow key
+                    continue
             else:
                 deposit += chr(key)
                 print(chr(key), end='', flush=True)
