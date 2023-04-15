@@ -839,6 +839,16 @@ def addDeposit():
                     documentChoice = documentChoice[:-1]
                     print(f"\rWpisz ID wypożyczenia w którym chcesz dodać kaucję: {documentChoice} {''}\b", end='',
                           flush=True)
+            elif key == 224:  # special keys (arrows, function keys, etc.)
+                key = ord(msvcrt.getch())
+                if key == 72:  # up arrow key
+                    continue
+                elif key == 80:  # down arrow key
+                    continue
+                elif key == 75:  # left arrow key
+                    continue
+                elif key == 77:  # right arrow key
+                    continue
             else:
                 documentChoice += chr(key)
                 print(chr(key), end='', flush=True)
@@ -860,6 +870,16 @@ def addDeposit():
                 if len(deposit) > 0:
                     deposit = deposit[:-1]
                     print(f"\rWpisz wartość kaucji (jeśli nie wpłacił kaucji kliknij ENTER): {deposit} {''}\b", end='',flush=True)
+            elif key == 224:  # special keys (arrows, function keys, etc.)
+                key = ord(msvcrt.getch())
+                if key == 72:  # up arrow key
+                    continue
+                elif key == 80:  # down arrow key
+                    continue
+                elif key == 75:  # left arrow key
+                    continue
+                elif key == 77:  # right arrow key
+                    continue
             else:
                 deposit += chr(key)
                 print(chr(key), end='', flush=True)
@@ -1100,6 +1120,16 @@ def extension():
                 if len(documentChoice) > 0:
                     documentChoice = documentChoice[:-1]
                     print(f"\rWpisz ID wypożyczenia które chcesz przedłużyć: {documentChoice} {''}\b", end='', flush=True)
+            elif key == 224:  # special keys (arrows, function keys, etc.)
+                key = ord(msvcrt.getch())
+                if key == 72:  # up arrow key
+                    continue
+                elif key == 80:  # down arrow key
+                    continue
+                elif key == 75:  # left arrow key
+                    continue
+                elif key == 77:  # right arrow key
+                    continue
             else:
                 documentChoice += chr(key)
                 print(chr(key), end='', flush=True)
