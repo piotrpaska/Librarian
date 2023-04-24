@@ -20,6 +20,7 @@ activeHiresFile = 'active.json'
 historyFile = 'history.json'
 dateFormat = "%d.%m.%Y"
 
+
 def mongoPreconfiguration():
     dotenv_path = dotenv.find_dotenv()
     global isJson
@@ -44,6 +45,7 @@ def mongoPreconfiguration():
             global activeCollection
             global historyCollection
             client = pymongo.MongoClient(connectionString)
+            # TODO Check target database
             db = client.Prymus
             activeCollection = db.activeRents
             historyCollection = db.historyRents
@@ -52,6 +54,8 @@ def mongoPreconfiguration():
         else:
             os.system('cls')
             print(f"{Style.BRIGHT}ZALOGOWANO JAKO {Fore.GREEN}{user}{Style.RESET_ALL}")
+
+
 def addHire():
     """Zapisywane dane to: imię, nazwisko, klasa, tytuł książki, data wypożyczenia, kaucja"""
     sure = 0
@@ -74,6 +78,16 @@ def addHire():
                 if len(name) > 0:
                     name = name[:-1]
                     print(f"\rWpisz imię: {name} {''}\b", end='', flush=True)
+            elif key == 224:  # special keys (arrows, function keys, etc.)
+                key = ord(msvcrt.getch())
+                if key == 72:  # up arrow key
+                    continue
+                elif key == 80:  # down arrow key
+                    continue
+                elif key == 75:  # left arrow key
+                    continue
+                elif key == 77:  # right arrow key
+                    continue
             else:
                 name += chr(key)
                 print(chr(key), end='', flush=True)
@@ -97,6 +111,16 @@ def addHire():
                 if len(lastName) > 0:
                     lastName = lastName[:-1]
                     print(f"\rWpisz nazwisko: {lastName} {''}\b", end='', flush=True)
+            elif key == 224:  # special keys (arrows, function keys, etc.)
+                key = ord(msvcrt.getch())
+                if key == 72:  # up arrow key
+                    continue
+                elif key == 80:  # down arrow key
+                    continue
+                elif key == 75:  # left arrow key
+                    continue
+                elif key == 77:  # right arrow key
+                    continue
             else:
                 lastName += chr(key)
                 print(chr(key), end='', flush=True)
@@ -119,6 +143,16 @@ def addHire():
                 if len(klasa) > 0:
                     klasa = klasa[:-1]
                     print(f"\rPodaj klasę czytelnika (np. 2a): {klasa} {''}\b", end='', flush=True)
+            elif key == 224:  # special keys (arrows, function keys, etc.)
+                key = ord(msvcrt.getch())
+                if key == 72:  # up arrow key
+                    continue
+                elif key == 80:  # down arrow key
+                    continue
+                elif key == 75:  # left arrow key
+                    continue
+                elif key == 77:  # right arrow key
+                    continue
             else:
                 klasa += chr(key)
                 print(chr(key), end='', flush=True)
@@ -142,13 +176,24 @@ def addHire():
                 if len(bookTitle) > 0:
                     bookTitle = bookTitle[:-1]
                     print(f"\rWpisz tytuł wypożyczonej książki: {bookTitle} {''}\b", end='', flush=True)
+            elif key == 224:  # special keys (arrows, function keys, etc.)
+                key = ord(msvcrt.getch())
+                if key == 72:  # up arrow key
+                    continue
+                elif key == 80:  # down arrow key
+                    continue
+                elif key == 75:  # left arrow key
+                    continue
+                elif key == 77:  # right arrow key
+                    continue
             else:
                 bookTitle += chr(key)
                 print(chr(key), end='', flush=True)
 
     hireData["bookTitle"] = bookTitle
 
-    print("Wpisz wartość kaucji (jeśli nie wpłacił kaucji kliknij ENTER): ", end='', flush=True)  # use print instead of input to avoid blocking
+    print("Wpisz wartość kaucji (jeśli nie wpłacił kaucji kliknij ENTER): ", end='',
+          flush=True)  # use print instead of input to avoid blocking
     deposit = ""
     while True:
         if msvcrt.kbhit():
@@ -164,7 +209,18 @@ def addHire():
             elif key == 8:  # backspace key
                 if len(deposit) > 0:
                     deposit = deposit[:-1]
-                    print(f"\rWpisz wartość kaucji (jeśli nie wpłacił kaucji kliknij ENTER): {deposit} {''}\b", end='', flush=True)
+                    print(f"\rWpisz wartość kaucji (jeśli nie wpłacił kaucji kliknij ENTER): {deposit} {''}\b", end='',
+                          flush=True)
+            elif key == 224:  # special keys (arrows, function keys, etc.)
+                key = ord(msvcrt.getch())
+                if key == 72:  # up arrow key
+                    continue
+                elif key == 80:  # down arrow key
+                    continue
+                elif key == 75:  # left arrow key
+                    continue
+                elif key == 77:  # right arrow key
+                    continue
             else:
                 deposit += chr(key)
                 print(chr(key), end='', flush=True)
@@ -186,8 +242,11 @@ def addHire():
     else:
         hireData["maxDate"] = '14:10'
 
-    summary = prettytable.PrettyTable(['Imię', 'Nazwisko', 'Klasa', 'Tytuł książki', 'Data wypożyczenia', 'Zwrot do', 'Kaucja'])
-    summary.add_row([hireData["name"], hireData["lastName"], hireData["klasa"], hireData["bookTitle"], hireData["rentalDate"], hireData["maxDate"], hireData["deposit"]])
+    summary = prettytable.PrettyTable(
+        ['Imię', 'Nazwisko', 'Klasa', 'Tytuł książki', 'Data wypożyczenia', 'Zwrot do', 'Kaucja'])
+    summary.add_row(
+        [hireData["name"], hireData["lastName"], hireData["klasa"], hireData["bookTitle"], hireData["rentalDate"],
+         hireData["maxDate"], hireData["deposit"]])
     print(summary)
 
     while True:
@@ -227,6 +286,7 @@ def addHire():
         elif sure == 0:
             print(f"{Fore.GREEN}Anulowano dodanie wypożyczenia{Style.RESET_ALL}")
 
+
 def endHire():
     if isJson:
         with open(activeHiresFile, "r") as f:
@@ -257,13 +317,23 @@ def endHire():
                 if int(documentChoice) in delOptRange:
                     print()
                     print("Wypożyczenie zakończone")
-                    break# exit loop
+                    break  # exit loop
                 else:
                     continue
             elif key == 8:  # backspace key
                 if len(documentChoice) > 0:
                     documentChoice = documentChoice[:-1]
                     print(f"\rWybierz ID 1-{data_length}: {documentChoice} {''}\b", end='', flush=True)
+            elif key == 224:  # special keys (arrows, function keys, etc.)
+                key = ord(msvcrt.getch())
+                if key == 72:  # up arrow key
+                    continue
+                elif key == 80:  # down arrow key
+                    continue
+                elif key == 75:  # left arrow key
+                    continue
+                elif key == 77:  # right arrow key
+                    continue
             else:
                 documentChoice += chr(key)
                 print(chr(key), end='', flush=True)
@@ -299,8 +369,10 @@ def endHire():
         else:
             print(f'{Fore.GREEN}Zakończono wypożyczenie{Style.RESET_ALL}')
 
+
 def viewActiveHires():
-    results = prettytable.PrettyTable(['Imię', 'Nazwisko', 'Klasa', 'Tytuł książki', 'Data wypożyczenia', 'Zwrot do', 'Kaucja', 'Status'])
+    results = prettytable.PrettyTable(
+        ['Imię', 'Nazwisko', 'Klasa', 'Tytuł książki', 'Data wypożyczenia', 'Zwrot do', 'Kaucja', 'Status'])
     results.title = 'Trwające wypożyczenia'
     if isJson:
         with open(activeHiresFile, 'r') as f:
@@ -317,15 +389,15 @@ def viewActiveHires():
             overdue = ''
             maxDate = None
 
-            #overdue
+            # overdue
             today = None
             if maxDateSTR != '14:10':
-                #jeśli kaucja jest wpłacona
+                # jeśli kaucja jest wpłacona
                 today = datetime.datetime.today().date()
                 maxDate = datetime.datetime.strptime(maxDateSTR, dateFormat).date()
                 if maxDate < today:
                     difference = today - maxDate
-                    overdue = f'{Style.BRIGHT}{Fore.RED}Przetrzymanie (Kara: {difference .days}zł){Style.RESET_ALL}'
+                    overdue = f'{Style.BRIGHT}{Fore.RED}Przetrzymanie (Kara: {difference.days}zł){Style.RESET_ALL}'
                 else:
                     overdue = f'{Fore.GREEN}Wypożyczona{Style.RESET_ALL}'
             else:
@@ -333,12 +405,13 @@ def viewActiveHires():
                 rentalDate = datetime.datetime.strptime(rentalDateSTR, dateFormat).date()
                 today = datetime.datetime.today().date()
                 if rentalDate < today:
-                    difference  = today - rentalDate
-                    overdue = f'{Style.BRIGHT}{Fore.RED}Przetrzymanie (Kara: {difference .days}zł){Style.RESET_ALL}'
+                    difference = today - rentalDate
+                    overdue = f'{Style.BRIGHT}{Fore.RED}Przetrzymanie (Kara: {difference.days}zł){Style.RESET_ALL}'
                 else:
                     overdue = f'{Fore.GREEN}Wypożyczona{Style.RESET_ALL}'
 
-            results.add_row([name, lastName, rentClass, bookTitle, str(rentalDateSTR), str(maxDateSTR), deposit, overdue])
+            results.add_row(
+                [name, lastName, rentClass, bookTitle, str(rentalDateSTR), str(maxDateSTR), deposit, overdue])
     else:
         documentIDs = []
         try:
@@ -346,7 +419,7 @@ def viewActiveHires():
         except Exception as error:
             print(Fore.RED + str(error) + Style.RESET_ALL)
         for item in entries:
-            documentIDs.append(item) # pamiatac o numeracji od 0 w tablicy IDkow a od 1 w tabeli co się wyswietla !!!!
+            documentIDs.append(item)  # pamiatac o numeracji od 0 w tablicy IDkow a od 1 w tabeli co się wyswietla !!!!
             name = item["name"]
             lastName = item["lastName"]
             rentClass = item["klasa"]
@@ -365,7 +438,7 @@ def viewActiveHires():
                 maxDate = datetime.datetime.strptime(maxDateSTR, dateFormat).date()
                 if maxDate < today:
                     difference = today - maxDate
-                    overdue = f'{Style.BRIGHT}{Fore.RED}Przetrzymanie (Kara: {difference .days}zł){Style.RESET_ALL}'
+                    overdue = f'{Style.BRIGHT}{Fore.RED}Przetrzymanie (Kara: {difference.days}zł){Style.RESET_ALL}'
                 else:
                     overdue = f'{Fore.GREEN}Wypożyczona{Style.RESET_ALL}'
             else:
@@ -374,11 +447,12 @@ def viewActiveHires():
                 rentalDate = datetime.datetime.strptime(rentalDateSTR, dateFormat).date()
                 if rentalDate < today:
                     difference = today - rentalDate
-                    overdue = f'{Style.BRIGHT}{Fore.RED}Przetrzymanie (Kara: {difference .days}zł){Style.RESET_ALL}'
+                    overdue = f'{Style.BRIGHT}{Fore.RED}Przetrzymanie (Kara: {difference.days}zł){Style.RESET_ALL}'
                 else:
                     overdue = f'{Fore.GREEN}Wypożyczona{Style.RESET_ALL}'
 
-            results.add_row([name, lastName, rentClass, bookTitle, str(rentalDateSTR), str(maxDateSTR), deposit, overdue])
+            results.add_row(
+                [name, lastName, rentClass, bookTitle, str(rentalDateSTR), str(maxDateSTR), deposit, overdue])
 
     results.add_autoindex('ID')
     if len(results.rows) == 0:
@@ -388,7 +462,8 @@ def viewActiveHires():
         print(results)
 
     if not isJson:
-       return documentIDs
+        return documentIDs
+
 
 def viewHistoryHires():
     results = prettytable.PrettyTable(
@@ -406,7 +481,8 @@ def viewHistoryHires():
             maxDate = item["maxDate"]
             returnDate = item["returnDate"]
             deposit = item["deposit"]
-            results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDate),str(returnDate), deposit])
+            results.add_row(
+                [name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDate), str(returnDate), deposit])
     else:
         try:
             entries = historyCollection.find()
@@ -421,7 +497,8 @@ def viewHistoryHires():
             maxDate = item["maxDate"]
             returnDate = item["returnDate"]
             deposit = item["deposit"]
-            results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDate),str(returnDate), deposit])
+            results.add_row(
+                [name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDate), str(returnDate), deposit])
 
     results.add_autoindex('ID')
     if len(results.rows) == 0:
@@ -429,6 +506,7 @@ def viewHistoryHires():
         print('Lista jest pusta')
     else:
         print(results)
+
 
 def activeSearch():
     print('[1] - imię')
@@ -446,7 +524,7 @@ def activeSearch():
                 os.system('cls')
                 return  # exit function
             elif key == 13:  # enter key
-                if int(choice) in range(1,5):
+                if int(choice) in range(1, 5):
                     print()
                     break  # exit loop
                 else:
@@ -455,6 +533,16 @@ def activeSearch():
                 if len(choice) > 0:
                     choice = choice[:-1]
                     print(f"\rPo czym chcesz szukać: {choice} {''}\b", end='', flush=True)
+            elif key == 224:  # special keys (arrows, function keys, etc.)
+                key = ord(msvcrt.getch())
+                if key == 72:  # up arrow key
+                    continue
+                elif key == 80:  # down arrow key
+                    continue
+                elif key == 75:  # left arrow key
+                    continue
+                elif key == 77:  # right arrow key
+                    continue
             else:
                 choice += chr(key)
                 print(chr(key), end='', flush=True)
@@ -476,10 +564,21 @@ def activeSearch():
                 if len(phrase) > 0:
                     phrase = phrase[:-1]
                     print(f"\rWprowadź szukaną frazę: {phrase} {''}\b", end='', flush=True)
+            elif key == 224:  # special keys (arrows, function keys, etc.)
+                key = ord(msvcrt.getch())
+                if key == 72:  # up arrow key
+                    continue
+                elif key == 80:  # down arrow key
+                    continue
+                elif key == 75:  # left arrow key
+                    continue
+                elif key == 77:  # right arrow key
+                    continue
             else:
                 phrase += chr(key)
                 print(chr(key), end='', flush=True)
-    results = prettytable.PrettyTable(['Imię', 'Nazwisko', 'Klasa', 'Tytuł książki', 'Data wypożyczenia', 'Zwrot do', 'Kaucja', 'Status'])
+    results = prettytable.PrettyTable(
+        ['Imię', 'Nazwisko', 'Klasa', 'Tytuł książki', 'Data wypożyczenia', 'Zwrot do', 'Kaucja', 'Status'])
     results.title = f'Szukana fraza: {phrase}'
     with open(activeHiresFile, 'r') as f:
         jsonFile = json.load(f)
@@ -503,7 +602,7 @@ def activeSearch():
                 maxDate = datetime.datetime.strptime(maxDateSTR, dateFormat).date()
                 if maxDate < today:
                     difference = today - maxDate
-                    overdue = f'{Style.BRIGHT}{Fore.RED}Przetrzymanie (Kara: {difference .days}zł){Style.RESET_ALL}'
+                    overdue = f'{Style.BRIGHT}{Fore.RED}Przetrzymanie (Kara: {difference.days}zł){Style.RESET_ALL}'
                 else:
                     overdue = f'{Fore.GREEN}Wypożyczona{Style.RESET_ALL}'
             else:
@@ -511,22 +610,26 @@ def activeSearch():
                 today = datetime.datetime.today().date()
                 if rentalDate < today:
                     difference = today - rentalDate
-                    overdue = f'{Style.BRIGHT}{Fore.RED}Przetrzymanie (Kara: {difference .days}zł){Style.RESET_ALL}'
+                    overdue = f'{Style.BRIGHT}{Fore.RED}Przetrzymanie (Kara: {difference.days}zł){Style.RESET_ALL}'
                 else:
                     overdue = f'{Fore.GREEN}Wypożyczona{Style.RESET_ALL}'
 
             if choice == str("1"):
                 if str(phrase) in name:
-                    results.add_row([name, lastName, rentClass, bookTitle, str(rentalDateSTR), str(maxDateSTR), deposit, overdue])
+                    results.add_row(
+                        [name, lastName, rentClass, bookTitle, str(rentalDateSTR), str(maxDateSTR), deposit, overdue])
             if choice == str("2"):
                 if str(phrase) in lastName:
-                    results.add_row([name, lastName, rentClass, bookTitle, str(rentalDateSTR), str(maxDateSTR), deposit, overdue])
+                    results.add_row(
+                        [name, lastName, rentClass, bookTitle, str(rentalDateSTR), str(maxDateSTR), deposit, overdue])
             if choice == str("3"):
                 if str(phrase) in rentClass:
-                    results.add_row([name, lastName, rentClass, bookTitle, str(rentalDateSTR), str(maxDateSTR), deposit, overdue])
+                    results.add_row(
+                        [name, lastName, rentClass, bookTitle, str(rentalDateSTR), str(maxDateSTR), deposit, overdue])
             if choice == str("4"):
                 if str(phrase) in bookTitle:
-                    results.add_row([name, lastName, rentClass, bookTitle, str(rentalDateSTR), str(maxDateSTR), deposit, overdue])
+                    results.add_row(
+                        [name, lastName, rentClass, bookTitle, str(rentalDateSTR), str(maxDateSTR), deposit, overdue])
     else:
         try:
             entries = activeCollection.find()
@@ -550,7 +653,7 @@ def activeSearch():
                 maxDate = datetime.datetime.strptime(maxDateSTR, dateFormat).date()
                 if maxDate < today:
                     difference = today - maxDate
-                    overdue = f'{Style.BRIGHT}{Fore.RED}Przetrzymanie (Kara: {difference .days}zł){Style.RESET_ALL}'
+                    overdue = f'{Style.BRIGHT}{Fore.RED}Przetrzymanie (Kara: {difference.days}zł){Style.RESET_ALL}'
                 else:
                     overdue = f'{Fore.GREEN}Wypożyczona{Style.RESET_ALL}'
             else:
@@ -558,7 +661,7 @@ def activeSearch():
                 today = datetime.datetime.today().date()
                 if rentalDate < today:
                     difference = today - rentalDate
-                    overdue = f'{Style.BRIGHT}{Fore.RED}Przetrzymanie (Kara: {difference .days}zł){Style.RESET_ALL}'
+                    overdue = f'{Style.BRIGHT}{Fore.RED}Przetrzymanie (Kara: {difference.days}zł){Style.RESET_ALL}'
                 else:
                     overdue = f'{Fore.GREEN}Wypożyczona{Style.RESET_ALL}'
 
@@ -585,6 +688,7 @@ def activeSearch():
     else:
         print(results)
 
+
 def historySearch():
     print('[1] - imię')
     print('[2] - nazwisko')
@@ -610,6 +714,16 @@ def historySearch():
                 if len(choice) > 0:
                     choice = choice[:-1]
                     print(f"\rPo czym chcesz szukać: {choice} {''}\b", end='', flush=True)
+            elif key == 224:  # special keys (arrows, function keys, etc.)
+                key = ord(msvcrt.getch())
+                if key == 72:  # up arrow key
+                    continue
+                elif key == 80:  # down arrow key
+                    continue
+                elif key == 75:  # left arrow key
+                    continue
+                elif key == 77:  # right arrow key
+                    continue
             else:
                 choice += chr(key)
                 print(chr(key), end='', flush=True)
@@ -631,10 +745,21 @@ def historySearch():
                 if len(phrase) > 0:
                     phrase = phrase[:-1]
                     print(f"\rWprowadź szukaną frazę: {phrase} {''}\b", end='', flush=True)
+            elif key == 224:  # special keys (arrows, function keys, etc.)
+                key = ord(msvcrt.getch())
+                if key == 72:  # up arrow key
+                    continue
+                elif key == 80:  # down arrow key
+                    continue
+                elif key == 75:  # left arrow key
+                    continue
+                elif key == 77:  # right arrow key
+                    continue
             else:
                 phrase += chr(key)
                 print(chr(key), end='', flush=True)
-    results = prettytable.PrettyTable(['Imię', 'Nazwisko', 'Klasa', 'Tytuł książki', 'Data wypożyczenia', 'Zwrot do', 'Data zwrotu', 'Kaucja'])
+    results = prettytable.PrettyTable(
+        ['Imię', 'Nazwisko', 'Klasa', 'Tytuł książki', 'Data wypożyczenia', 'Zwrot do', 'Data zwrotu', 'Kaucja'])
     results.title = f'Szukana fraza: {phrase}'
     with open(historyFile, 'r') as f:
         jsonFile = json.load(f)
@@ -653,16 +778,20 @@ def historySearch():
 
             if choice == str("1"):
                 if str(phrase) in name:
-                    results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDate),str(returnDate), deposit])
+                    results.add_row(
+                        [name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDate), str(returnDate), deposit])
             if choice == str("2"):
                 if str(phrase) in lastName:
-                    results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDate),str(returnDate), deposit])
+                    results.add_row(
+                        [name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDate), str(returnDate), deposit])
             if choice == str("3"):
                 if str(phrase) in rentClass:
-                    results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDate),str(returnDate), deposit])
+                    results.add_row(
+                        [name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDate), str(returnDate), deposit])
             if choice == str("4"):
                 if str(phrase) in bookTitle:
-                    results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDate),str(returnDate), deposit])
+                    results.add_row(
+                        [name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDate), str(returnDate), deposit])
     else:
         try:
             entries = historyCollection.find()
@@ -701,6 +830,7 @@ def historySearch():
         print('Lista jest pusta')
     else:
         print(results)
+
 
 def addDeposit():
     if isJson:
@@ -738,11 +868,22 @@ def addDeposit():
                     documentChoice = documentChoice[:-1]
                     print(f"\rWpisz ID wypożyczenia w którym chcesz dodać kaucję: {documentChoice} {''}\b", end='',
                           flush=True)
+            elif key == 224:  # special keys (arrows, function keys, etc.)
+                key = ord(msvcrt.getch())
+                if key == 72:  # up arrow key
+                    continue
+                elif key == 80:  # down arrow key
+                    continue
+                elif key == 75:  # left arrow key
+                    continue
+                elif key == 77:  # right arrow key
+                    continue
             else:
                 documentChoice += chr(key)
                 print(chr(key), end='', flush=True)
 
-    print("Wpisz wartość kaucji (jeśli nie wpłacił kaucji kliknij ENTER): ", end='',flush=True)  # use print instead of input to avoid blocking
+    print("Wpisz wartość kaucji (jeśli nie wpłacił kaucji kliknij ENTER): ", end='',
+          flush=True)  # use print instead of input to avoid blocking
     deposit = ""
     while True:
         if msvcrt.kbhit():
@@ -758,7 +899,18 @@ def addDeposit():
             elif key == 8:  # backspace key
                 if len(deposit) > 0:
                     deposit = deposit[:-1]
-                    print(f"\rWpisz wartość kaucji (jeśli nie wpłacił kaucji kliknij ENTER): {deposit} {''}\b", end='',flush=True)
+                    print(f"\rWpisz wartość kaucji (jeśli nie wpłacił kaucji kliknij ENTER): {deposit} {''}\b", end='',
+                          flush=True)
+            elif key == 224:  # special keys (arrows, function keys, etc.)
+                key = ord(msvcrt.getch())
+                if key == 72:  # up arrow key
+                    continue
+                elif key == 80:  # down arrow key
+                    continue
+                elif key == 75:  # left arrow key
+                    continue
+                elif key == 77:  # right arrow key
+                    continue
             else:
                 deposit += chr(key)
                 print(chr(key), end='', flush=True)
@@ -790,7 +942,7 @@ def addDeposit():
                 i = i + 1
 
         with open(activeHiresFile, 'w') as f:
-            json.dump(newData,f, indent=4)
+            json.dump(newData, f, indent=4)
         print('Zmieniono kaucję')
     else:
         try:
@@ -811,8 +963,10 @@ def addDeposit():
         else:
             print(f'{Fore.GREEN}Zmieniono kaucję{Style.RESET_ALL}')
 
+
 def viewTodayReturns():
-    results = prettytable.PrettyTable(['Imię', 'Nazwisko', 'Klasa', 'Tytuł książki', 'Data wypożyczenia', 'Zwrot do', 'Kaucja', 'Status'])
+    results = prettytable.PrettyTable(
+        ['Imię', 'Nazwisko', 'Klasa', 'Tytuł książki', 'Data wypożyczenia', 'Zwrot do', 'Kaucja', 'Status'])
     results.title = 'Książki z dzisiejszym terminem'
     with open(activeHiresFile, 'r') as f:
         jsonFile = json.load(f)
@@ -846,14 +1000,14 @@ def viewTodayReturns():
                 maxReturnDate = datetime.datetime.strptime(maxDateSTR, dateFormat).strftime(dateFormat)
 
             if maxReturnDate <= today or maxDateSTR == '14:10':
-                results.add_row([name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDateSTR), deposit, overdue])
+                results.add_row(
+                    [name, lastName, rentClass, bookTitle, str(rentalDate), str(maxDateSTR), deposit, overdue])
     else:
         try:
             entries = activeCollection.find()
         except Exception as error:
             print(Fore.RED + str(error) + Style.RESET_ALL)
         for entry in entries:
-            maxReturnDate = ''
             name = entry["name"]
             lastName = entry["lastName"]
             rentClass = entry["klasa"]
@@ -864,10 +1018,10 @@ def viewTodayReturns():
             # overdue
             overdue = ''
             maxDate = None
-            today = None
+            today = datetime.datetime.today().date()
             if maxDateSTR != '14:10':
                 # jeśli kaucja jest wpłacona
-                today = datetime.datetime.today().date()
+                isDeposit = True
                 maxDate = datetime.datetime.strptime(maxDateSTR, dateFormat).date()
                 if maxDate < today:
                     difference = today - maxDate
@@ -876,7 +1030,7 @@ def viewTodayReturns():
                     overdue = f'{Fore.GREEN}Wypożyczona{Style.RESET_ALL}'
             else:
                 # jeśli kaucja nie została wpłacona
-                today = datetime.datetime.today().date()
+                isDeposit = False
                 rentalDate = datetime.datetime.strptime(rentalDateSTR, dateFormat).date()
                 if rentalDate < today:
                     difference = today - rentalDate
@@ -884,19 +1038,17 @@ def viewTodayReturns():
                 else:
                     overdue = f'{Fore.GREEN}Wypożyczona{Style.RESET_ALL}'
 
-            today = datetime.date.today().strftime(dateFormat)
-            if maxDateSTR != '14:10':
-                maxReturnDate = datetime.datetime.strptime(maxDateSTR, dateFormat).strftime(dateFormat)
-
-            if maxReturnDate <= today or maxDateSTR == '14:10':
+            if isDeposit and maxDate <= today or not isDeposit:
                 results.add_row(
-                    [name, lastName, rentClass, bookTitle, str(rentalDateSTR), str(maxDateSTR), deposit, overdue])
+                    [name, lastName, rentClass, bookTitle, rentalDateSTR, maxDateSTR, deposit,
+                     overdue])
 
     if len(results.rows) == 0:
         print()
         print('Lista jest pusta')
     else:
         print(results)
+
 
 def extension():
     with open(activeHiresFile, 'r') as f:
@@ -909,13 +1061,14 @@ def extension():
             dataLength = len(dataLengthList)
         else:
             try:
-                dataLength = activeCollection.count_documents({ "maxDate": { "$not": { "$eq": "14:10" } } })
-                entries = activeCollection.find({ "maxDate": { "$not": { "$eq": "14:10" } } })
+                dataLength = activeCollection.count_documents({"maxDate": {"$not": {"$eq": "14:10"}}})
+                entries = activeCollection.find({"maxDate": {"$not": {"$eq": "14:10"}}})
             except Exception as error:
                 print(Fore.RED + str(error) + Style.RESET_ALL)
 
     # View
-    view = prettytable.PrettyTable(['Imię', 'Nazwisko', 'Klasa', 'Tytuł książki', 'Data wypożyczenia', 'Zwrot do', 'Kaucja', 'Status'])
+    view = prettytable.PrettyTable(
+        ['Imię', 'Nazwisko', 'Klasa', 'Tytuł książki', 'Data wypożyczenia', 'Zwrot do', 'Kaucja', 'Status'])
     view.title = 'Trwające wypożyczenia'
     if isJson:
         newData = []
@@ -938,10 +1091,11 @@ def extension():
                 maxDate = datetime.datetime.strptime(maxDateSTR, dateFormat).date()
                 if maxDate < today:
                     difference = today - maxDate
-                    overdue = f'{Style.BRIGHT}{Fore.RED}Przetrzymanie (Kara: {difference .days}zł){Style.RESET_ALL}'
+                    overdue = f'{Style.BRIGHT}{Fore.RED}Przetrzymanie (Kara: {difference.days}zł){Style.RESET_ALL}'
                 else:
                     overdue = f'{Fore.GREEN}Wypożyczona{Style.RESET_ALL}'
-                view.add_row([name, lastName, rentClass, bookTitle, str(rentalDateSTR), str(maxDateSTR), deposit, overdue])
+                view.add_row(
+                    [name, lastName, rentClass, bookTitle, str(rentalDateSTR), str(maxDateSTR), deposit, overdue])
     else:
         documentIDs = []
         for item in entries:
@@ -962,7 +1116,7 @@ def extension():
             maxDate = datetime.datetime.strptime(maxDateSTR, dateFormat).date()
             if maxDate < today:
                 difference = today - maxDate
-                overdue = f'{Style.BRIGHT}{Fore.RED}Przetrzymanie (Kara: {difference .days}zł){Style.RESET_ALL}'
+                overdue = f'{Style.BRIGHT}{Fore.RED}Przetrzymanie (Kara: {difference.days}zł){Style.RESET_ALL}'
             else:
                 overdue = f'{Fore.GREEN}Wypożyczona{Style.RESET_ALL}'
 
@@ -998,7 +1152,18 @@ def extension():
             elif key == 8:  # backspace key
                 if len(documentChoice) > 0:
                     documentChoice = documentChoice[:-1]
-                    print(f"\rWpisz ID wypożyczenia które chcesz przedłużyć: {documentChoice} {''}\b", end='', flush=True)
+                    print(f"\rWpisz ID wypożyczenia które chcesz przedłużyć: {documentChoice} {''}\b", end='',
+                          flush=True)
+            elif key == 224:  # special keys (arrows, function keys, etc.)
+                key = ord(msvcrt.getch())
+                if key == 72:  # up arrow key
+                    continue
+                elif key == 80:  # down arrow key
+                    continue
+                elif key == 75:  # left arrow key
+                    continue
+                elif key == 77:  # right arrow key
+                    continue
             else:
                 documentChoice += chr(key)
                 print(chr(key), end='', flush=True)
@@ -1036,6 +1201,7 @@ def extension():
             print(Fore.RED + str(error) + Style.RESET_ALL)
         else:
             print(f'{Fore.GREEN}Przedłużono wypożyczenie{Style.RESET_ALL}')
+
 
 mongoPreconfiguration()
 while True:
