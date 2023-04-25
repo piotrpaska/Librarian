@@ -1,4 +1,4 @@
-name: Change target database
+name: Change target database to Prymus
 
 on:
   workflow_dispatch:
