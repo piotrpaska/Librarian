@@ -20,7 +20,6 @@ activeHiresFile = 'active.json'
 historyFile = 'history.json'
 dateFormat = "%d.%m.%Y"
 
-
 def mongoPreconfiguration():
     dotenv_path = dotenv.find_dotenv()
     global isJson
@@ -45,7 +44,7 @@ def mongoPreconfiguration():
             global activeCollection
             global historyCollection
             client = pymongo.MongoClient(connectionString)
-            # TODO Check target database
+            # TODO: Check target database
             db = client.Prymus
             activeCollection = db.activeRents
             historyCollection = db.historyRents
