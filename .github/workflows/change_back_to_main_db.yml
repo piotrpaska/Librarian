@@ -1,21 +1,37 @@
-name: Change target database
+name: Back to Prymus database
 
 on:
+  pull_request_review:
+    types: [submitted]
+    branches:
+      - develop*
   workflow_dispatch:
 
 jobs:
-  change-db-target-to-Prymus:
+  back-to-main-db:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Update database client
+      - name: Revert database changes
         run: sed -i 's/db = client.Testing/db = client.Prymus/' main.py
 
       - name: Commit changes
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
-          git commit -a -m "Change target database to Prymus"
+          git commit -a -m "Back to Prymus database"
           git push
+
+      - name: Set status check
+        uses: peter-evans/create-pull-request-comment@v3.7.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          check_name: Back to Prymus database
+          conclusion: success
+          status: completed
+          details_url: https://your-domain.com/docs/workflows/back-to-main-db
+          title: Back to Main database passed!
+          summary: The workflow has successfully reverted the database changes.
