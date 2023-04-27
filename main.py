@@ -3,10 +3,14 @@ import datetime
 import prettytable
 import msvcrt
 import os
-import dotenv
+from dotenv import set_key, get_key, find_dotenv
 import pymongo
 import maskpass
 from colorama import Fore, Style, Back
+import random
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 # Mongo variables
 global isJson
@@ -20,23 +24,90 @@ activeHiresFile = 'active.json'
 historyFile = 'history.json'
 dateFormat = "%d.%m.%Y"
 
+senderEmail = 'librarian.no.reply@gmail.com'
+receiveEmail = 'paska.piotrek@gmail.com'
+senderPassword = 'dkmirnvykimxpabo'
+class AdminTools:
+
+    def __init__(self, senderEmail, receiveEmail, password):
+        self.senderEmail = senderEmail
+        self.receiveEmail = receiveEmail
+        self.password = password
+
+    def emailCodeSend(self):
+        confirmCode = str(random.randint(100000, 999999))
+        # Tworzenie wiadomości
+        message = MIMEMultipart()
+        message['From'] = self.senderEmail
+        message['To'] = self.receiveEmail
+        message['Subject'] = 'Librarian admin'
+        body = f"""<h1>There is your confirmation code for librarian</h1><font size:"16">Here is your confirmation code: <b>{confirmCode}</b></font>"""
+        message.attach(MIMEText(body, 'html'))
+
+        # Utworzenie sesji SMTP
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login(self.senderEmail, self.password)
+
+
+        # Wysłanie wiadomości
+        text = message.as_string()
+        server.sendmail(self.senderEmail, self.receiveEmail, text)
+        server.quit()
+
+        print("Wpisz kod potwierdzający: ", end='', flush=True)  # use print instead of input to avoid blocking
+        codeInput = ""
+        while True:
+            if msvcrt.kbhit():
+                key = ord(msvcrt.getch())
+                if key == 27:  # escape key
+                    print()
+                    os.system('cls')
+                    return  # exit function
+                elif key == 13:  # enter key
+                    print()
+                    break  # exit loop
+                elif key == 8:  # backspace key
+                    if len(codeInput) > 0:
+                        codeInput = codeInput[:-1]
+                        print(f"\rWpisz kod potwierdzający: {codeInput} {''}\b", end='', flush=True)
+                else:
+                    codeInput += chr(key)
+                    print(chr(key), end='', flush=True)
+
+        if codeInput == confirmCode:
+            return True
+        else:
+            return False
+
+    def changeMode(self):
+        if self.emailCodeSend():
+            print('Auth confirmed')
+            if get_key(find_dotenv(), 'JSON') == 'True':
+                set_key(find_dotenv(), 'JSON', 'False')
+            elif get_key(find_dotenv(), 'JSON') == 'False':
+                set_key(find_dotenv(), 'JSON', 'True')
+        else:
+            print("""You don't have permissions""")
+
+
 
 def mongoPreconfiguration():
-    dotenv_path = dotenv.find_dotenv()
+    dotenv_path = find_dotenv()
     global isJson
-    if dotenv.get_key(dotenv_path, 'JSON') == 'True':
+    if get_key(dotenv_path, 'JSON') == 'True':
         isJson = True
     else:
         isJson = False
     if not isJson:
-        user = dotenv.get_key(dotenv_path, 'MONGODB_USER')
-        password = dotenv.get_key(dotenv_path, 'MONGODB_PASSWORD')
+        user = get_key(dotenv_path, 'MONGODB_USER')
+        password = get_key(dotenv_path, 'MONGODB_PASSWORD')
         if user == 'None' and password == 'None':
             print(f'{Style.BRIGHT}Konfiguracja dostępu do bazy danych{Style.RESET_ALL}')
             user = input("Podaj nazwę użytkownika: ")
             password = maskpass.askpass(prompt='Podaj hasło do bazy danych MongoDB: ', mask='*')
-            dotenv.set_key(dotenv_path, "MONGODB_USER", user)
-            dotenv.set_key(dotenv_path, "MONGODB_PASSWORD", password)
+            set_key(dotenv_path, "MONGODB_USER", user)
+            set_key(dotenv_path, "MONGODB_PASSWORD", password)
 
         try:
             connectionString = f"mongodb+srv://{user}:{password}@librarian.3akhsbc.mongodb.net/?retryWrites=true&w=majority"
@@ -1202,7 +1273,7 @@ def extension():
         else:
             print(f'{Fore.GREEN}Przedłużono wypożyczenie{Style.RESET_ALL}')
 
-
+adminTools = AdminTools(senderEmail, receiveEmail, senderPassword)
 mongoPreconfiguration()
 while True:
     choice = 0
@@ -1253,8 +1324,10 @@ while True:
         os.system('cls')
     elif choice == 'config':
         os.system('cls')
-        dotenv.set_key(dotenv.find_dotenv(), "MONGODB_USER", 'None')
-        dotenv.set_key(dotenv.find_dotenv(), "MONGODB_PASSWORD", 'None')
+        set_key(find_dotenv(), "MONGODB_USER", 'None')
+        set_key(find_dotenv(), "MONGODB_PASSWORD", 'None')
         mongoPreconfiguration()
+    elif choice == 'change mode':
+        adminTools.changeMode()
     else:
         print("Wprowadzone dane są niepoprawne. Spróbuj ponownie")
