@@ -11,6 +11,7 @@ import random
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+import signal
 
 # Mongo variables
 global isJson
@@ -25,11 +26,11 @@ historyFile = 'history.json'
 dateFormat = "%d.%m.%Y"
 
 senderEmail = 'librarian.no.reply@gmail.com'
-receiveEmail = 'paska.piotrek@gmail.com'
+receiveEmail = ['paska.piotrek@gmail.com']
 senderPassword = 'dkmirnvykimxpabo'
 class AdminTools:
 
-    def __init__(self, senderEmail: str, receiveEmail: str, password: str):
+    def __init__(self, senderEmail: str, receiveEmail: list, password: str):
         self.senderEmail = senderEmail
         self.receiveEmail = receiveEmail
         self.password = password
@@ -39,7 +40,7 @@ class AdminTools:
         # Tworzenie wiadomości
         message = MIMEMultipart()
         message['From'] = self.senderEmail
-        message['To'] = self.receiveEmail
+        message['To'] = ', '.join(self.receiveEmail)
         message['Subject'] = 'Librarian admin'
         body = f"""<h1>There is your confirmation code for librarian</h1><font size:"16">Here is your confirmation code: <b>{confirmCode}</b></font>"""
         message.attach(MIMEText(body, 'html'))
@@ -97,6 +98,8 @@ class AdminTools:
                 print(f'{Fore.GREEN}Active rents list is clear{Style.RESET_ALL}')
             else:
                 print(f"""{Fore.RED}You don't have permissions{Style.RESET_ALL}""")
+        else:
+            print(f"{Fore.RED}You aren't in MongoDB mode{Style.RESET_ALL}")
 
     def resetHistory(self):
         if not isJson:
@@ -106,6 +109,8 @@ class AdminTools:
                 print(f'{Fore.GREEN}History is clear{Style.RESET_ALL}')
             else:
                 print(f"""{Fore.RED}You don't have permissions{Style.RESET_ALL}""")
+        else:
+            print(f"{Fore.RED}You aren't in MongoDB mode{Style.RESET_ALL}")
 
     def resetAll(self):
         if not isJson:
@@ -116,6 +121,8 @@ class AdminTools:
                 print(f'{Fore.GREEN}Database is fully reset{Style.RESET_ALL}')
             else:
                 print(f"""{Fore.RED}You don't have permissions{Style.RESET_ALL}""")
+        else:
+            print(f"{Fore.RED}You aren't in MongoDB mode{Style.RESET_ALL}")
 
 
 def mongoPreconfiguration():
