@@ -1349,12 +1349,12 @@ while True:
         viewTodayReturns()
     elif choice == 'cls':
         os.system('cls')
-    elif choice == 'config':
+    elif choice == 'cfg mongo':
         os.system('cls')
         set_key(find_dotenv(), "MONGODB_USER", 'None')
         set_key(find_dotenv(), "MONGODB_PASSWORD", 'None')
         mongoPreconfiguration()
-    elif choice == 'admin':
+    elif choice == 'cfg admin':
         os.system('cls')
         print(f"[1] - Zmień tryb - aktualny: {Fore.LIGHTBLUE_EX}{get_key(find_dotenv(), 'JSON')}{Style.RESET_ALL}")
         print("[2] - Wyczyść listę aktywnych wypożyczeń")
