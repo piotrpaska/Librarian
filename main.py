@@ -29,12 +29,12 @@ receiveEmail = 'paska.piotrek@gmail.com'
 senderPassword = 'dkmirnvykimxpabo'
 class AdminTools:
 
-    def __init__(self, senderEmail, receiveEmail, password):
+    def __init__(self, senderEmail: str, receiveEmail: str, password: str):
         self.senderEmail = senderEmail
         self.receiveEmail = receiveEmail
         self.password = password
 
-    def emailCodeSend(self):
+    def emailCodeSend(self) -> bool:
         confirmCode = str(random.randint(100000, 999999))
         # Tworzenie wiadomości
         message = MIMEMultipart()
@@ -75,10 +75,7 @@ class AdminTools:
                     codeInput += chr(key)
                     print(chr(key), end='', flush=True)
 
-        if codeInput == confirmCode:
-            return True
-        else:
-            return False
+        return codeInput == confirmCode
 
     def changeMode(self):
         if self.emailCodeSend():
@@ -90,8 +87,14 @@ class AdminTools:
         else:
             print("""You don't have permissions""")
 
+    def resetActive(self):
+        pass
 
+    def resetHistory(self):
+        pass
 
+    def resetAll(self):
+        pass
 def mongoPreconfiguration():
     dotenv_path = find_dotenv()
     global isJson
@@ -1273,8 +1276,9 @@ def extension():
         else:
             print(f'{Fore.GREEN}Przedłużono wypożyczenie{Style.RESET_ALL}')
 
-adminTools = AdminTools(senderEmail, receiveEmail, senderPassword)
 mongoPreconfiguration()
+adminTools = AdminTools(senderEmail, receiveEmail, senderPassword)
+print(adminTools.emailCodeSend())
 while True:
     choice = 0
     print("----------------------------------------------------------------------------")
