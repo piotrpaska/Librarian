@@ -1356,7 +1356,7 @@ while True:
         mongoPreconfiguration()
     elif choice == 'admin':
         os.system('cls')
-        print(f"[1] - Zmień tryb - aktualny {get_key(find_dotenv(), 'JSON')}")
+        print(f"[1] - Zmień tryb - aktualny: {Fore.LIGHTBLUE_EX}{get_key(find_dotenv(), 'JSON')}{Style.RESET_ALL}")
         print("[2] - Wyczyść listę aktywnych wypożyczeń")
         print("[3] - Wyczyść historię")
         print("[4] - Wyczyść wszystko")
