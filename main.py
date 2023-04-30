@@ -55,7 +55,7 @@ class AdminTools:
         server.sendmail(self.senderEmail, self.receiveEmail, text)
         server.quit()
 
-        print("Wpisz kod potwierdzający: ", end='', flush=True)  # use print instead of input to avoid blocking
+        print("Wpisz kod potwierdzający z twojej poczty email: ", end='', flush=True)  # use print instead of input to avoid blocking
         codeInput = ""
         while True:
             if msvcrt.kbhit():
@@ -70,7 +70,7 @@ class AdminTools:
                 elif key == 8:  # backspace key
                     if len(codeInput) > 0:
                         codeInput = codeInput[:-1]
-                        print(f"\rWpisz kod potwierdzający: {codeInput} {''}\b", end='', flush=True)
+                        print(f"\rWpisz kod potwierdzający z twojej poczty email: {codeInput} {''}\b", end='', flush=True)
                 else:
                     codeInput += chr(key)
                     print(chr(key), end='', flush=True)
@@ -79,22 +79,45 @@ class AdminTools:
 
     def changeMode(self):
         if self.emailCodeSend():
-            print('Auth confirmed')
+            print(f'{Fore.GREEN}Auth confirmed{Style.RESET_ALL}')
             if get_key(find_dotenv(), 'JSON') == 'True':
                 set_key(find_dotenv(), 'JSON', 'False')
             elif get_key(find_dotenv(), 'JSON') == 'False':
                 set_key(find_dotenv(), 'JSON', 'True')
+            print(f'{Fore.GREEN}Mode changed successfully{Style.RESET_ALL}')
+            print('Please restart program')
         else:
-            print("""You don't have permissions""")
+            print(f"""{Fore.RED}You don't have permissions{Style.RESET_ALL}""")
 
     def resetActive(self):
-        pass
+        if not isJson:
+            if self.emailCodeSend():
+                print(f'{Fore.GREEN}Auth confirmed{Style.RESET_ALL}')
+                activeCollection.delete_many({})
+                print(f'{Fore.GREEN}Active rents list is clear{Style.RESET_ALL}')
+            else:
+                print(f"""{Fore.RED}You don't have permissions{Style.RESET_ALL}""")
 
     def resetHistory(self):
-        pass
+        if not isJson:
+            if self.emailCodeSend():
+                print(f'{Fore.GREEN}Auth confirmed{Style.RESET_ALL}')
+                historyCollection.delete_many({})
+                print(f'{Fore.GREEN}History is clear{Style.RESET_ALL}')
+            else:
+                print(f"""{Fore.RED}You don't have permissions{Style.RESET_ALL}""")
 
     def resetAll(self):
-        pass
+        if not isJson:
+            if self.emailCodeSend():
+                print(f'{Fore.GREEN}Auth confirmed{Style.RESET_ALL}')
+                activeCollection.delete_many({})
+                historyCollection.delete_many({})
+                print(f'{Fore.GREEN}Database is fully reset{Style.RESET_ALL}')
+            else:
+                print(f"""{Fore.RED}You don't have permissions{Style.RESET_ALL}""")
+
+
 def mongoPreconfiguration():
     dotenv_path = find_dotenv()
     global isJson
@@ -1276,9 +1299,9 @@ def extension():
         else:
             print(f'{Fore.GREEN}Przedłużono wypożyczenie{Style.RESET_ALL}')
 
-mongoPreconfiguration()
+
 adminTools = AdminTools(senderEmail, receiveEmail, senderPassword)
-print(adminTools.emailCodeSend())
+mongoPreconfiguration()
 while True:
     choice = 0
     print("----------------------------------------------------------------------------")
@@ -1331,7 +1354,22 @@ while True:
         set_key(find_dotenv(), "MONGODB_USER", 'None')
         set_key(find_dotenv(), "MONGODB_PASSWORD", 'None')
         mongoPreconfiguration()
-    elif choice == 'change mode':
-        adminTools.changeMode()
+    elif choice == 'admin':
+        os.system('cls')
+        print(f"[1] - Zmień tryb - aktualny {get_key(find_dotenv(), 'JSON')}")
+        print("[2] - Wyczyść listę aktywnych wypożyczeń")
+        print("[3] - Wyczyść historię")
+        print("[4] - Wyczyść wszystko")
+        choice = input("Wybierz z listy: ")
+        if choice == '1':
+            adminTools.changeMode()
+        elif choice == '2':
+            adminTools.resetActive()
+        elif choice == '3':
+            adminTools.resetHistory()
+        elif choice == '4':
+            adminTools.resetAll()
+        else:
+            print("Wprowadzone dane są niepoprawne. Spróbuj ponownie")
     else:
         print("Wprowadzone dane są niepoprawne. Spróbuj ponownie")
