@@ -79,48 +79,69 @@ class AdminTools:
         return codeInput == confirmCode
 
     def changeMode(self):
-        if self.emailCodeSend():
-            print(f'{Fore.GREEN}Auth confirmed{Style.RESET_ALL}')
-            if get_key(find_dotenv(), 'JSON') == 'True':
-                set_key(find_dotenv(), 'JSON', 'False')
-            elif get_key(find_dotenv(), 'JSON') == 'False':
-                set_key(find_dotenv(), 'JSON', 'True')
-            print(f'{Fore.GREEN}Mode changed successfully{Style.RESET_ALL}')
-            print('Please restart program')
-        else:
-            print(f"""{Fore.RED}You don't have permissions{Style.RESET_ALL}""")
-
-    def resetActive(self):
-        if not isJson:
+        try:
             if self.emailCodeSend():
                 print(f'{Fore.GREEN}Auth confirmed{Style.RESET_ALL}')
-                activeCollection.delete_many({})
-                print(f'{Fore.GREEN}Active rents list is clear{Style.RESET_ALL}')
+                if get_key(find_dotenv(), 'JSON') == 'True':
+                    set_key(find_dotenv(), 'JSON', 'False')
+                elif get_key(find_dotenv(), 'JSON') == 'False':
+                    set_key(find_dotenv(), 'JSON', 'True')
+                print(f'{Fore.GREEN}Mode changed successfully{Style.RESET_ALL}')
+                print('Please restart program')
             else:
                 print(f"""{Fore.RED}You don't have permissions{Style.RESET_ALL}""")
+        except Exception:
+            print('Czas minął')
+
+    def resetActive(self):
+        try:
+            if not isJson:
+                if self.emailCodeSend():
+                    print(f'{Fore.GREEN}Auth confirmed{Style.RESET_ALL}')
+                    activeCollection.delete_many({})
+                    print(f'{Fore.GREEN}Active rents list is clear{Style.RESET_ALL}')
+                else:
+                    print(f"""{Fore.RED}You don't have permissions{Style.RESET_ALL}""")
+            else:
+                print(f"{Fore.RED}You aren't in MongoDB mode{Style.RESET_ALL}")
+        except Exception:
+            print('Czas minął')
+            print(f"""{Fore.RED}You don't have permissions{Style.RESET_ALL}""")
         else:
             print(f"{Fore.RED}You aren't in MongoDB mode{Style.RESET_ALL}")
 
     def resetHistory(self):
-        if not isJson:
-            if self.emailCodeSend():
-                print(f'{Fore.GREEN}Auth confirmed{Style.RESET_ALL}')
-                historyCollection.delete_many({})
-                print(f'{Fore.GREEN}History is clear{Style.RESET_ALL}')
+        try:
+            if not isJson:
+                if self.emailCodeSend():
+                    print(f'{Fore.GREEN}Auth confirmed{Style.RESET_ALL}')
+                    historyCollection.delete_many({})
+                    print(f'{Fore.GREEN}History is clear{Style.RESET_ALL}')
+                else:
+                    print(f"""{Fore.RED}You don't have permissions{Style.RESET_ALL}""")
             else:
-                print(f"""{Fore.RED}You don't have permissions{Style.RESET_ALL}""")
+                print(f"{Fore.RED}You aren't in MongoDB mode{Style.RESET_ALL}")
+        except Exception:
+            print('Czas minął')
+            print(f"""{Fore.RED}You don't have permissions{Style.RESET_ALL}""")
         else:
             print(f"{Fore.RED}You aren't in MongoDB mode{Style.RESET_ALL}")
 
     def resetAll(self):
-        if not isJson:
-            if self.emailCodeSend():
-                print(f'{Fore.GREEN}Auth confirmed{Style.RESET_ALL}')
-                activeCollection.delete_many({})
-                historyCollection.delete_many({})
-                print(f'{Fore.GREEN}Database is fully reset{Style.RESET_ALL}')
+        try:
+            if not isJson:
+                if self.emailCodeSend():
+                    print(f'{Fore.GREEN}Auth confirmed{Style.RESET_ALL}')
+                    activeCollection.delete_many({})
+                    historyCollection.delete_many({})
+                    print(f'{Fore.GREEN}Database is fully reset{Style.RESET_ALL}')
+                else:
+                    print(f"""{Fore.RED}You don't have permissions{Style.RESET_ALL}""")
             else:
-                print(f"""{Fore.RED}You don't have permissions{Style.RESET_ALL}""")
+                print(f"{Fore.RED}You aren't in MongoDB mode{Style.RESET_ALL}")
+        except Exception:
+            print('Czas minął')
+            print(f"""{Fore.RED}You don't have permissions{Style.RESET_ALL}""")
         else:
             print(f"{Fore.RED}You aren't in MongoDB mode{Style.RESET_ALL}")
 
