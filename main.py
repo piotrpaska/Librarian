@@ -395,7 +395,7 @@ def addHire():
                 raise Exception
             break
         except Exception:
-            print("Wprowadzone dane są niepoprawne. Spróbuj ponownie")
+            print("Nie znaleziono takiej komendy. Spróbuj ponownie.")
             continue
 
     if isJson:
@@ -1703,7 +1703,7 @@ while True:
         elif choice == '4':
             historySearch()
         else:
-            print("Wprowadzone dane są niepoprawne. Spróbuj ponownie")
+            print("Nie znaleziono takiej komendy. Spróbuj ponownie.")
     elif choice == "4":
         print('[1] - Zmień lub dodaj kaucję')
         print('[2] - Przedłuż wypożyczenie')
@@ -1717,7 +1717,7 @@ while True:
         elif choice == '3':
             modifying()
         else:
-            print("Wprowadzone dane są niepoprawne. Spróbuj ponownie")
+            print("Nie znaleziono takiej komendy. Spróbuj ponownie.")
     elif choice == '5':
         viewTodayReturns()
     elif choice == 'cls':
@@ -1743,6 +1743,6 @@ while True:
         elif choice == '4':
             adminTools.resetAll()
         else:
-            print("Wprowadzone dane są niepoprawne. Spróbuj ponownie")
+            print("Nie znaleziono takiej komendy. Spróbuj ponownie.")
     else:
-        print("Wprowadzone dane są niepoprawne. Spróbuj ponownie")
+        print("Nie znaleziono takiej komendy. Spróbuj ponownie.")
