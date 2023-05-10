@@ -3,10 +3,15 @@ import datetime
 import prettytable
 import msvcrt
 import os
-import dotenv
+from dotenv import set_key, get_key, find_dotenv
 import pymongo
 import maskpass
 from colorama import Fore, Style, Back
+import random
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+import signal
 
 # Mongo variables
 global isJson
@@ -20,23 +25,143 @@ activeHiresFile = 'active.json'
 historyFile = 'history.json'
 dateFormat = "%d.%m.%Y"
 
+senderEmail = 'librarian.no.reply@gmail.com'
+receiveEmail = ['paska.piotrek@gmail.com']
+senderPassword = 'dkmirnvykimxpabo'
+class AdminTools:
+
+    def __init__(self, senderEmail: str, receiveEmail: list, password: str):
+        self.senderEmail = senderEmail
+        self.receiveEmail = receiveEmail
+        self.password = password
+
+    def emailCodeSend(self) -> bool:
+        confirmCode = str(random.randint(100000, 999999))
+        # Tworzenie wiadomości
+        message = MIMEMultipart()
+        message['From'] = self.senderEmail
+        message['To'] = ', '.join(self.receiveEmail)
+        message['Subject'] = 'Librarian admin'
+        body = f"""<h1>There is your confirmation code for librarian</h1><font size:"16">Here is your confirmation code: <b>{confirmCode}</b></font>"""
+        message.attach(MIMEText(body, 'html'))
+
+        # Utworzenie sesji SMTP
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login(self.senderEmail, self.password)
+
+
+        # Wysłanie wiadomości
+        text = message.as_string()
+        server.sendmail(self.senderEmail, self.receiveEmail, text)
+        server.quit()
+
+        print("Wpisz kod potwierdzający z twojej poczty email: ", end='', flush=True)  # use print instead of input to avoid blocking
+        codeInput = ""
+        while True:
+            if msvcrt.kbhit():
+                key = ord(msvcrt.getch())
+                if key == 27:  # escape key
+                    print()
+                    os.system('cls')
+                    return  # exit function
+                elif key == 13:  # enter key
+                    print()
+                    break  # exit loop
+                elif key == 8:  # backspace key
+                    if len(codeInput) > 0:
+                        codeInput = codeInput[:-1]
+                        print(f"\rWpisz kod potwierdzający z twojej poczty email: {codeInput} {''}\b", end='', flush=True)
+                else:
+                    codeInput += chr(key)
+                    print(chr(key), end='', flush=True)
+
+        return codeInput == confirmCode
+
+    def changeMode(self):
+        try:
+            if self.emailCodeSend():
+                print(f'{Fore.GREEN}Auth confirmed{Style.RESET_ALL}')
+                if get_key(find_dotenv(), 'JSON') == 'True':
+                    set_key(find_dotenv(), 'JSON', 'False')
+                elif get_key(find_dotenv(), 'JSON') == 'False':
+                    set_key(find_dotenv(), 'JSON', 'True')
+                print(f'{Fore.GREEN}Mode changed successfully{Style.RESET_ALL}')
+                print('Please restart program')
+            else:
+                print(f"""{Fore.RED}You don't have permissions{Style.RESET_ALL}""")
+        except Exception:
+            print('Czas minął')
+
+    def resetActive(self):
+        try:
+            if not isJson:
+                if self.emailCodeSend():
+                    print(f'{Fore.GREEN}Auth confirmed{Style.RESET_ALL}')
+                    activeCollection.delete_many({})
+                    print(f'{Fore.GREEN}Active rents list is clear{Style.RESET_ALL}')
+                else:
+                    print(f"""{Fore.RED}You don't have permissions{Style.RESET_ALL}""")
+            else:
+                print(f"{Fore.RED}You aren't in MongoDB mode{Style.RESET_ALL}")
+        except Exception:
+            print('Czas minął')
+            print(f"""{Fore.RED}You don't have permissions{Style.RESET_ALL}""")
+        else:
+            print(f"{Fore.RED}You aren't in MongoDB mode{Style.RESET_ALL}")
+
+    def resetHistory(self):
+        try:
+            if not isJson:
+                if self.emailCodeSend():
+                    print(f'{Fore.GREEN}Auth confirmed{Style.RESET_ALL}')
+                    historyCollection.delete_many({})
+                    print(f'{Fore.GREEN}History is clear{Style.RESET_ALL}')
+                else:
+                    print(f"""{Fore.RED}You don't have permissions{Style.RESET_ALL}""")
+            else:
+                print(f"{Fore.RED}You aren't in MongoDB mode{Style.RESET_ALL}")
+        except Exception:
+            print('Czas minął')
+            print(f"""{Fore.RED}You don't have permissions{Style.RESET_ALL}""")
+        else:
+            print(f"{Fore.RED}You aren't in MongoDB mode{Style.RESET_ALL}")
+
+    def resetAll(self):
+        try:
+            if not isJson:
+                if self.emailCodeSend():
+                    print(f'{Fore.GREEN}Auth confirmed{Style.RESET_ALL}')
+                    activeCollection.delete_many({})
+                    historyCollection.delete_many({})
+                    print(f'{Fore.GREEN}Database is fully reset{Style.RESET_ALL}')
+                else:
+                    print(f"""{Fore.RED}You don't have permissions{Style.RESET_ALL}""")
+            else:
+                print(f"{Fore.RED}You aren't in MongoDB mode{Style.RESET_ALL}")
+        except Exception:
+            print('Czas minął')
+            print(f"""{Fore.RED}You don't have permissions{Style.RESET_ALL}""")
+        else:
+            print(f"{Fore.RED}You aren't in MongoDB mode{Style.RESET_ALL}")
+
 
 def mongoPreconfiguration():
-    dotenv_path = dotenv.find_dotenv()
+    dotenv_path = find_dotenv()
     global isJson
-    if dotenv.get_key(dotenv_path, 'JSON') == 'True':
+    if get_key(dotenv_path, 'JSON') == 'True':
         isJson = True
     else:
         isJson = False
     if not isJson:
-        user = dotenv.get_key(dotenv_path, 'MONGODB_USER')
-        password = dotenv.get_key(dotenv_path, 'MONGODB_PASSWORD')
+        user = get_key(dotenv_path, 'MONGODB_USER')
+        password = get_key(dotenv_path, 'MONGODB_PASSWORD')
         if user == 'None' and password == 'None':
             print(f'{Style.BRIGHT}Konfiguracja dostępu do bazy danych{Style.RESET_ALL}')
             user = input("Podaj nazwę użytkownika: ")
             password = maskpass.askpass(prompt='Podaj hasło do bazy danych MongoDB: ', mask='*')
-            dotenv.set_key(dotenv_path, "MONGODB_USER", user)
-            dotenv.set_key(dotenv_path, "MONGODB_PASSWORD", password)
+            set_key(dotenv_path, "MONGODB_USER", user)
+            set_key(dotenv_path, "MONGODB_PASSWORD", password)
 
         try:
             connectionString = f"mongodb+srv://{user}:{password}@librarian.3akhsbc.mongodb.net/?retryWrites=true&w=majority"
@@ -1202,7 +1327,7 @@ def extension():
         else:
             print(f'{Fore.GREEN}Przedłużono wypożyczenie{Style.RESET_ALL}')
 
-
+            
 def modifying():
     if isJson:
         with open(activeHiresFile, "r") as f:
@@ -1528,8 +1653,9 @@ def modifying():
             print(Fore.RED + str(error) + Style.RESET_ALL)
         else:
             print(f'{Fore.GREEN}Zmodyfikowano wypożyczenie{Style.RESET_ALL}')
+            
 
-
+adminTools = AdminTools(senderEmail, receiveEmail, senderPassword)
 mongoPreconfiguration()
 while True:
     choice = 0
@@ -1581,10 +1707,27 @@ while True:
         viewTodayReturns()
     elif choice == 'cls':
         os.system('cls')
-    elif choice == 'config':
+    elif choice == 'cfg mongo':
         os.system('cls')
-        dotenv.set_key(dotenv.find_dotenv(), "MONGODB_USER", 'None')
-        dotenv.set_key(dotenv.find_dotenv(), "MONGODB_PASSWORD", 'None')
+        set_key(find_dotenv(), "MONGODB_USER", 'None')
+        set_key(find_dotenv(), "MONGODB_PASSWORD", 'None')
         mongoPreconfiguration()
+    elif choice == 'cfg admin':
+        os.system('cls')
+        print(f"[1] - Zmień tryb - aktualny: {Fore.LIGHTBLUE_EX}{get_key(find_dotenv(), 'JSON')}{Style.RESET_ALL}")
+        print("[2] - Wyczyść listę aktywnych wypożyczeń")
+        print("[3] - Wyczyść historię")
+        print("[4] - Wyczyść wszystko")
+        choice = input("Wybierz z listy: ")
+        if choice == '1':
+            adminTools.changeMode()
+        elif choice == '2':
+            adminTools.resetActive()
+        elif choice == '3':
+            adminTools.resetHistory()
+        elif choice == '4':
+            adminTools.resetAll()
+        else:
+            print("Wprowadzone dane są niepoprawne. Spróbuj ponownie")
     else:
         print("Wprowadzone dane są niepoprawne. Spróbuj ponownie")
