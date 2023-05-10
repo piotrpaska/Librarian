@@ -395,7 +395,7 @@ def addHire():
                 raise Exception
             break
         except Exception:
-            print("Nie znaleziono takiej komendy. Spróbuj ponownie.")
+            print(f"{Fore.RED}Nie znaleziono takiej komendy. Spróbuj ponownie.{Style.RESET_ALL}")
             continue
 
     if isJson:
@@ -1670,6 +1670,7 @@ adminTools = AdminTools(senderEmail, receiveEmail, senderPassword)
 mongoPreconfiguration()
 while True:
     choice = 0
+    print()
     if isJson:
         print(f'{Fore.LIGHTWHITE_EX}Tryb lokalny{Style.RESET_ALL}')
     else:
@@ -1703,7 +1704,7 @@ while True:
         elif choice == '4':
             historySearch()
         else:
-            print("Nie znaleziono takiej komendy. Spróbuj ponownie.")
+            print(f"{Fore.RED}Nie znaleziono takiej komendy. Spróbuj ponownie.{Style.RESET_ALL}")
     elif choice == "4":
         print('[1] - Zmień lub dodaj kaucję')
         print('[2] - Przedłuż wypożyczenie')
@@ -1717,7 +1718,7 @@ while True:
         elif choice == '3':
             modifying()
         else:
-            print("Nie znaleziono takiej komendy. Spróbuj ponownie.")
+            print(f"{Fore.RED}Nie znaleziono takiej komendy. Spróbuj ponownie.{Style.RESET_ALL}")
     elif choice == '5':
         viewTodayReturns()
     elif choice == 'cls':
@@ -1743,6 +1744,6 @@ while True:
         elif choice == '4':
             adminTools.resetAll()
         else:
-            print("Nie znaleziono takiej komendy. Spróbuj ponownie.")
+            print(f"{Fore.RED}Nie znaleziono takiej komendy. Spróbuj ponownie.{Style.RESET_ALL}")
     else:
-        print("Nie znaleziono takiej komendy. Spróbuj ponownie.")
+        print(f"{Fore.RED}Nie znaleziono takiej komendy. Spróbuj ponownie.{Style.RESET_ALL}")
