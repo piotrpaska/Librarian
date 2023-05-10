@@ -190,9 +190,6 @@ def mongoPreconfiguration():
             historyCollection = db.historyRents
         except Exception as error:
             print(Fore.RED + str(error) + Style.RESET_ALL)
-        else:
-            os.system('cls')
-            print(f"{Style.BRIGHT}ZALOGOWANO JAKO {Fore.GREEN}{userInput}{Style.RESET_ALL}")
 
 
 def addHire():
@@ -1673,6 +1670,10 @@ adminTools = AdminTools(senderEmail, receiveEmail, senderPassword)
 mongoPreconfiguration()
 while True:
     choice = 0
+    if isJson:
+        print(f'{Fore.LIGHTWHITE_EX}Tryb lokalny{Style.RESET_ALL}')
+    else:
+        print(f"{Fore.LIGHTWHITE_EX}ZALOGOWANO JAKO {Fore.LIGHTGREEN_EX}{get_key(find_dotenv(), 'MONGODB_USER')}{Fore.LIGHTWHITE_EX} - Tryb MongoDB{Style.RESET_ALL}")
     print("----------------------------------------------------------------------------")
     print("[1] - Dodaj wypożyczenie")
     print("[2] - Zakończ wypożyczenie")
