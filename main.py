@@ -3,10 +3,15 @@ import datetime
 import prettytable
 import msvcrt
 import os
-import dotenv
+from dotenv import set_key, get_key, find_dotenv
 import pymongo
 import maskpass
 from colorama import Fore, Style, Back
+import random
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+import signal
 
 # Mongo variables
 global isJson
@@ -20,26 +25,160 @@ activeHiresFile = 'active.json'
 historyFile = 'history.json'
 dateFormat = "%d.%m.%Y"
 
+senderEmail = 'librarian.no.reply@gmail.com'
+receiveEmail = ['paska.piotrek@gmail.com']
+senderPassword = 'dkmirnvykimxpabo'
+class AdminTools:
+
+    def __init__(self, senderEmail: str, receiveEmail: list, password: str):
+        self.senderEmail = senderEmail
+        self.receiveEmail = receiveEmail
+        self.password = password
+
+    def emailCodeSend(self) -> bool:
+        confirmCode = str(random.randint(100000, 999999))
+        # Tworzenie wiadomości
+        message = MIMEMultipart()
+        message['From'] = self.senderEmail
+        message['To'] = ', '.join(self.receiveEmail)
+        message['Subject'] = 'Librarian admin'
+        body = f"""<h1>There is your confirmation code for librarian</h1><font size:"16">Here is your confirmation code: <b>{confirmCode}</b></font>"""
+        message.attach(MIMEText(body, 'html'))
+
+        # Utworzenie sesji SMTP
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login(self.senderEmail, self.password)
+
+
+        # Wysłanie wiadomości
+        text = message.as_string()
+        server.sendmail(self.senderEmail, self.receiveEmail, text)
+        server.quit()
+
+        print("Enter confirmation code from email: ", end='', flush=True)  # use print instead of input to avoid blocking
+        codeInput = ""
+        while True:
+            if msvcrt.kbhit():
+                key = ord(msvcrt.getch())
+                if key == 27:  # escape key
+                    print()
+                    os.system('cls')
+                    return  # exit function
+                elif key == 13:  # enter key
+                    print()
+                    break  # exit loop
+                elif key == 8:  # backspace key
+                    if len(codeInput) > 0:
+                        codeInput = codeInput[:-1]
+                        print(f"\rEnter confirmation code from email: {codeInput} {''}\b", end='', flush=True)
+                else:
+                    codeInput += chr(key)
+                    print(chr(key), end='', flush=True)
+
+        return codeInput == confirmCode
+
+    def changeMode(self):
+        try:
+            if self.emailCodeSend():
+                print(f'{Fore.GREEN}Auth confirmed{Style.RESET_ALL}')
+                if get_key(find_dotenv(), 'JSON') == 'True':
+                    set_key(find_dotenv(), 'JSON', 'False')
+                elif get_key(find_dotenv(), 'JSON') == 'False':
+                    set_key(find_dotenv(), 'JSON', 'True')
+                print(f'{Fore.GREEN}Mode changed successfully{Style.RESET_ALL}')
+                print('Please restart program')
+            else:
+                print(f"""{Fore.RED}You don't have permissions{Style.RESET_ALL}""")
+        except Exception:
+            print('Czas minął')
+
+    def resetActive(self):
+        try:
+            if not isJson:
+                if self.emailCodeSend():
+                    print(f'{Fore.GREEN}Auth confirmed{Style.RESET_ALL}')
+                    activeCollection.delete_many({})
+                    print(f'{Fore.GREEN}Active rents list is clear{Style.RESET_ALL}')
+                else:
+                    print(f"""{Fore.RED}You don't have permissions{Style.RESET_ALL}""")
+            else:
+                print(f"{Fore.RED}You aren't in MongoDB mode{Style.RESET_ALL}")
+        except Exception:
+            print('Czas minął')
+            print(f"""{Fore.RED}You don't have permissions{Style.RESET_ALL}""")
+        else:
+            print(f"{Fore.RED}You aren't in MongoDB mode{Style.RESET_ALL}")
+
+    def resetHistory(self):
+        try:
+            if not isJson:
+                if self.emailCodeSend():
+                    print(f'{Fore.GREEN}Auth confirmed{Style.RESET_ALL}')
+                    historyCollection.delete_many({})
+                    print(f'{Fore.GREEN}History is clear{Style.RESET_ALL}')
+                else:
+                    print(f"""{Fore.RED}You don't have permissions{Style.RESET_ALL}""")
+            else:
+                print(f"{Fore.RED}You aren't in MongoDB mode{Style.RESET_ALL}")
+        except Exception:
+            print('Czas minął')
+            print(f"""{Fore.RED}You don't have permissions{Style.RESET_ALL}""")
+        else:
+            print(f"{Fore.RED}You aren't in MongoDB mode{Style.RESET_ALL}")
+
+    def resetAll(self):
+        try:
+            if not isJson:
+                if self.emailCodeSend():
+                    print(f'{Fore.GREEN}Auth confirmed{Style.RESET_ALL}')
+                    activeCollection.delete_many({})
+                    historyCollection.delete_many({})
+                    print(f'{Fore.GREEN}Database is fully reset{Style.RESET_ALL}')
+                else:
+                    print(f"""{Fore.RED}You don't have permissions{Style.RESET_ALL}""")
+            else:
+                print(f"{Fore.RED}You aren't in MongoDB mode{Style.RESET_ALL}")
+        except Exception:
+            print('Czas minął')
+            print(f"""{Fore.RED}You don't have permissions{Style.RESET_ALL}""")
+        else:
+            print(f"{Fore.RED}You aren't in MongoDB mode{Style.RESET_ALL}")
+
 
 def mongoPreconfiguration():
-    dotenv_path = dotenv.find_dotenv()
+    connectionString = str
+    dotenv_path = find_dotenv()
     global isJson
-    if dotenv.get_key(dotenv_path, 'JSON') == 'True':
+    if get_key(dotenv_path, 'JSON') == 'True':
         isJson = True
     else:
         isJson = False
     if not isJson:
-        user = dotenv.get_key(dotenv_path, 'MONGODB_USER')
-        password = dotenv.get_key(dotenv_path, 'MONGODB_PASSWORD')
-        if user == 'None' and password == 'None':
-            print(f'{Style.BRIGHT}Konfiguracja dostępu do bazy danych{Style.RESET_ALL}')
-            user = input("Podaj nazwę użytkownika: ")
-            password = maskpass.askpass(prompt='Podaj hasło do bazy danych MongoDB: ', mask='*')
-            dotenv.set_key(dotenv_path, "MONGODB_USER", user)
-            dotenv.set_key(dotenv_path, "MONGODB_PASSWORD", password)
+        userInput = get_key(dotenv_path, 'MONGODB_USER')
+        passwordInput = get_key(dotenv_path, 'MONGODB_PASSWORD')
+        if userInput == 'None' and passwordInput == 'None':
+            while True:
+                print(f'{Fore.LIGHTWHITE_EX}Konfiguracja dostępu do bazy danych{Style.RESET_ALL}')
+                userInput = input("Podaj nazwę użytkownika: ")
+                passwordInput = maskpass.askpass(prompt='Podaj hasło do bazy danych MongoDB: ', mask='*')
+                connectionString = f"mongodb+srv://default:default@librarian.3akhsbc.mongodb.net/?retryWrites=true&w=majority"
+                usersClient = pymongo.MongoClient(connectionString)
+                usersDb = usersClient.Users
+                usersCollection = usersDb.users
+                usersDict = usersCollection.find_one({"username": str(userInput), "password": str(passwordInput)})
+                if usersDict != None:
+                    set_key(dotenv_path, "MONGODB_USER", userInput)
+                    set_key(dotenv_path, "MONGODB_PASSWORD", passwordInput)
+                    break
+                else:
+                    print()
+                    print(f"{Fore.RED}Nazwa użytkownika lub hasło jest niepoprawne{Style.RESET_ALL}")
+                    print("----------------------------------------------------------------------------")
+                    continue
 
         try:
-            connectionString = f"mongodb+srv://{user}:{password}@librarian.3akhsbc.mongodb.net/?retryWrites=true&w=majority"
+            connectionString = f"mongodb+srv://{userInput}:{passwordInput}@librarian.3akhsbc.mongodb.net/?retryWrites=true&w=majority"
             global client
             global db
             global activeCollection
@@ -51,9 +190,6 @@ def mongoPreconfiguration():
             historyCollection = db.historyRents
         except Exception as error:
             print(Fore.RED + str(error) + Style.RESET_ALL)
-        else:
-            os.system('cls')
-            print(f"{Style.BRIGHT}ZALOGOWANO JAKO {Fore.GREEN}{user}{Style.RESET_ALL}")
 
 
 def addHire():
@@ -259,7 +395,7 @@ def addHire():
                 raise Exception
             break
         except Exception:
-            print("Wprowadzone dane są niepoprawne. Spróbuj ponownie")
+            print(f"{Fore.RED}Nie znaleziono takiej komendy. Spróbuj ponownie.{Style.RESET_ALL}")
             continue
 
     if isJson:
@@ -343,8 +479,7 @@ def endHire():
         i = 1
         for entry in temp:
             if i == int(documentChoice):
-                returnDate = datetime.datetime.now()
-                entry["returnDate"] = str(f"{returnDate.day}.{returnDate.month}.{returnDate.year}")
+                entry["returnDate"] = datetime.datetime.today().strftime(dateFormat)
                 with open(historyFile, "r") as f:
                     temp = json.load(f)
                     temp.append(entry)
@@ -361,7 +496,7 @@ def endHire():
         try:
             chosenDocument = activeCollection.find_one({'_id': documentIDs[int(documentChoice) - 1]["_id"]})
             returnDate = datetime.datetime.now()
-            chosenDocument["returnDate"] = str(f"{returnDate.day}.{returnDate.month}.{returnDate.year}")
+            chosenDocument["returnDate"] = datetime.datetime.today().strftime(dateFormat)
             historyCollection.insert_one(chosenDocument)
             activeCollection.delete_one({'_id': chosenDocument['_id']})
         except Exception as error:
@@ -1202,10 +1337,343 @@ def extension():
         else:
             print(f'{Fore.GREEN}Przedłużono wypożyczenie{Style.RESET_ALL}')
 
+            
+def modifying():
+    if isJson:
+        with open(activeHiresFile, "r") as f:
+            viewActiveHires()
+            temp = json.load(f)
+            data_length = len(temp)
+    else:
+        documentIDs = viewActiveHires()
+        try:
+            data_length = activeCollection.count_documents({})
+        except Exception as error:
+            print(Fore.RED + str(error) + Style.RESET_ALL)
 
+    if data_length <= 0:
+        return
+
+    print("Wpisz ID wypożyczenia w którym chcesz dodać kaucję: ", end='',
+          flush=True)  # use print instead of input to avoid blocking
+    documentChoice = ""
+    while True:
+        if msvcrt.kbhit():
+            key = ord(msvcrt.getch())
+            if key == 27:  # escape key
+                print()
+                os.system('cls')
+                return  # exit function
+            elif key == 13:  # enter key
+                idRange = range(1, int(data_length + 1))
+                if int(documentChoice) in idRange:
+                    print()
+                    break  # exit loop
+            elif key == 8:  # backspace key
+                if len(documentChoice) > 0:
+                    documentChoice = documentChoice[:-1]
+                    print(f"\rWpisz ID wypożyczenia w którym chcesz dodać kaucję: {documentChoice} {''}\b", end='',
+                          flush=True)
+            elif key == 224:  # special keys (arrows, function keys, etc.)
+                key = ord(msvcrt.getch())
+                if key == 72:  # up arrow key
+                    continue
+                elif key == 80:  # down arrow key
+                    continue
+                elif key == 75:  # left arrow key
+                    continue
+                elif key == 77:  # right arrow key
+                    continue
+            else:
+                documentChoice += chr(key)
+                print(chr(key), end='', flush=True)
+
+    if isJson:
+        newData = []
+        i = 1
+        for entry in temp:
+            if i == int(documentChoice):
+                print("Zmień imię: ", end='', flush=True)  # use print instead of input to avoid blocking
+                name = entry["name"]
+                print(f"\rZmień imię: {name} {''}\b", end='', flush=True)
+                while True:
+                    if msvcrt.kbhit():
+                        key = ord(msvcrt.getch())
+                        if key == 27:  # escape key
+                            print()
+                            os.system('cls')
+                            return  # exit function
+                        elif key == 13:  # enter key
+                            print()
+                            break  # exit loop
+                        elif key == 8:  # backspace key
+                            if len(name) > 0:
+                                name = name[:-1]
+                                print(f"\rZmień imię: {name} {''}\b", end='', flush=True)
+                        elif key == 224:  # special keys (arrows, function keys, etc.)
+                            key = ord(msvcrt.getch())
+                            if key == 72:  # up arrow key
+                                continue
+                            elif key == 80:  # down arrow key
+                                continue
+                            elif key == 75:  # left arrow key
+                                continue
+                            elif key == 77:  # right arrow key
+                                continue
+                        else:
+                            name += chr(key)
+                            print(chr(key), end='', flush=True)
+
+                print("Zmień nazwisko: ", end='', flush=True)  # use print instead of input to avoid blocking
+                lastName = entry['lastName']
+                print(f"\rZmień nazwisko: {lastName} {''}\b", end='', flush=True)
+                while True:
+                    if msvcrt.kbhit():
+                        key = ord(msvcrt.getch())
+                        if key == 27:  # escape key
+                            print()
+                            os.system('cls')
+                            return  # exit function
+                        elif key == 13:  # enter key
+                            print()
+                            break  # exit loop
+                        elif key == 8:  # backspace key
+                            if len(lastName) > 0:
+                                lastName = lastName[:-1]
+                                print(f"\rZmień nazwisko: {lastName} {''}\b", end='', flush=True)
+                        elif key == 224:  # special keys (arrows, function keys, etc.)
+                            key = ord(msvcrt.getch())
+                            if key == 72:  # up arrow key
+                                continue
+                            elif key == 80:  # down arrow key
+                                continue
+                            elif key == 75:  # left arrow key
+                                continue
+                            elif key == 77:  # right arrow key
+                                continue
+                        else:
+                            lastName += chr(key)
+                            print(chr(key), end='', flush=True)
+
+                print("Zmień klasę: ", end='', flush=True)  # use print instead of input to avoid blocking
+                klasa = entry['klasa']
+                print(f"\rZmień klasę: {klasa} {''}\b", end='', flush=True)
+                while True:
+                    if msvcrt.kbhit():
+                        key = ord(msvcrt.getch())
+                        if key == 27:  # escape key
+                            print()
+                            os.system('cls')
+                            return  # exit function
+                        elif key == 13:  # enter key
+                            print()
+                            break  # exit loop
+                        elif key == 8:  # backspace key
+                            if len(klasa) > 0:
+                                klasa = klasa[:-1]
+                                print(f"\rZmień klasę: {klasa} {''}\b", end='', flush=True)
+                        elif key == 224:  # special keys (arrows, function keys, etc.)
+                            key = ord(msvcrt.getch())
+                            if key == 72:  # up arrow key
+                                continue
+                            elif key == 80:  # down arrow key
+                                continue
+                            elif key == 75:  # left arrow key
+                                continue
+                            elif key == 77:  # right arrow key
+                                continue
+                        else:
+                            klasa += chr(key)
+                            print(chr(key), end='', flush=True)
+
+                print("Zmień tytuł książki: ", end='', flush=True)  # use print instead of input to avoid blocking
+                bookTitle = entry['bookTitle']
+                print(f"\rZmień tytuł książki: {bookTitle} {''}\b", end='', flush=True)
+                while True:
+                    if msvcrt.kbhit():
+                        key = ord(msvcrt.getch())
+                        if key == 27:  # escape key
+                            print()
+                            os.system('cls')
+                            return  # exit function
+                        elif key == 13:  # enter key
+                            print()
+                            break  # exit loop
+                        elif key == 8:  # backspace key
+                            if len(bookTitle) > 0:
+                                bookTitle = bookTitle[:-1]
+                                print(f"\rZmień tytuł książki: {bookTitle} {''}\b", end='', flush=True)
+                        elif key == 224:  # special keys (arrows, function keys, etc.)
+                            key = ord(msvcrt.getch())
+                            if key == 72:  # up arrow key
+                                continue
+                            elif key == 80:  # down arrow key
+                                continue
+                            elif key == 75:  # left arrow key
+                                continue
+                            elif key == 77:  # right arrow key
+                                continue
+                        else:
+                            bookTitle += chr(key)
+                            print(chr(key), end='', flush=True)
+                entry['name'] = name
+                entry['lastName'] = lastName
+                entry['klasa'] = klasa
+                entry['bookTitle'] = bookTitle
+                newData.append(entry)
+                i = i + 1
+            else:
+                newData.append(entry)
+                i = i + 1
+
+        with open(activeHiresFile, 'w') as f:
+            json.dump(newData, f, indent=4)
+        print('Zmieniono kaucję')
+    else:
+        try:
+            chosenDocument = activeCollection.find_one({'_id': documentIDs[int(documentChoice) - 1]["_id"]})
+            print("Zmień imię: ", end='', flush=True)  # use print instead of input to avoid blocking
+            name = chosenDocument["name"]
+            print(f"\rZmień imię: {name} {''}\b", end='', flush=True)
+            while True:
+                if msvcrt.kbhit():
+                    key = ord(msvcrt.getch())
+                    if key == 27:  # escape key
+                        print()
+                        os.system('cls')
+                        return  # exit function
+                    elif key == 13:  # enter key
+                        print()
+                        break  # exit loop
+                    elif key == 8:  # backspace key
+                        if len(name) > 0:
+                            name = name[:-1]
+                            print(f"\rZmień imię: {name} {''}\b", end='', flush=True)
+                    elif key == 224:  # special keys (arrows, function keys, etc.)
+                        key = ord(msvcrt.getch())
+                        if key == 72:  # up arrow key
+                            continue
+                        elif key == 80:  # down arrow key
+                            continue
+                        elif key == 75:  # left arrow key
+                            continue
+                        elif key == 77:  # right arrow key
+                            continue
+                    else:
+                        name += chr(key)
+                        print(chr(key), end='', flush=True)
+
+            print("Zmień nazwisko: ", end='', flush=True)  # use print instead of input to avoid blocking
+            lastName = chosenDocument['lastName']
+            print(f"\rZmień nazwisko: {lastName} {''}\b", end='', flush=True)
+            while True:
+                if msvcrt.kbhit():
+                    key = ord(msvcrt.getch())
+                    if key == 27:  # escape key
+                        print()
+                        os.system('cls')
+                        return  # exit function
+                    elif key == 13:  # enter key
+                        print()
+                        break  # exit loop
+                    elif key == 8:  # backspace key
+                        if len(lastName) > 0:
+                            lastName = lastName[:-1]
+                            print(f"\rZmień nazwisko: {lastName} {''}\b", end='', flush=True)
+                    elif key == 224:  # special keys (arrows, function keys, etc.)
+                        key = ord(msvcrt.getch())
+                        if key == 72:  # up arrow key
+                            continue
+                        elif key == 80:  # down arrow key
+                            continue
+                        elif key == 75:  # left arrow key
+                            continue
+                        elif key == 77:  # right arrow key
+                            continue
+                    else:
+                        lastName += chr(key)
+                        print(chr(key), end='', flush=True)
+
+            print("Zmień klasę: ", end='', flush=True)  # use print instead of input to avoid blocking
+            klasa = chosenDocument['klasa']
+            print(f"\rZmień klasę: {klasa} {''}\b", end='', flush=True)
+            while True:
+                if msvcrt.kbhit():
+                    key = ord(msvcrt.getch())
+                    if key == 27:  # escape key
+                        print()
+                        os.system('cls')
+                        return  # exit function
+                    elif key == 13:  # enter key
+                        print()
+                        break  # exit loop
+                    elif key == 8:  # backspace key
+                        if len(klasa) > 0:
+                            klasa = klasa[:-1]
+                            print(f"\rZmień klasę: {klasa} {''}\b", end='', flush=True)
+                    elif key == 224:  # special keys (arrows, function keys, etc.)
+                        key = ord(msvcrt.getch())
+                        if key == 72:  # up arrow key
+                            continue
+                        elif key == 80:  # down arrow key
+                            continue
+                        elif key == 75:  # left arrow key
+                            continue
+                        elif key == 77:  # right arrow key
+                            continue
+                    else:
+                        klasa += chr(key)
+                        print(chr(key), end='', flush=True)
+
+            print("Zmień tytuł książki: ", end='', flush=True)  # use print instead of input to avoid blocking
+            bookTitle = chosenDocument['bookTitle']
+            print(f"\rZmień tytuł książki: {bookTitle} {''}\b", end='', flush=True)
+            while True:
+                if msvcrt.kbhit():
+                    key = ord(msvcrt.getch())
+                    if key == 27:  # escape key
+                        print()
+                        os.system('cls')
+                        return  # exit function
+                    elif key == 13:  # enter key
+                        print()
+                        break  # exit loop
+                    elif key == 8:  # backspace key
+                        if len(bookTitle) > 0:
+                            bookTitle = bookTitle[:-1]
+                            print(f"\rZmień tytuł książki: {bookTitle} {''}\b", end='', flush=True)
+                    elif key == 224:  # special keys (arrows, function keys, etc.)
+                        key = ord(msvcrt.getch())
+                        if key == 72:  # up arrow key
+                            continue
+                        elif key == 80:  # down arrow key
+                            continue
+                        elif key == 75:  # left arrow key
+                            continue
+                        elif key == 77:  # right arrow key
+                            continue
+                    else:
+                        bookTitle += chr(key)
+                        print(chr(key), end='', flush=True)
+            updates = {
+                "$set": {"name": name, "lastName":lastName,"klasa":klasa, "bookTitle":bookTitle}
+            }
+            activeCollection.update_one({"_id": chosenDocument["_id"]}, update=updates)
+        except Exception as error:
+            print(Fore.RED + str(error) + Style.RESET_ALL)
+        else:
+            print(f'{Fore.GREEN}Zmodyfikowano wypożyczenie{Style.RESET_ALL}')
+            
+
+adminTools = AdminTools(senderEmail, receiveEmail, senderPassword)
 mongoPreconfiguration()
 while True:
     choice = 0
+    print()
+    if isJson:
+        print(f'{Fore.LIGHTWHITE_EX}Tryb lokalny{Style.RESET_ALL}')
+    else:
+        print(f"{Fore.LIGHTWHITE_EX}ZALOGOWANO JAKO {Fore.LIGHTGREEN_EX}{get_key(find_dotenv(), 'MONGODB_USER')}{Fore.LIGHTWHITE_EX} - Tryb MongoDB{Style.RESET_ALL}")
     print("----------------------------------------------------------------------------")
     print("[1] - Dodaj wypożyczenie")
     print("[2] - Zakończ wypożyczenie")
@@ -1235,26 +1703,46 @@ while True:
         elif choice == '4':
             historySearch()
         else:
-            print("Wprowadzone dane są niepoprawne. Spróbuj ponownie")
+            print(f"{Fore.RED}Nie znaleziono takiej komendy. Spróbuj ponownie.{Style.RESET_ALL}")
     elif choice == "4":
         print('[1] - Zmień lub dodaj kaucję')
         print('[2] - Przedłuż wypożyczenie')
+        print('[3] - Zmodyfikuj wypożyczenie')
         choice = input("Wybierz z listy: ")
         print()
         if choice == '1':
             addDeposit()
         elif choice == '2':
             extension()
+        elif choice == '3':
+            modifying()
         else:
-            print("Wprowadzone dane są niepoprawne. Spróbuj ponownie")
+            print(f"{Fore.RED}Nie znaleziono takiej komendy. Spróbuj ponownie.{Style.RESET_ALL}")
     elif choice == '5':
         viewTodayReturns()
     elif choice == 'cls':
         os.system('cls')
-    elif choice == 'config':
+    elif choice == 'cfg mongo':
         os.system('cls')
-        dotenv.set_key(dotenv.find_dotenv(), "MONGODB_USER", 'None')
-        dotenv.set_key(dotenv.find_dotenv(), "MONGODB_PASSWORD", 'None')
+        set_key(find_dotenv(), "MONGODB_USER", 'None')
+        set_key(find_dotenv(), "MONGODB_PASSWORD", 'None')
         mongoPreconfiguration()
+    elif choice == 'cfg admin':
+        os.system('cls')
+        print(f"[1] - Change mode - current: {Fore.LIGHTBLUE_EX}{get_key(find_dotenv(), 'JSON')}{Style.RESET_ALL}")
+        print("[2] - Reset active rents list")
+        print("[3] - Reset history")
+        print("[4] - Reset all")
+        choice = input("Wybierz z listy: ")
+        if choice == '1':
+            adminTools.changeMode()
+        elif choice == '2':
+            adminTools.resetActive()
+        elif choice == '3':
+            adminTools.resetHistory()
+        elif choice == '4':
+            adminTools.resetAll()
+        else:
+            print(f"{Fore.RED}Nie znaleziono takiej komendy. Spróbuj ponownie.{Style.RESET_ALL}")
     else:
-        print("Wprowadzone dane są niepoprawne. Spróbuj ponownie")
+        print(f"{Fore.RED}Nie znaleziono takiej komendy. Spróbuj ponownie.{Style.RESET_ALL}")
