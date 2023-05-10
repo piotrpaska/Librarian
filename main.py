@@ -56,7 +56,7 @@ class AdminTools:
         server.sendmail(self.senderEmail, self.receiveEmail, text)
         server.quit()
 
-        print("Wpisz kod potwierdzający z twojej poczty email: ", end='', flush=True)  # use print instead of input to avoid blocking
+        print("Enter confirmation code from email: ", end='', flush=True)  # use print instead of input to avoid blocking
         codeInput = ""
         while True:
             if msvcrt.kbhit():
@@ -71,7 +71,7 @@ class AdminTools:
                 elif key == 8:  # backspace key
                     if len(codeInput) > 0:
                         codeInput = codeInput[:-1]
-                        print(f"\rWpisz kod potwierdzający z twojej poczty email: {codeInput} {''}\b", end='', flush=True)
+                        print(f"\rEnter confirmation code from email: {codeInput} {''}\b", end='', flush=True)
                 else:
                     codeInput += chr(key)
                     print(chr(key), end='', flush=True)
@@ -1728,10 +1728,10 @@ while True:
         mongoPreconfiguration()
     elif choice == 'cfg admin':
         os.system('cls')
-        print(f"[1] - Zmień tryb - aktualny: {Fore.LIGHTBLUE_EX}{get_key(find_dotenv(), 'JSON')}{Style.RESET_ALL}")
-        print("[2] - Wyczyść listę aktywnych wypożyczeń")
-        print("[3] - Wyczyść historię")
-        print("[4] - Wyczyść wszystko")
+        print(f"[1] - Change mode - current: {Fore.LIGHTBLUE_EX}{get_key(find_dotenv(), 'JSON')}{Style.RESET_ALL}")
+        print("[2] - Reset active rents list")
+        print("[3] - Reset history")
+        print("[4] - Reset all")
         choice = input("Wybierz z listy: ")
         if choice == '1':
             adminTools.changeMode()
