@@ -147,6 +147,7 @@ class AdminTools:
 
 
 def mongoPreconfiguration():
+    connectionString = str
     dotenv_path = find_dotenv()
     global isJson
     if get_key(dotenv_path, 'JSON') == 'True':
@@ -154,17 +155,30 @@ def mongoPreconfiguration():
     else:
         isJson = False
     if not isJson:
-        user = get_key(dotenv_path, 'MONGODB_USER')
-        password = get_key(dotenv_path, 'MONGODB_PASSWORD')
-        if user == 'None' and password == 'None':
-            print(f'{Style.BRIGHT}Konfiguracja dostępu do bazy danych{Style.RESET_ALL}')
-            user = input("Podaj nazwę użytkownika: ")
-            password = maskpass.askpass(prompt='Podaj hasło do bazy danych MongoDB: ', mask='*')
-            set_key(dotenv_path, "MONGODB_USER", user)
-            set_key(dotenv_path, "MONGODB_PASSWORD", password)
+        userInput = get_key(dotenv_path, 'MONGODB_USER')
+        passwordInput = get_key(dotenv_path, 'MONGODB_PASSWORD')
+        if userInput == 'None' and passwordInput == 'None':
+            while True:
+                print(f'{Fore.LIGHTWHITE_EX}Konfiguracja dostępu do bazy danych{Style.RESET_ALL}')
+                userInput = input("Podaj nazwę użytkownika: ")
+                passwordInput = maskpass.askpass(prompt='Podaj hasło do bazy danych MongoDB: ', mask='*')
+                connectionString = f"mongodb+srv://default:default@librarian.3akhsbc.mongodb.net/?retryWrites=true&w=majority"
+                usersClient = pymongo.MongoClient(connectionString)
+                usersDb = usersClient.Users
+                usersCollection = usersDb.users
+                usersDict = usersCollection.find_one({"username": str(userInput), "password": str(passwordInput)})
+                if usersDict != None:
+                    set_key(dotenv_path, "MONGODB_USER", userInput)
+                    set_key(dotenv_path, "MONGODB_PASSWORD", passwordInput)
+                    break
+                else:
+                    print()
+                    print(f"{Fore.RED}Nazwa użytkownika lub hasło jest niepoprawne{Style.RESET_ALL}")
+                    print("----------------------------------------------------------------------------")
+                    continue
 
         try:
-            connectionString = f"mongodb+srv://{user}:{password}@librarian.3akhsbc.mongodb.net/?retryWrites=true&w=majority"
+            connectionString = f"mongodb+srv://{userInput}:{passwordInput}@librarian.3akhsbc.mongodb.net/?retryWrites=true&w=majority"
             global client
             global db
             global activeCollection
@@ -178,7 +192,7 @@ def mongoPreconfiguration():
             print(Fore.RED + str(error) + Style.RESET_ALL)
         else:
             os.system('cls')
-            print(f"{Style.BRIGHT}ZALOGOWANO JAKO {Fore.GREEN}{user}{Style.RESET_ALL}")
+            print(f"{Style.BRIGHT}ZALOGOWANO JAKO {Fore.GREEN}{userInput}{Style.RESET_ALL}")
 
 
 def addHire():
