@@ -1327,6 +1327,333 @@ def extension():
         else:
             print(f'{Fore.GREEN}Przedłużono wypożyczenie{Style.RESET_ALL}')
 
+            
+def modifying():
+    if isJson:
+        with open(activeHiresFile, "r") as f:
+            viewActiveHires()
+            temp = json.load(f)
+            data_length = len(temp)
+    else:
+        documentIDs = viewActiveHires()
+        try:
+            data_length = activeCollection.count_documents({})
+        except Exception as error:
+            print(Fore.RED + str(error) + Style.RESET_ALL)
+
+    if data_length <= 0:
+        return
+
+    print("Wpisz ID wypożyczenia w którym chcesz dodać kaucję: ", end='',
+          flush=True)  # use print instead of input to avoid blocking
+    documentChoice = ""
+    while True:
+        if msvcrt.kbhit():
+            key = ord(msvcrt.getch())
+            if key == 27:  # escape key
+                print()
+                os.system('cls')
+                return  # exit function
+            elif key == 13:  # enter key
+                idRange = range(1, int(data_length + 1))
+                if int(documentChoice) in idRange:
+                    print()
+                    break  # exit loop
+            elif key == 8:  # backspace key
+                if len(documentChoice) > 0:
+                    documentChoice = documentChoice[:-1]
+                    print(f"\rWpisz ID wypożyczenia w którym chcesz dodać kaucję: {documentChoice} {''}\b", end='',
+                          flush=True)
+            elif key == 224:  # special keys (arrows, function keys, etc.)
+                key = ord(msvcrt.getch())
+                if key == 72:  # up arrow key
+                    continue
+                elif key == 80:  # down arrow key
+                    continue
+                elif key == 75:  # left arrow key
+                    continue
+                elif key == 77:  # right arrow key
+                    continue
+            else:
+                documentChoice += chr(key)
+                print(chr(key), end='', flush=True)
+
+    if isJson:
+        newData = []
+        i = 1
+        for entry in temp:
+            if i == int(documentChoice):
+                print("Zmień imię: ", end='', flush=True)  # use print instead of input to avoid blocking
+                name = entry["name"]
+                print(f"\rZmień imię: {name} {''}\b", end='', flush=True)
+                while True:
+                    if msvcrt.kbhit():
+                        key = ord(msvcrt.getch())
+                        if key == 27:  # escape key
+                            print()
+                            os.system('cls')
+                            return  # exit function
+                        elif key == 13:  # enter key
+                            print()
+                            break  # exit loop
+                        elif key == 8:  # backspace key
+                            if len(name) > 0:
+                                name = name[:-1]
+                                print(f"\rZmień imię: {name} {''}\b", end='', flush=True)
+                        elif key == 224:  # special keys (arrows, function keys, etc.)
+                            key = ord(msvcrt.getch())
+                            if key == 72:  # up arrow key
+                                continue
+                            elif key == 80:  # down arrow key
+                                continue
+                            elif key == 75:  # left arrow key
+                                continue
+                            elif key == 77:  # right arrow key
+                                continue
+                        else:
+                            name += chr(key)
+                            print(chr(key), end='', flush=True)
+
+                print("Zmień nazwisko: ", end='', flush=True)  # use print instead of input to avoid blocking
+                lastName = entry['lastName']
+                print(f"\rZmień nazwisko: {lastName} {''}\b", end='', flush=True)
+                while True:
+                    if msvcrt.kbhit():
+                        key = ord(msvcrt.getch())
+                        if key == 27:  # escape key
+                            print()
+                            os.system('cls')
+                            return  # exit function
+                        elif key == 13:  # enter key
+                            print()
+                            break  # exit loop
+                        elif key == 8:  # backspace key
+                            if len(lastName) > 0:
+                                lastName = lastName[:-1]
+                                print(f"\rZmień nazwisko: {lastName} {''}\b", end='', flush=True)
+                        elif key == 224:  # special keys (arrows, function keys, etc.)
+                            key = ord(msvcrt.getch())
+                            if key == 72:  # up arrow key
+                                continue
+                            elif key == 80:  # down arrow key
+                                continue
+                            elif key == 75:  # left arrow key
+                                continue
+                            elif key == 77:  # right arrow key
+                                continue
+                        else:
+                            lastName += chr(key)
+                            print(chr(key), end='', flush=True)
+
+                print("Zmień klasę: ", end='', flush=True)  # use print instead of input to avoid blocking
+                klasa = entry['klasa']
+                print(f"\rZmień klasę: {klasa} {''}\b", end='', flush=True)
+                while True:
+                    if msvcrt.kbhit():
+                        key = ord(msvcrt.getch())
+                        if key == 27:  # escape key
+                            print()
+                            os.system('cls')
+                            return  # exit function
+                        elif key == 13:  # enter key
+                            print()
+                            break  # exit loop
+                        elif key == 8:  # backspace key
+                            if len(klasa) > 0:
+                                klasa = klasa[:-1]
+                                print(f"\rZmień klasę: {klasa} {''}\b", end='', flush=True)
+                        elif key == 224:  # special keys (arrows, function keys, etc.)
+                            key = ord(msvcrt.getch())
+                            if key == 72:  # up arrow key
+                                continue
+                            elif key == 80:  # down arrow key
+                                continue
+                            elif key == 75:  # left arrow key
+                                continue
+                            elif key == 77:  # right arrow key
+                                continue
+                        else:
+                            klasa += chr(key)
+                            print(chr(key), end='', flush=True)
+
+                print("Zmień tytuł książki: ", end='', flush=True)  # use print instead of input to avoid blocking
+                bookTitle = entry['bookTitle']
+                print(f"\rZmień tytuł książki: {bookTitle} {''}\b", end='', flush=True)
+                while True:
+                    if msvcrt.kbhit():
+                        key = ord(msvcrt.getch())
+                        if key == 27:  # escape key
+                            print()
+                            os.system('cls')
+                            return  # exit function
+                        elif key == 13:  # enter key
+                            print()
+                            break  # exit loop
+                        elif key == 8:  # backspace key
+                            if len(bookTitle) > 0:
+                                bookTitle = bookTitle[:-1]
+                                print(f"\rZmień tytuł książki: {bookTitle} {''}\b", end='', flush=True)
+                        elif key == 224:  # special keys (arrows, function keys, etc.)
+                            key = ord(msvcrt.getch())
+                            if key == 72:  # up arrow key
+                                continue
+                            elif key == 80:  # down arrow key
+                                continue
+                            elif key == 75:  # left arrow key
+                                continue
+                            elif key == 77:  # right arrow key
+                                continue
+                        else:
+                            bookTitle += chr(key)
+                            print(chr(key), end='', flush=True)
+                entry['name'] = name
+                entry['lastName'] = lastName
+                entry['klasa'] = klasa
+                entry['bookTitle'] = bookTitle
+                newData.append(entry)
+                i = i + 1
+            else:
+                newData.append(entry)
+                i = i + 1
+
+        with open(activeHiresFile, 'w') as f:
+            json.dump(newData, f, indent=4)
+        print('Zmieniono kaucję')
+    else:
+        try:
+            chosenDocument = activeCollection.find_one({'_id': documentIDs[int(documentChoice) - 1]["_id"]})
+            print("Zmień imię: ", end='', flush=True)  # use print instead of input to avoid blocking
+            name = chosenDocument["name"]
+            print(f"\rZmień imię: {name} {''}\b", end='', flush=True)
+            while True:
+                if msvcrt.kbhit():
+                    key = ord(msvcrt.getch())
+                    if key == 27:  # escape key
+                        print()
+                        os.system('cls')
+                        return  # exit function
+                    elif key == 13:  # enter key
+                        print()
+                        break  # exit loop
+                    elif key == 8:  # backspace key
+                        if len(name) > 0:
+                            name = name[:-1]
+                            print(f"\rZmień imię: {name} {''}\b", end='', flush=True)
+                    elif key == 224:  # special keys (arrows, function keys, etc.)
+                        key = ord(msvcrt.getch())
+                        if key == 72:  # up arrow key
+                            continue
+                        elif key == 80:  # down arrow key
+                            continue
+                        elif key == 75:  # left arrow key
+                            continue
+                        elif key == 77:  # right arrow key
+                            continue
+                    else:
+                        name += chr(key)
+                        print(chr(key), end='', flush=True)
+
+            print("Zmień nazwisko: ", end='', flush=True)  # use print instead of input to avoid blocking
+            lastName = chosenDocument['lastName']
+            print(f"\rZmień nazwisko: {lastName} {''}\b", end='', flush=True)
+            while True:
+                if msvcrt.kbhit():
+                    key = ord(msvcrt.getch())
+                    if key == 27:  # escape key
+                        print()
+                        os.system('cls')
+                        return  # exit function
+                    elif key == 13:  # enter key
+                        print()
+                        break  # exit loop
+                    elif key == 8:  # backspace key
+                        if len(lastName) > 0:
+                            lastName = lastName[:-1]
+                            print(f"\rZmień nazwisko: {lastName} {''}\b", end='', flush=True)
+                    elif key == 224:  # special keys (arrows, function keys, etc.)
+                        key = ord(msvcrt.getch())
+                        if key == 72:  # up arrow key
+                            continue
+                        elif key == 80:  # down arrow key
+                            continue
+                        elif key == 75:  # left arrow key
+                            continue
+                        elif key == 77:  # right arrow key
+                            continue
+                    else:
+                        lastName += chr(key)
+                        print(chr(key), end='', flush=True)
+
+            print("Zmień klasę: ", end='', flush=True)  # use print instead of input to avoid blocking
+            klasa = chosenDocument['klasa']
+            print(f"\rZmień klasę: {klasa} {''}\b", end='', flush=True)
+            while True:
+                if msvcrt.kbhit():
+                    key = ord(msvcrt.getch())
+                    if key == 27:  # escape key
+                        print()
+                        os.system('cls')
+                        return  # exit function
+                    elif key == 13:  # enter key
+                        print()
+                        break  # exit loop
+                    elif key == 8:  # backspace key
+                        if len(klasa) > 0:
+                            klasa = klasa[:-1]
+                            print(f"\rZmień klasę: {klasa} {''}\b", end='', flush=True)
+                    elif key == 224:  # special keys (arrows, function keys, etc.)
+                        key = ord(msvcrt.getch())
+                        if key == 72:  # up arrow key
+                            continue
+                        elif key == 80:  # down arrow key
+                            continue
+                        elif key == 75:  # left arrow key
+                            continue
+                        elif key == 77:  # right arrow key
+                            continue
+                    else:
+                        klasa += chr(key)
+                        print(chr(key), end='', flush=True)
+
+            print("Zmień tytuł książki: ", end='', flush=True)  # use print instead of input to avoid blocking
+            bookTitle = chosenDocument['bookTitle']
+            print(f"\rZmień tytuł książki: {bookTitle} {''}\b", end='', flush=True)
+            while True:
+                if msvcrt.kbhit():
+                    key = ord(msvcrt.getch())
+                    if key == 27:  # escape key
+                        print()
+                        os.system('cls')
+                        return  # exit function
+                    elif key == 13:  # enter key
+                        print()
+                        break  # exit loop
+                    elif key == 8:  # backspace key
+                        if len(bookTitle) > 0:
+                            bookTitle = bookTitle[:-1]
+                            print(f"\rZmień tytuł książki: {bookTitle} {''}\b", end='', flush=True)
+                    elif key == 224:  # special keys (arrows, function keys, etc.)
+                        key = ord(msvcrt.getch())
+                        if key == 72:  # up arrow key
+                            continue
+                        elif key == 80:  # down arrow key
+                            continue
+                        elif key == 75:  # left arrow key
+                            continue
+                        elif key == 77:  # right arrow key
+                            continue
+                    else:
+                        bookTitle += chr(key)
+                        print(chr(key), end='', flush=True)
+            updates = {
+                "$set": {"name": name, "lastName":lastName,"klasa":klasa, "bookTitle":bookTitle}
+            }
+            activeCollection.update_one({"_id": chosenDocument["_id"]}, update=updates)
+        except Exception as error:
+            print(Fore.RED + str(error) + Style.RESET_ALL)
+        else:
+            print(f'{Fore.GREEN}Zmodyfikowano wypożyczenie{Style.RESET_ALL}')
+            
 
 adminTools = AdminTools(senderEmail, receiveEmail, senderPassword)
 mongoPreconfiguration()
@@ -1365,12 +1692,15 @@ while True:
     elif choice == "4":
         print('[1] - Zmień lub dodaj kaucję')
         print('[2] - Przedłuż wypożyczenie')
+        print('[3] - Zmodyfikuj wypożyczenie')
         choice = input("Wybierz z listy: ")
         print()
         if choice == '1':
             addDeposit()
         elif choice == '2':
             extension()
+        elif choice == '3':
+            modifying()
         else:
             print("Wprowadzone dane są niepoprawne. Spróbuj ponownie")
     elif choice == '5':
