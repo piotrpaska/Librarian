@@ -479,8 +479,7 @@ def endHire():
         i = 1
         for entry in temp:
             if i == int(documentChoice):
-                returnDate = datetime.datetime.now()
-                entry["returnDate"] = str(f"{returnDate.day}.{returnDate.month}.{returnDate.year}")
+                entry["returnDate"] = datetime.datetime.today().strftime(dateFormat)
                 with open(historyFile, "r") as f:
                     temp = json.load(f)
                     temp.append(entry)
@@ -497,7 +496,7 @@ def endHire():
         try:
             chosenDocument = activeCollection.find_one({'_id': documentIDs[int(documentChoice) - 1]["_id"]})
             returnDate = datetime.datetime.now()
-            chosenDocument["returnDate"] = str(f"{returnDate.day}.{returnDate.month}.{returnDate.year}")
+            chosenDocument["returnDate"] = datetime.datetime.today().strftime(dateFormat)
             historyCollection.insert_one(chosenDocument)
             activeCollection.delete_one({'_id': chosenDocument['_id']})
         except Exception as error:
