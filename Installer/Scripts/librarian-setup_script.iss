@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Librarian"
-#define MyAppVersion "1.6.0"
+#define MyAppVersion "1.6.1"
 #define MyAppPublisher "Codevision"
 #define MyAppURL "https://github.com/Piciu19/Librarian"
 #define MyAppExeName "Librarian.exe"
@@ -27,7 +27,7 @@ InfoAfterFile=C:\Users\krzys\Desktop\It-Projects\Szkola\Biblioteka\Installer\Lic
 PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=commandline
 OutputDir=C:\Users\krzys\Desktop\It-Projects\Szkola\Biblioteka\Installer\Installer
-OutputBaseFilename=librarian-setup-1.6.0
+OutputBaseFilename=librarian-setup-1.6.1
 SetupIconFile=C:\Users\krzys\Desktop\It-Projects\Szkola\Biblioteka\Installer\Icons\installer.ico
 Compression=lzma
 SolidCompression=yes
