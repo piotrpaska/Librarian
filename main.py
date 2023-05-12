@@ -6,7 +6,7 @@ import os
 from dotenv import set_key, get_key, find_dotenv
 import pymongo
 import maskpass
-from colorama import Fore, Style, Back
+from colorama import Fore, Style, Back, init
 import random
 import smtplib
 from email.mime.text import MIMEText
@@ -28,6 +28,8 @@ dateFormat = "%d.%m.%Y"
 senderEmail = 'librarian.no.reply@gmail.com'
 receiveEmail = ['paska.piotrek@gmail.com']
 senderPassword = 'dkmirnvykimxpabo'
+
+init()
 class AdminTools:
 
     def __init__(self, senderEmail: str, receiveEmail: list, password: str):
