@@ -187,7 +187,7 @@ def mongoPreconfiguration():
             global historyCollection
             client = pymongo.MongoClient(connectionString)
             # TODO Check target database
-            db = client.Testing
+            db = client.Prymus
             activeCollection = db.activeRents
             historyCollection = db.historyRents
         except Exception as error:
