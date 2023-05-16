@@ -12,6 +12,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import signal
+import sqlite3
 
 # Mongo variables
 global isJson
@@ -147,6 +148,93 @@ class AdminTools:
         else:
             print(f"{Fore.RED}You aren't in MongoDB mode{Style.RESET_ALL}")
 
+
+def profiles():
+    if not os.path.exists('profiles.db'):
+
+        def registrations() -> list:
+            print(f"{Fore.LIGHTWHITE_EX}Konfiguracja profili bibliotekarzy. Kiedy chcesz skończyć naciśnij ESC{Style.RESET_ALL}")
+            print("Wprowadź nazwę użytkownika: ", end='', flush=True)  # use print instead of input to avoid blocking
+            username = ""
+            while True:
+                if msvcrt.kbhit():
+                    key = ord(msvcrt.getch())
+                    if key == 27:  # escape key
+                        print()
+                        os.system('cls')
+                        raise TimeoutError
+                        return # exit function
+                    elif key == 13:  # enter key
+                        print()
+                        break  # exit loop
+                    elif key == 8:  # backspace key
+                        if len(username) > 0:
+                            username = username[:-1]
+                            print(f"\rWprowadź nazwę użytkownika: {username} {''}\b", end='', flush=True)
+                    elif key == 224:  # special keys (arrows, function keys, etc.)
+                        key = ord(msvcrt.getch())
+                        if key == 72:  # up arrow key
+                            continue
+                        elif key == 80:  # down arrow key
+                            continue
+                        elif key == 75:  # left arrow key
+                            continue
+                        elif key == 77:  # right arrow key
+                            continue
+                    else:
+                        username += chr(key)
+                        print(chr(key), end='', flush=True)
+
+            print("Wprowadź hasło: ", end='', flush=True)  # use print instead of input to avoid blocking
+            pwd = ""
+            while True:
+                if msvcrt.kbhit():
+                    key = ord(msvcrt.getch())
+                    if key == 27:  # escape key
+                        print()
+                        os.system('cls')
+                        raise TimeoutError
+                        return # exit function
+                    elif key == 13:  # enter key
+                        print()
+                        break  # exit loop
+                    elif key == 8:  # backspace key
+                        if len(pwd) > 0:
+                            pwd = pwd[:-1]
+                            print(f"\rWprowadź hasło: {pwd} {''}\b", end='', flush=True)
+                    elif key == 224:  # special keys (arrows, function keys, etc.)
+                        key = ord(msvcrt.getch())
+                        if key == 72:  # up arrow key
+                            continue
+                        elif key == 80:  # down arrow key
+                            continue
+                        elif key == 75:  # left arrow key
+                            continue
+                        elif key == 77:  # right arrow key
+                            continue
+                    else:
+                        pwd += chr(key)
+                        print(chr(key), end='', flush=True)
+
+            return username, pwd
+
+        conn = sqlite3.connect('profiles.db')
+        cursor = conn.cursor()
+
+        cursor.execute('''CREATE TABLE IF NOT EXISTS profiles (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            username TEXT,
+                            password TEXT
+                                )''')
+        conn.commit()
+        while True:
+            try:
+                cursor.execute("INSERT INTO profiles (username, password) VALUES (?, ?)", registrations())
+            except TimeoutError:
+                break
+            conn.commit()
+    else:
+        pass
 
 def mongoPreconfiguration():
     connectionString = str
@@ -1666,7 +1754,7 @@ def modifying():
         else:
             print(f'{Fore.GREEN}Zmodyfikowano wypożyczenie{Style.RESET_ALL}')
             
-
+profiles()
 adminTools = AdminTools(senderEmail, receiveEmail, senderPassword)
 mongoPreconfiguration()
 while True:
