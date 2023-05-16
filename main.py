@@ -13,6 +13,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import signal
 import sqlite3
+import bcrypt
 
 # Mongo variables
 global isJson
@@ -216,7 +217,7 @@ def profiles():
                         pwd += chr(key)
                         print(chr(key), end='', flush=True)
 
-            return username, pwd
+            return bcrypt.hashpw(username.encode('utf-8'), bcrypt.gensalt()), bcrypt.hashpw(pwd.encode('utf-8'), bcrypt.gensalt())
 
         conn = sqlite3.connect('profiles.db')
         cursor = conn.cursor()
@@ -227,6 +228,7 @@ def profiles():
                             password TEXT
                                 )''')
         conn.commit()
+
         while True:
             try:
                 cursor.execute("INSERT INTO profiles (username, password) VALUES (?, ?)", registrations())
