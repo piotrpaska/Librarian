@@ -22,6 +22,9 @@ global db
 global activeCollection
 global historyCollection
 
+global profileUsername
+global profilePassword
+
 # Json variables
 activeHiresFile = 'active.json'
 historyFile = 'history.json'
@@ -236,7 +239,38 @@ def profiles():
                 break
             conn.commit()
     else:
-        pass
+        conn = sqlite3.connect('profiles.db')
+        cursor = conn.cursor()
+        cursor.execute('SELECT * FROM profiles')
+        profiles = []
+        for pair in cursor.fetchall():
+            profiles.append((pair[1], pair[2]))
+
+        def checkPairs(username: str, password: str, pairList: list) -> bool:
+            for pair in pairList:
+                hashedUsername = pair[0]
+                hashedPassword = pair[1]
+                if bcrypt.checkpw(username.encode('utf-8'), hashedUsername) and bcrypt.checkpw(password.encode('utf-8'), hashedPassword):
+                    return True
+            return False
+
+        while True:
+            print(f'{Fore.LIGHTWHITE_EX}Zaloguj się za pomocą twojego profilu:{Style.RESET_ALL}')
+            inputUsername = input('Wpisz login: ')
+            inputPassword = maskpass.askpass('Wpisz hasło: ', '*')
+
+            if checkPairs(inputUsername, inputPassword, profiles):
+                global profileUsername
+                global profilePassword
+                profileUsername = inputUsername
+                profilePassword = inputPassword
+                os.system('cls')
+                break
+            else:
+                print(f'{Fore.RED}Niepoprawny login lub hasło.{Style.RESET_ALL}')
+                continue
+
+
 
 def mongoPreconfiguration():
     connectionString = str
@@ -1763,9 +1797,9 @@ while True:
     choice = 0
     print()
     if isJson:
-        print(f'{Fore.LIGHTWHITE_EX}Tryb lokalny{Style.RESET_ALL}')
+        print(f'{Fore.LIGHTWHITE_EX}Zalogowano jako {Fore.LIGHTGREEN_EX}{profileUsername}{Style.RESET_ALL}- Tryb lokalny{Style.RESET_ALL}')
     else:
-        print(f"{Fore.LIGHTWHITE_EX}ZALOGOWANO JAKO {Fore.LIGHTGREEN_EX}{get_key(find_dotenv(), 'MONGODB_USER')}{Fore.LIGHTWHITE_EX} - Tryb MongoDB{Style.RESET_ALL}")
+        print(f"{Fore.LIGHTWHITE_EX}ZALOGOWANO JAKO {Fore.LIGHTGREEN_EX}{profileUsername}{Fore.LIGHTWHITE_EX} - Tryb MongoDB{Style.RESET_ALL}")
     print("----------------------------------------------------------------------------")
     print("[1] - Dodaj wypożyczenie")
     print("[2] - Zakończ wypożyczenie")
