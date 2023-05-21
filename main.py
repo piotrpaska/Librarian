@@ -84,6 +84,89 @@ class AdminTools:
 
         return codeInput == confirmCode
 
+    def addProfile(self):
+        try:
+            if self.emailCodeSend():
+                pass
+            else:
+                return
+        except Exception:
+            print("Czas minął")
+            return
+
+        print(f"{Fore.LIGHTWHITE_EX}Adding profile{Style.RESET_ALL}")
+
+        print("Enter username: ", end='', flush=True)  # use print instead of input to avoid blocking
+        username = ""
+        while True:
+            if msvcrt.kbhit():
+                key = ord(msvcrt.getch())
+                if key == 27:  # escape key
+                    print()
+                    os.system('cls')
+                    return  # exit function
+                elif key == 13:  # enter key
+                    print()
+                    break  # exit loop
+                elif key == 8:  # backspace key
+                    if len(username) > 0:
+                        username = username[:-1]
+                        print(f"\rEnter username: {username} {''}\b", end='', flush=True)
+                elif key == 224:  # special keys (arrows, function keys, etc.)
+                    key = ord(msvcrt.getch())
+                    if key == 72:  # up arrow key
+                        continue
+                    elif key == 80:  # down arrow key
+                        continue
+                    elif key == 75:  # left arrow key
+                        continue
+                    elif key == 77:  # right arrow key
+                        continue
+                else:
+                    username += chr(key)
+                    print(chr(key), end='', flush=True)
+
+        print("Enter password: ", end='', flush=True)  # use print instead of input to avoid blocking
+        password = ""
+        while True:
+            if msvcrt.kbhit():
+                key = ord(msvcrt.getch())
+                if key == 27:  # escape key
+                    print()
+                    os.system('cls')
+                    return  # exit function
+                elif key == 13:  # enter key
+                    print()
+                    break  # exit loop
+                elif key == 8:  # backspace key
+                    if len(password) > 0:
+                        password = password[:-1]
+                        print(f"\rEnter password: {password} {''}\b", end='', flush=True)
+                elif key == 224:  # special keys (arrows, function keys, etc.)
+                    key = ord(msvcrt.getch())
+                    if key == 72:  # up arrow key
+                        continue
+                    elif key == 80:  # down arrow key
+                        continue
+                    elif key == 75:  # left arrow key
+                        continue
+                    elif key == 77:  # right arrow key
+                        continue
+                else:
+                    password += chr(key)
+                    print(chr(key), end='', flush=True)
+
+        newProfile = {}
+        newProfile["username"] = username
+        newProfile["password"] = password
+        profilesCollection.insert_one(newProfile)
+
+    def deleteProfile(self):
+        pass
+
+    def modifyProfile(self):
+        pass
+
     def changeMode(self):
         try:
             if self.emailCodeSend():
@@ -153,7 +236,7 @@ class AdminTools:
 
 
 def profiles():
-    #TODO: change to mongo
+    #TODO: Logging out
     profiles = []
     for pair in profilesCollection.find():
         profiles.append((pair["username"], pair["password"]))
@@ -1782,6 +1865,8 @@ while True:
             adminTools.resetHistory()
         elif choice == '4':
             adminTools.resetAll()
+        elif choice == '5':
+            adminTools.addProfile()
         else:
             print(f"{Fore.RED}Nie znaleziono takiej komendy. Spróbuj ponownie.{Style.RESET_ALL}")
     else:
