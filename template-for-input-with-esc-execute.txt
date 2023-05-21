@@ -1,5 +1,5 @@
-    print("Wybierz ID 1-{data_length}: ", end='', flush=True)  # use print instead of input to avoid blocking
-    deleteOption = ""
+    print("Enter password: ", end='', flush=True)  # use print instead of input to avoid blocking
+    password = ""
     while True:
         if msvcrt.kbhit():
             key = ord(msvcrt.getch())
@@ -11,11 +11,21 @@
                 print()
                 break  # exit loop
             elif key == 8:  # backspace key
-                if len(deleteOption) > 0:
-                    deleteOption = deleteOption[:-1]
-                    print(f"\rWybierz ID 1-{data_length}: {deleteOption} {''}\b", end='', flush=True)
+                if len(password) > 0:
+                    password = password[:-1]
+                    print(f"\rEnter password: {password} {''}\b", end='', flush=True)
+            elif key == 224:  # special keys (arrows, function keys, etc.)
+                key = ord(msvcrt.getch())
+                if key == 72:  # up arrow key
+                    continue
+                elif key == 80:  # down arrow key
+                    continue
+                elif key == 75:  # left arrow key
+                    continue
+                elif key == 77:  # right arrow key
+                    continue
             else:
-                deleteOption += chr(key)
+                password += chr(key)
                 print(chr(key), end='', flush=True)
 
-    hireData["deleteOption"] = deleteOption
+    hireData["password"] = password

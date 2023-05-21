@@ -236,7 +236,6 @@ class AdminTools:
 
 
 def profiles():
-    #TODO: Logging out
     profiles = []
     for pair in profilesCollection.find():
         profiles.append((pair["username"], pair["password"]))
@@ -263,6 +262,7 @@ def profiles():
             break
         else:
             print(f'{Fore.RED}Niepoprawny login lub hasło.{Style.RESET_ALL}')
+            print()
             continue
 
 
@@ -1869,5 +1869,8 @@ while True:
             adminTools.addProfile()
         else:
             print(f"{Fore.RED}Nie znaleziono takiej komendy. Spróbuj ponownie.{Style.RESET_ALL}")
+    elif choice == 'logout':
+        os.system('cls')
+        profiles()
     else:
         print(f"{Fore.RED}Nie znaleziono takiej komendy. Spróbuj ponownie.{Style.RESET_ALL}")
