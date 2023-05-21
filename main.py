@@ -12,8 +12,6 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import signal
-import sqlite3
-import bcrypt
 
 # Mongo variables
 global isJson
@@ -21,6 +19,7 @@ global client
 global db
 global activeCollection
 global historyCollection
+global profilesCollection
 
 global profileUsername
 global profilePassword
@@ -154,121 +153,34 @@ class AdminTools:
 
 
 def profiles():
-    if not os.path.exists('profiles.db'):
+    #TODO: change to mongo
+    profiles = []
+    for pair in profilesCollection.find():
+        profiles.append((pair["username"], pair["password"]))
 
-        def registrations() -> list:
-            print(f"{Fore.LIGHTWHITE_EX}Konfiguracja profili bibliotekarzy. Kiedy chcesz skończyć naciśnij ESC{Style.RESET_ALL}")
-            print("Wprowadź nazwę użytkownika: ", end='', flush=True)  # use print instead of input to avoid blocking
-            username = ""
-            while True:
-                if msvcrt.kbhit():
-                    key = ord(msvcrt.getch())
-                    if key == 27:  # escape key
-                        print()
-                        os.system('cls')
-                        raise TimeoutError
-                        return # exit function
-                    elif key == 13:  # enter key
-                        print()
-                        break  # exit loop
-                    elif key == 8:  # backspace key
-                        if len(username) > 0:
-                            username = username[:-1]
-                            print(f"\rWprowadź nazwę użytkownika: {username} {''}\b", end='', flush=True)
-                    elif key == 224:  # special keys (arrows, function keys, etc.)
-                        key = ord(msvcrt.getch())
-                        if key == 72:  # up arrow key
-                            continue
-                        elif key == 80:  # down arrow key
-                            continue
-                        elif key == 75:  # left arrow key
-                            continue
-                        elif key == 77:  # right arrow key
-                            continue
-                    else:
-                        username += chr(key)
-                        print(chr(key), end='', flush=True)
+    def checkPairs(username: str, password: str, pairList: list) -> bool:
+        for pair in pairList:
+            pairUsername = pair[0]
+            pairPassword = pair[1]
+            if  username == pairUsername and password == pairPassword:
+                return True
+        return False
 
-            print("Wprowadź hasło: ", end='', flush=True)  # use print instead of input to avoid blocking
-            pwd = ""
-            while True:
-                if msvcrt.kbhit():
-                    key = ord(msvcrt.getch())
-                    if key == 27:  # escape key
-                        print()
-                        os.system('cls')
-                        raise TimeoutError
-                        return # exit function
-                    elif key == 13:  # enter key
-                        print()
-                        break  # exit loop
-                    elif key == 8:  # backspace key
-                        if len(pwd) > 0:
-                            pwd = pwd[:-1]
-                            print(f"\rWprowadź hasło: {pwd} {''}\b", end='', flush=True)
-                    elif key == 224:  # special keys (arrows, function keys, etc.)
-                        key = ord(msvcrt.getch())
-                        if key == 72:  # up arrow key
-                            continue
-                        elif key == 80:  # down arrow key
-                            continue
-                        elif key == 75:  # left arrow key
-                            continue
-                        elif key == 77:  # right arrow key
-                            continue
-                    else:
-                        pwd += chr(key)
-                        print(chr(key), end='', flush=True)
+    while True:
+        print(f'{Fore.LIGHTWHITE_EX}Zaloguj się za pomocą twojego profilu:{Style.RESET_ALL}')
+        inputUsername = input('Wpisz login: ')
+        inputPassword = maskpass.askpass('Wpisz hasło: ', '*')
 
-            return bcrypt.hashpw(username.encode('utf-8'), bcrypt.gensalt()), bcrypt.hashpw(pwd.encode('utf-8'), bcrypt.gensalt())
-
-        conn = sqlite3.connect('profiles.db')
-        cursor = conn.cursor()
-
-        cursor.execute('''CREATE TABLE IF NOT EXISTS profiles (
-                            id INTEGER PRIMARY KEY AUTOINCREMENT,
-                            username TEXT,
-                            password TEXT
-                                )''')
-        conn.commit()
-
-        while True:
-            try:
-                cursor.execute("INSERT INTO profiles (username, password) VALUES (?, ?)", registrations())
-            except TimeoutError:
-                break
-            conn.commit()
-    else:
-        conn = sqlite3.connect('profiles.db')
-        cursor = conn.cursor()
-        cursor.execute('SELECT * FROM profiles')
-        profiles = []
-        for pair in cursor.fetchall():
-            profiles.append((pair[1], pair[2]))
-
-        def checkPairs(username: str, password: str, pairList: list) -> bool:
-            for pair in pairList:
-                hashedUsername = pair[0]
-                hashedPassword = pair[1]
-                if bcrypt.checkpw(username.encode('utf-8'), hashedUsername) and bcrypt.checkpw(password.encode('utf-8'), hashedPassword):
-                    return True
-            return False
-
-        while True:
-            print(f'{Fore.LIGHTWHITE_EX}Zaloguj się za pomocą twojego profilu:{Style.RESET_ALL}')
-            inputUsername = input('Wpisz login: ')
-            inputPassword = maskpass.askpass('Wpisz hasło: ', '*')
-
-            if checkPairs(inputUsername, inputPassword, profiles):
-                global profileUsername
-                global profilePassword
-                profileUsername = inputUsername
-                profilePassword = inputPassword
-                os.system('cls')
-                break
-            else:
-                print(f'{Fore.RED}Niepoprawny login lub hasło.{Style.RESET_ALL}')
-                continue
+        if checkPairs(inputUsername, inputPassword, profiles):
+            global profileUsername
+            global profilePassword
+            profileUsername = inputUsername
+            profilePassword = inputPassword
+            os.system('cls')
+            break
+        else:
+            print(f'{Fore.RED}Niepoprawny login lub hasło.{Style.RESET_ALL}')
+            continue
 
 
 
@@ -309,11 +221,13 @@ def mongoPreconfiguration():
             global db
             global activeCollection
             global historyCollection
+            global profilesCollection
             client = pymongo.MongoClient(connectionString)
             # TODO Check target database
             db = client.Testing
             activeCollection = db.activeRents
             historyCollection = db.historyRents
+            profilesCollection = client.Users.profiles
         except Exception as error:
             print(Fore.RED + str(error) + Style.RESET_ALL)
 
@@ -1790,9 +1704,9 @@ def modifying():
         else:
             print(f'{Fore.GREEN}Zmodyfikowano wypożyczenie{Style.RESET_ALL}')
             
+mongoPreconfiguration()
 profiles()
 adminTools = AdminTools(senderEmail, receiveEmail, senderPassword)
-mongoPreconfiguration()
 while True:
     choice = 0
     print()
