@@ -11,7 +11,8 @@ import random
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-import signal
+from inputimeout import inputimeout
+import time
 
 # Mongo variables
 global isJson
@@ -58,25 +59,12 @@ class AdminTools:
         server.sendmail(self.senderEmail, self.receiveEmail, text)
         server.quit()
 
-        print("Enter confirmation code from email: ", end='', flush=True)  # use print instead of input to avoid blocking
-        codeInput = ""
-        while True:
-            if msvcrt.kbhit():
-                key = ord(msvcrt.getch())
-                if key == 27:  # escape key
-                    print()
-                    os.system('cls')
-                    return  # exit function
-                elif key == 13:  # enter key
-                    print()
-                    break  # exit loop
-                elif key == 8:  # backspace key
-                    if len(codeInput) > 0:
-                        codeInput = codeInput[:-1]
-                        print(f"\rEnter confirmation code from email: {codeInput} {''}\b", end='', flush=True)
-                else:
-                    codeInput += chr(key)
-                    print(chr(key), end='', flush=True)
+        try:
+            codeInput = inputimeout(prompt="Enter confirmation code from email: ", timeout=120)
+        except Exception:
+            #TODO: delete sleep
+            print("Timeout")
+            time.sleep(1000)
 
         return codeInput == confirmCode
 
