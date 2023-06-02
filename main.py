@@ -12,6 +12,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from keycloak import KeycloakOpenID
+import atexit
 
 # Mongo variables
 global isJson
@@ -1722,9 +1723,17 @@ def modifying():
             print(Fore.RED + str(error) + Style.RESET_ALL)
         else:
             print(f'{Fore.GREEN}Zmodyfikowano wypożyczenie{Style.RESET_ALL}')
-            
+
+
+def onExit():
+    global keycloak_openid
+    global token
+    keycloak_openid.logout(token['refresh_token'])
+
+
 mongoPreconfiguration()
 profiles()
+atexit.register(onExit)
 adminTools = AdminTools(senderEmail, receiveEmail, senderPassword)
 while True:
     choice = 0
