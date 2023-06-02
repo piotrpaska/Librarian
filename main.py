@@ -11,7 +11,7 @@ import random
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-import signal
+from keycloak import KeycloakOpenID
 
 # Mongo variables
 global isJson
@@ -32,6 +32,9 @@ dateFormat = "%d.%m.%Y"
 senderEmail = 'librarian.no.reply@gmail.com'
 receiveEmail = ['paska.piotrek@gmail.com']
 senderPassword = 'dkmirnvykimxpabo'
+
+global keycloak_openid
+global token
 
 init()
 class AdminTools:
@@ -85,81 +88,7 @@ class AdminTools:
         return codeInput == confirmCode
 
     def addProfile(self):
-        try:
-            if self.emailCodeSend():
-                pass
-            else:
-                return
-        except Exception:
-            print("Czas minął")
-            return
-
-        print(f"{Fore.LIGHTWHITE_EX}Adding profile{Style.RESET_ALL}")
-
-        print("Enter username: ", end='', flush=True)  # use print instead of input to avoid blocking
-        username = ""
-        while True:
-            if msvcrt.kbhit():
-                key = ord(msvcrt.getch())
-                if key == 27:  # escape key
-                    print()
-                    os.system('cls')
-                    return  # exit function
-                elif key == 13:  # enter key
-                    print()
-                    break  # exit loop
-                elif key == 8:  # backspace key
-                    if len(username) > 0:
-                        username = username[:-1]
-                        print(f"\rEnter username: {username} {''}\b", end='', flush=True)
-                elif key == 224:  # special keys (arrows, function keys, etc.)
-                    key = ord(msvcrt.getch())
-                    if key == 72:  # up arrow key
-                        continue
-                    elif key == 80:  # down arrow key
-                        continue
-                    elif key == 75:  # left arrow key
-                        continue
-                    elif key == 77:  # right arrow key
-                        continue
-                else:
-                    username += chr(key)
-                    print(chr(key), end='', flush=True)
-
-        print("Enter password: ", end='', flush=True)  # use print instead of input to avoid blocking
-        password = ""
-        while True:
-            if msvcrt.kbhit():
-                key = ord(msvcrt.getch())
-                if key == 27:  # escape key
-                    print()
-                    os.system('cls')
-                    return  # exit function
-                elif key == 13:  # enter key
-                    print()
-                    break  # exit loop
-                elif key == 8:  # backspace key
-                    if len(password) > 0:
-                        password = password[:-1]
-                        print(f"\rEnter password: {password} {''}\b", end='', flush=True)
-                elif key == 224:  # special keys (arrows, function keys, etc.)
-                    key = ord(msvcrt.getch())
-                    if key == 72:  # up arrow key
-                        continue
-                    elif key == 80:  # down arrow key
-                        continue
-                    elif key == 75:  # left arrow key
-                        continue
-                    elif key == 77:  # right arrow key
-                        continue
-                else:
-                    password += chr(key)
-                    print(chr(key), end='', flush=True)
-
-        newProfile = {}
-        newProfile["username"] = username
-        newProfile["password"] = password
-        profilesCollection.insert_one(newProfile)
+        pass
 
     def deleteProfile(self):
         pass
@@ -236,24 +165,32 @@ class AdminTools:
 
 
 def profiles():
-    profiles = []
-    for pair in profilesCollection.find():
-        profiles.append((pair["username"], pair["password"]))
+    # Konfiguracja klienta Keycloak
+    keycloak_url = 'https://lemur-5.cloud-iam.com/auth/'
+    realm_name = 'librarian-keycloak'
+    client_id = 'default'
+    client_secret = 'xTMK3xWzRJZtyo1DwXi7wVnfy1Ec4S8d'
 
-    def checkPairs(username: str, password: str, pairList: list) -> bool:
-        for pair in pairList:
-            pairUsername = pair[0]
-            pairPassword = pair[1]
-            if  username == pairUsername and password == pairPassword:
-                return True
-        return False
+    # Inicjalizacja obiektu
+    global keycloak_openid
+    keycloak_openid = KeycloakOpenID(server_url=keycloak_url, client_id=client_id, realm_name=realm_name,
+                                     client_secret_key=client_secret)
+
+    # Logowanie
+    def checkToken(username, password):
+        try:
+            global token
+            token = keycloak_openid.token(username, password)
+            return True
+        except Exception:
+            return False
 
     while True:
         print(f'{Fore.LIGHTWHITE_EX}Zaloguj się za pomocą twojego profilu:{Style.RESET_ALL}')
         inputUsername = input('Wpisz login: ')
         inputPassword = maskpass.askpass('Wpisz hasło: ', '*')
 
-        if checkPairs(inputUsername, inputPassword, profiles):
+        if checkToken(inputUsername, inputPassword):
             global profileUsername
             global profilePassword
             profileUsername = inputUsername
@@ -575,7 +512,6 @@ def endHire():
                 delOptRange = range(1, int(data_length + 1))
                 if int(documentChoice) in delOptRange:
                     print()
-                    print("Wypożyczenie zakończone")
                     break  # exit loop
                 else:
                     continue
@@ -1856,6 +1792,9 @@ while True:
         print("[2] - Reset active rents list")
         print("[3] - Reset history")
         print("[4] - Reset all")
+        print("[5] - Add profile")
+        print("[6] - Delete profile")
+        print("[7] - Modify profile")
         choice = input("Wybierz z listy: ")
         if choice == '1':
             adminTools.changeMode()
@@ -1867,10 +1806,15 @@ while True:
             adminTools.resetAll()
         elif choice == '5':
             adminTools.addProfile()
+        elif choice == '6':
+            adminTools.deleteProfile()
+        elif choice == '7':
+            adminTools.modifyProfile()
         else:
             print(f"{Fore.RED}Nie znaleziono takiej komendy. Spróbuj ponownie.{Style.RESET_ALL}")
     elif choice == 'logout':
         os.system('cls')
+        keycloak_openid.logout(token['refresh_token'])
         profiles()
     else:
         print(f"{Fore.RED}Nie znaleziono takiej komendy. Spróbuj ponownie.{Style.RESET_ALL}")
