@@ -11,7 +11,7 @@ import random
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from keycloak import KeycloakOpenID
+from keycloak import KeycloakOpenID, KeycloakAdmin
 import atexit
 
 # Mongo variables
@@ -89,7 +89,35 @@ class AdminTools:
         return codeInput == confirmCode
 
     def addProfile(self):
-        pass
+        keycloakAdmin = KeycloakAdmin(server_url='https://lemur-5.cloud-iam.com/auth/',
+                                      username='admin',
+                                      password='9F1ghter5',
+                                      realm_name='librarian-keycloak',
+                                      verify=True
+                                      )
+
+        print()
+        print(f'{Fore.LIGHTWHITE_EX}Adding user{Style.RESET_ALL}')
+        username = input('Enter username: ')
+        password = input('Enter password: ')
+        email = input('Enter email: ')
+        firstName = input('Enter first name: ')
+        lastName = input('Enter last name: ')
+
+        #creating user
+        user = {"username": username,
+                "email": email,
+                "enabled": True,
+                "firstName": firstName,
+                "lastName": lastName,
+                "emailVerified": True}
+
+        keycloakAdmin.create_user(user)
+
+        #Adding password
+        user_id = keycloakAdmin.get_user_id(username)
+
+        keycloakAdmin.set_user_password(user_id, password)
 
     def deleteProfile(self):
         pass
@@ -183,7 +211,7 @@ def profiles():
             global token
             token = keycloak_openid.token(username, password)
             return True
-        except Exception:
+        except Exception as error:
             return False
 
     while True:
@@ -1728,7 +1756,7 @@ def modifying():
 def onExit():
     global keycloak_openid
     global token
-    keycloak_openid.logout(token['refresh_token'])
+    keycloak_openid.logout(token)
 
 
 mongoPreconfiguration()
