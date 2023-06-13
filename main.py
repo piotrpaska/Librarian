@@ -35,6 +35,7 @@ receiveEmail = ['paska.piotrek@gmail.com']
 senderPassword = 'dkmirnvykimxpabo'
 
 global keycloak_openid
+keycloak_openid = KeycloakOpenID
 global token
 
 init()
@@ -88,13 +89,16 @@ class AdminTools:
 
         return codeInput == confirmCode
 
+    global keycloakAdmin
+    keycloakAdmin = KeycloakAdmin(server_url='https://lemur-5.cloud-iam.com/auth/',
+                                  username='admin',
+                                  password='9F1ghter5',
+                                  realm_name='librarian-keycloak',
+                                  verify=True
+                                  )
+
     def addProfile(self):
-        keycloakAdmin = KeycloakAdmin(server_url='https://lemur-5.cloud-iam.com/auth/',
-                                      username='admin',
-                                      password='9F1ghter5',
-                                      realm_name='librarian-keycloak',
-                                      verify=True
-                                      )
+        global keycloakAdmin
 
         print()
         print(f'{Fore.LIGHTWHITE_EX}Adding user{Style.RESET_ALL}')
@@ -120,7 +124,55 @@ class AdminTools:
         keycloakAdmin.set_user_password(user_id, password)
 
     def deleteProfile(self):
-        pass
+        global keycloakAdmin
+
+        usersList = prettytable.PrettyTable(["Username"])
+        usersIDs = []
+
+        users = keycloakAdmin.get_users()
+        for user in users:
+            usersList.add_row([user["username"]])
+            usersIDs.append(user)
+        usersList.add_autoindex("ID")
+        usersList.title = "Users list"
+
+        print(usersList)
+        print("Enter user ID that you want to delete: ", end='',
+              flush=True)  # use print instead of input to avoid blocking
+        id = ""
+        while True:
+            if msvcrt.kbhit():
+                key = ord(msvcrt.getch())
+                if key == 27:  # escape key
+                    print()
+                    os.system('cls')
+                    return  # exit function
+                elif key == 13:  # enter key
+                    if id.isdigit():
+                        print()
+                        break  # exit loop
+                    else:
+                        continue
+                elif key == 8:  # backspace key
+                    if len(id) > 0:
+                        id = id[:-1]
+                        print(f"\rEnter user ID that you want to delete: {id} {''}\b", end='', flush=True)
+                elif key == 224:  # special keys (arrows, function keys, etc.)
+                    key = ord(msvcrt.getch())
+                    if key == 72:  # up arrow key
+                        continue
+                    elif key == 80:  # down arrow key
+                        continue
+                    elif key == 75:  # left arrow key
+                        continue
+                    elif key == 77:  # right arrow key
+                        continue
+                else:
+                    id += chr(key)
+                    print(chr(key), end='', flush=True)
+
+        keycloakAdmin.delete_user(usersIDs[int(id) - 1]['id'])
+
 
     def modifyProfile(self):
         pass
@@ -1851,7 +1903,7 @@ while True:
             print(f"{Fore.RED}Nie znaleziono takiej komendy. Spróbuj ponownie.{Style.RESET_ALL}")
     elif choice == 'logout':
         os.system('cls')
-        keycloak_openid.logout(token['refresh_token'])
+        keycloak_openid.logout(token["refresh_token"])
         profiles()
     else:
         print(f"{Fore.RED}Nie znaleziono takiej komendy. Spróbuj ponownie.{Style.RESET_ALL}")
