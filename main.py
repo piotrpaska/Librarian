@@ -122,6 +122,8 @@ class AdminTools:
         user_id = keycloakAdmin.get_user_id(username)
 
         keycloakAdmin.set_user_password(user_id, password)
+        print(f'{Fore.LIGHTGREEN_EX}Added profile{Style.RESET_ALL}')
+
 
     def deleteProfile(self):
         global keycloakAdmin
@@ -172,10 +174,190 @@ class AdminTools:
                     print(chr(key), end='', flush=True)
 
         keycloakAdmin.delete_user(usersIDs[int(id) - 1]['id'])
+        print(f'{Fore.LIGHTGREEN_EX}Deleted profile{Style.RESET_ALL}')
 
 
     def modifyProfile(self):
-        pass
+        global keycloakAdmin
+
+        usersList = prettytable.PrettyTable(["Username"])
+        usersIDs = []
+
+        users = keycloakAdmin.get_users()
+        for user in users:
+            usersList.add_row([user["username"]])
+            usersIDs.append(user)
+        usersList.add_autoindex("ID")
+        usersList.title = "Users list"
+
+        print(usersList)
+        print("Enter user ID that you want to delete: ", end='',
+              flush=True)  # use print instead of input to avoid blocking
+        id = ""
+        while True:
+            if msvcrt.kbhit():
+                key = ord(msvcrt.getch())
+                if key == 27:  # escape key
+                    print()
+                    os.system('cls')
+                    return  # exit function
+                elif key == 13:  # enter key
+                    if id.isdigit():
+                        print()
+                        break  # exit loop
+                    else:
+                        continue
+                elif key == 8:  # backspace key
+                    if len(id) > 0:
+                        id = id[:-1]
+                        print(f"\rEnter user ID that you want to delete: {id} {''}\b", end='', flush=True)
+                elif key == 224:  # special keys (arrows, function keys, etc.)
+                    key = ord(msvcrt.getch())
+                    if key == 72:  # up arrow key
+                        continue
+                    elif key == 80:  # down arrow key
+                        continue
+                    elif key == 75:  # left arrow key
+                        continue
+                    elif key == 77:  # right arrow key
+                        continue
+                else:
+                    id += chr(key)
+                    print(chr(key), end='', flush=True)
+
+        chosenUser = usersIDs[int(id) - 1]
+        print(chosenUser)
+
+        print("Enter username: ", end='', flush=True)  # use print instead of input to avousername blocking
+        username = chosenUser["username"]
+        print(f"\rEnter username: {username} {''}\b", end='', flush=True)
+        while True:
+            if msvcrt.kbhit():
+                key = ord(msvcrt.getch())
+                if key == 27:  # escape key
+                    print()
+                    os.system('cls')
+                    return  # exit function
+                elif key == 13:  # enter key
+                    print()
+                    break  # exit loop
+                elif key == 8:  # backspace key
+                    if len(username) > 0:
+                        username = username[:-1]
+                        print(f"\rEnter username: {username} {''}\b", end='', flush=True)
+                elif key == 224:  # special keys (arrows, function keys, etc.)
+                    key = ord(msvcrt.getch())
+                    if key == 72:  # up arrow key
+                        continue
+                    elif key == 80:  # down arrow key
+                        continue
+                    elif key == 75:  # left arrow key
+                        continue
+                    elif key == 77:  # right arrow key
+                        continue
+                else:
+                    username += chr(key)
+                    print(chr(key), end='', flush=True)
+
+        print("Enter email: ", end='', flush=True)  # use print instead of input to avoemail blocking
+        email = chosenUser["email"]
+        print(f"\rEnter email: {email} {''}\b", end='', flush=True)
+        while True:
+            if msvcrt.kbhit():
+                key = ord(msvcrt.getch())
+                if key == 27:  # escape key
+                    print()
+                    os.system('cls')
+                    return  # exit function
+                elif key == 13:  # enter key
+                    print()
+                    break  # exit loop
+                elif key == 8:  # backspace key
+                    if len(email) > 0:
+                        email = email[:-1]
+                        print(f"\rEnter email: {email} {''}\b", end='', flush=True)
+                elif key == 224:  # special keys (arrows, function keys, etc.)
+                    key = ord(msvcrt.getch())
+                    if key == 72:  # up arrow key
+                        continue
+                    elif key == 80:  # down arrow key
+                        continue
+                    elif key == 75:  # left arrow key
+                        continue
+                    elif key == 77:  # right arrow key
+                        continue
+                else:
+                    email += chr(key)
+                    print(chr(key), end='', flush=True)
+
+        print("Enter first name: ", end='', flush=True)  # use print instead of input to avofirstName blocking
+        firstName = chosenUser["firstName"]
+        print(f"\rEnter first name: {firstName} {''}\b", end='', flush=True)
+        while True:
+            if msvcrt.kbhit():
+                key = ord(msvcrt.getch())
+                if key == 27:  # escape key
+                    print()
+                    os.system('cls')
+                    return  # exit function
+                elif key == 13:  # enter key
+                    print()
+                    break  # exit loop
+                elif key == 8:  # backspace key
+                    if len(firstName) > 0:
+                        firstName = firstName[:-1]
+                        print(f"\rEnter first name: {firstName} {''}\b", end='', flush=True)
+                elif key == 224:  # special keys (arrows, function keys, etc.)
+                    key = ord(msvcrt.getch())
+                    if key == 72:  # up arrow key
+                        continue
+                    elif key == 80:  # down arrow key
+                        continue
+                    elif key == 75:  # left arrow key
+                        continue
+                    elif key == 77:  # right arrow key
+                        continue
+                else:
+                    firstName += chr(key)
+                    print(chr(key), end='', flush=True)
+
+        print("Enter last name: ", end='', flush=True)  # use print instead of input to avolastName blocking
+        lastName = ""
+        print(f"\rEnter last name: {lastName} {''}\b", end='', flush=True)
+        while True:
+            if msvcrt.kbhit():
+                key = ord(msvcrt.getch())
+                if key == 27:  # escape key
+                    print()
+                    os.system('cls')
+                    return  # exit function
+                elif key == 13:  # enter key
+                    print()
+                    break  # exit loop
+                elif key == 8:  # backspace key
+                    if len(lastName) > 0:
+                        lastName = lastName[:-1]
+                        print(f"\rEnter last name: {lastName} {''}\b", end='', flush=True)
+                elif key == 224:  # special keys (arrows, function keys, etc.)
+                    key = ord(msvcrt.getch())
+                    if key == 72:  # up arrow key
+                        continue
+                    elif key == 80:  # down arrow key
+                        continue
+                    elif key == 75:  # left arrow key
+                        continue
+                    elif key == 77:  # right arrow key
+                        continue
+                else:
+                    lastName += chr(key)
+                    print(chr(key), end='', flush=True)
+
+        keycloakAdmin.update_user(user_id=chosenUser['id'], payload={"username": username,
+                                                                     "email": email,
+                                                                     "firstName": firstName,
+                                                                     "lastName": lastName
+                                                                     })
+        print(f'{Fore.LIGHTGREEN_EX}Modified profile{Style.RESET_ALL}')
 
     def changeMode(self):
         try:
@@ -1808,7 +1990,7 @@ def modifying():
 def onExit():
     global keycloak_openid
     global token
-    keycloak_openid.logout(token)
+    keycloak_openid.logout(token["refresh_token"])
 
 
 mongoPreconfiguration()
