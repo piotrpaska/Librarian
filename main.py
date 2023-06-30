@@ -107,6 +107,48 @@ class AdminTools:
         email = input('Enter email: ')
         firstName = input('Enter first name: ')
         lastName = input('Enter last name: ')
+        isEmailVerified = True
+
+        if email != '':
+            #Weryfikacja email-a
+            verifyCode = str(random.randint(100000, 999999))
+            # Tworzenie wiadomości
+            message = MIMEMultipart()
+            message['From'] = self.senderEmail
+            message['To'] = ', '.join(self.receiveEmail)
+            message['Subject'] = 'Librarian admin'
+            body = f"""<h1>There is your confirmation code for librarian</h1><font size:"16">Here is your confirmation code: <b>{verifyCode}</b></font>"""
+            message.attach(MIMEText(body, 'html'))
+
+            # Utworzenie sesji SMTP
+            server = smtplib.SMTP('smtp.gmail.com', 587)
+            server.starttls()
+            server.login(self.senderEmail, self.password)
+
+            # Wysłanie wiadomości
+            text = message.as_string()
+            server.sendmail(self.senderEmail, self.receiveEmail, text)
+            server.quit()
+
+            i = 3
+            while i > 0:
+                verifyCodeInput = input('Enter email verify code: ')
+                if verifyCode == verifyCodeInput:
+                    isEmailVerified = True
+                    break
+                else:
+                    if i > 0:
+                        i = i - 1
+                        print(f'{Fore.RED}Wrong verify code. Remaining trials: {i}{Style.RESET_ALL}')
+                        print()
+                    else:
+                        print(f'{Fore.RED}Wrong verify code. Adding user canceled{Style.RESET_ALL}')
+                        isEmailVerified = False
+
+        if isEmailVerified == False:
+            print(f"{Fore.RED}Adding user canceled{Style.RESET_ALL}")
+            return
+
 
         #creating user
         user = {"username": username,
@@ -114,7 +156,7 @@ class AdminTools:
                 "enabled": True,
                 "firstName": firstName,
                 "lastName": lastName,
-                "emailVerified": True}
+                "emailVerified": isEmailVerified}
 
         keycloakAdmin.create_user(user)
 
@@ -428,6 +470,7 @@ class AdminTools:
 
 
 def profiles():
+    # TODO: add change password to logging
     # Konfiguracja klienta Keycloak
     keycloak_url = 'https://lemur-5.cloud-iam.com/auth/'
     realm_name = 'librarian-keycloak'
@@ -1998,6 +2041,7 @@ profiles()
 atexit.register(onExit)
 adminTools = AdminTools(senderEmail, receiveEmail, senderPassword)
 while True:
+    #TODO: add change password as a command
     choice = 0
     print()
     if isJson:

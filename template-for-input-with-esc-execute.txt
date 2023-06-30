@@ -1,5 +1,5 @@
-    print("Enter user ID that you want to delete: ", end='', flush=True)  # use print instead of input to avoid blocking
-    id = ""
+    print("Enter last name: ", end='', flush=True)  # use print instead of input to avolastName blocking
+    lastName = ""
     while True:
         if msvcrt.kbhit():
             key = ord(msvcrt.getch())
@@ -11,9 +11,9 @@
                 print()
                 break  # exit loop
             elif key == 8:  # backspace key
-                if len(id) > 0:
-                    id = id[:-1]
-                    print(f"\rEnter user ID that you want to delete: {id} {''}\b", end='', flush=True)
+                if len(lastName) > 0:
+                    lastName = lastName[:-1]
+                    print(f"\rEnter last name: {lastName} {''}\b", end='', flush=True)
             elif key == 224:  # special keys (arrows, function keys, etc.)
                 key = ord(msvcrt.getch())
                 if key == 72:  # up arrow key
@@ -25,7 +25,7 @@
                 elif key == 77:  # right arrow key
                     continue
             else:
-                id += chr(key)
+                lastName += chr(key)
                 print(chr(key), end='', flush=True)
 
-    hireData["id"] = id
+    hireData["lastName"] = lastName
