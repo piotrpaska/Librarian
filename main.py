@@ -103,7 +103,7 @@ class AdminTools:
         print()
         print(f'{Fore.LIGHTWHITE_EX}Adding user{Style.RESET_ALL}')
         username = input('Enter username: ')
-        password = input('Enter password: ')
+        password = maskpass.askpass(prompt='Enter password: ', mask='*')
         email = input('Enter email: ')
         firstName = input('Enter first name: ')
         lastName = input('Enter last name: ')
