@@ -163,7 +163,7 @@ class AdminTools:
         #Adding password
         user_id = keycloakAdmin.get_user_id(username)
 
-        keycloakAdmin.set_user_password(user_id, password)
+        keycloakAdmin.set_user_password(user_id, password, temporary=False)
         print(f'{Fore.LIGHTGREEN_EX}Added profile{Style.RESET_ALL}')
 
 
@@ -400,6 +400,22 @@ class AdminTools:
                                                                      "lastName": lastName
                                                                      })
         print(f'{Fore.LIGHTGREEN_EX}Modified profile{Style.RESET_ALL}')
+
+
+    def changePassword(self):
+        #TODO: przypomnienie - zacząłem robić zmianę hasła
+
+        try:
+            global profileUsername
+            global keycloakAdmin
+            user_id = keycloakAdmin.get_user_id(profileUsername)
+            keycloakAdmin.send_update_account(user_id=user_id, payload=['UPDATE_PASSWORD'])
+            print(f'{Fore.GREEN}Udało się wysłać email{Style.RESET_ALL}')
+        except Exception as error:
+            print(f'{Fore.RED}Zmiana hasła niepowiodła się. Możliwe że nie masz przypisanego adresu email do profilu\n'
+                  f'Poproś administratora o pomoc{Style.RESET_ALL}')
+
+
 
     def changeMode(self):
         try:
@@ -2054,6 +2070,7 @@ while True:
     print("[3] - Wypożyczone książki")
     print("[4] - Zarządzaj wypożyczeniami")
     print("[5] - Wyświetl książki z dzisiejszą datą zwrotu")
+    print("'cp' - Zmień hasło do profilu")
 
     choice = input("Wybierz z listy: ")
     print()
@@ -2131,5 +2148,7 @@ while True:
         os.system('cls')
         keycloak_openid.logout(token["refresh_token"])
         profiles()
+    elif choice == 'cp':
+        adminTools.changePassword()
     else:
         print(f"{Fore.RED}Nie znaleziono takiej komendy. Spróbuj ponownie.{Style.RESET_ALL}")
