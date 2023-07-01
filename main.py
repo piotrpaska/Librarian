@@ -402,15 +402,14 @@ class AdminTools:
         print(f'{Fore.LIGHTGREEN_EX}Modified profile{Style.RESET_ALL}')
 
 
-    def changePassword(self):
+    def changePassword(self, username):
         #TODO: przypomnienie - zacząłem robić zmianę hasła
-
         try:
-            global profileUsername
             global keycloakAdmin
-            user_id = keycloakAdmin.get_user_id(profileUsername)
+            user_id = keycloakAdmin.get_user_id(username)
             keycloakAdmin.send_update_account(user_id=user_id, payload=['UPDATE_PASSWORD'])
-            print(f'{Fore.GREEN}Udało się wysłać email{Style.RESET_ALL}')
+            print(f'{Fore.GREEN}Udało się wysłać email.\n'
+                  f'Zobacz swoją skrzynkę pocztową i postępuj zgodnie z instruckjami zawartymi w email-u{Style.RESET_ALL}')
         except Exception as error:
             print(f'{Fore.RED}Zmiana hasła niepowiodła się. Możliwe że nie masz przypisanego adresu email do profilu\n'
                   f'Poproś administratora o pomoc{Style.RESET_ALL}')
@@ -508,21 +507,30 @@ def profiles():
             return False
 
     while True:
-        print(f'{Fore.LIGHTWHITE_EX}Zaloguj się za pomocą twojego profilu:{Style.RESET_ALL}')
-        inputUsername = input('Wpisz login: ')
-        inputPassword = maskpass.askpass('Wpisz hasło: ', '*')
-
-        if checkToken(inputUsername, inputPassword):
-            global profileUsername
-            global profilePassword
-            profileUsername = inputUsername
-            profilePassword = inputPassword
-            os.system('cls')
-            break
-        else:
-            print(f'{Fore.RED}Niepoprawny login lub hasło.{Style.RESET_ALL}')
+        print(f'{Fore.LIGHTWHITE_EX}Zaloguj się za pomocą twojego profilu. Jeśli nie pamiętasz hasła wpisz "cp":{Style.RESET_ALL}')
+        inputUsername = input('Wpisz login lub "cp" w celu zmiany hasła: ')
+        if inputUsername == 'cp':
+            usernmeForChangePassword = input('Wpisz login: ')
             print()
-            continue
+            adminTools.changePassword(usernmeForChangePassword)
+            print()
+            print(f'{Fore.LIGHTWHITE_EX}Jeśli zmieniłeś już hasło zaloguj się ponownie z nowym hasłem{Style.RESET_ALL}')
+            print()
+
+        if inputUsername != 'cp':
+            inputPassword = maskpass.askpass('Wpisz hasło: ', '*')
+
+            if checkToken(inputUsername, inputPassword):
+                global profileUsername
+                global profilePassword
+                profileUsername = inputUsername
+                profilePassword = inputPassword
+                os.system('cls')
+                break
+            else:
+                print(f'{Fore.RED}Niepoprawny login lub hasło.{Style.RESET_ALL}')
+                print()
+                continue
 
 
 
@@ -2051,11 +2059,10 @@ def onExit():
     global token
     keycloak_openid.logout(token["refresh_token"])
 
-
+adminTools = AdminTools(senderEmail, receiveEmail, senderPassword)
 mongoPreconfiguration()
 profiles()
 atexit.register(onExit)
-adminTools = AdminTools(senderEmail, receiveEmail, senderPassword)
 while True:
     #TODO: add change password as a command
     choice = 0
@@ -2149,6 +2156,6 @@ while True:
         keycloak_openid.logout(token["refresh_token"])
         profiles()
     elif choice == 'cp':
-        adminTools.changePassword()
+        adminTools.changePassword(profileUsername)
     else:
         print(f"{Fore.RED}Nie znaleziono takiej komendy. Spróbuj ponownie.{Style.RESET_ALL}")
