@@ -34,6 +34,8 @@ senderEmail = 'librarian.no.reply@gmail.com'
 receiveEmail = ['paska.piotrek@gmail.com']
 senderPassword = 'dkmirnvykimxpabo'
 
+adminPassword = '9F1ghter5'
+
 global keycloak_openid
 keycloak_openid = KeycloakOpenID
 global token
@@ -89,10 +91,11 @@ class AdminTools:
 
         return codeInput == confirmCode
 
+    global adminPassword
     global keycloakAdmin
     keycloakAdmin = KeycloakAdmin(server_url='https://lemur-5.cloud-iam.com/auth/',
                                   username='admin',
-                                  password='9F1ghter5',
+                                  password=adminPassword,
                                   realm_name='librarian-keycloak',
                                   verify=True
                                   )
@@ -403,18 +406,49 @@ class AdminTools:
 
 
     def changePassword(self, username):
-        #TODO: przypomnienie - zacząłem robić zmianę hasła
         try:
             global keycloakAdmin
             user_id = keycloakAdmin.get_user_id(username)
             keycloakAdmin.send_update_account(user_id=user_id, payload=['UPDATE_PASSWORD'])
             print(f'{Fore.GREEN}Udało się wysłać email.\n'
                   f'Zobacz swoją skrzynkę pocztową i postępuj zgodnie z instruckjami zawartymi w email-u{Style.RESET_ALL}')
-        except Exception as error:
+        except Exception:
             print(f'{Fore.RED}Zmiana hasła niepowiodła się. Możliwe że nie masz przypisanego adresu email do profilu\n'
                   f'Poproś administratora o pomoc{Style.RESET_ALL}')
-
-
+            isEnd = False
+            while isEnd == False:
+                adminEmailChoice = input(f'Jeśli jest obok ciebie administrator wpisz? (y/n): ')
+                if adminEmailChoice == 'y':
+                    i = 3
+                    while i > 0:
+                        adminPasswordInput = maskpass.askpass('Wpisz hasło administratora: ', '*')
+                        if adminPasswordInput == adminPassword:
+                            print()
+                            while True:
+                                newPassword = input('Wpisz nowe hasło: ')
+                                repeatNewPassword = maskpass.askpass('Powtórz nowe hasło: ', '*')
+                                if newPassword == repeatNewPassword:
+                                    keycloakAdmin.set_user_password(user_id=user_id, password=newPassword, temporary=False)
+                                    print(f'{Fore.GREEN}Pomyślnie zmieniono hasło{Style.RESET_ALL}')
+                                    isEnd = True
+                                    break
+                                else:
+                                    print(f'{Fore.RED}Hasła się różnią.{Style.RESET_ALL}')
+                                    print()
+                            break
+                        else:
+                            i = i - 1
+                            if i > 0:
+                                print(f'{Fore.RED}Pozostałe próby: {i}{Style.RESET_ALL}')
+                            else:
+                                print(f'{Fore.RED}Zmiana hasła została anulowana.{Style.RESET_ALL}')
+                                isEnd = True
+                                break
+                elif adminEmailChoice == 'n':
+                    print(f'{Fore.RED}Zmiana hasła została anulowana.{Style.RESET_ALL}')
+                    break
+                else:
+                    print(f'{Fore.RED}Niepoprawna komenda.{Style.RESET_ALL}')
 
     def changeMode(self):
         try:
@@ -485,12 +519,11 @@ class AdminTools:
 
 
 def profiles():
-    # TODO: add change password to logging
     # Konfiguracja klienta Keycloak
     keycloak_url = 'https://lemur-5.cloud-iam.com/auth/'
     realm_name = 'librarian-keycloak'
-    client_id = 'default'
-    client_secret = 'xTMK3xWzRJZtyo1DwXi7wVnfy1Ec4S8d'
+    client_id = 'python-app'
+    client_secret = 'xa1ze6H4EjrdOCrH0KDzKTHlDwKiLrB7'
 
     # Inicjalizacja obiektu
     global keycloak_openid
@@ -504,6 +537,7 @@ def profiles():
             token = keycloak_openid.token(username, password)
             return True
         except Exception as error:
+            print(error)
             return False
 
     while True:
@@ -2064,7 +2098,6 @@ mongoPreconfiguration()
 profiles()
 atexit.register(onExit)
 while True:
-    #TODO: add change password as a command
     choice = 0
     print()
     if isJson:
