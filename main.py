@@ -100,7 +100,23 @@ class AdminTools:
                                   verify=True
                                   )
 
+    def checkRole(self, roleName: str, username: str) -> bool:
+        global keycloakAdmin
+        # Pobranie ID użytkownika na podstawie jego nazwy użytkownika
+        user_id = keycloakAdmin.get_user_id(username)
+
+        # Pobranie ról na poziomie królestwa dla użytkownika
+        realm_roles = keycloakAdmin.get_realm_roles_of_user(user_id=user_id)
+        print(realm_roles)
+
+        # Sprawdzenie, czy użytkownik posiada rolę "librarian" na poziomie królestwa
+        if any(role['name'] == roleName for role in realm_roles):
+            return True
+        else:
+            return False
+
     def addProfile(self):
+        #TODO: dodać przypisanie roli w momencie tworzenia użytkownika
         global keycloakAdmin
 
         print()
@@ -223,6 +239,7 @@ class AdminTools:
 
 
     def modifyProfile(self):
+        #TODO: dodać możliwość zmiany roli
         global keycloakAdmin
 
         usersList = prettytable.PrettyTable(["Username"])
@@ -2098,6 +2115,7 @@ mongoPreconfiguration()
 profiles()
 atexit.register(onExit)
 while True:
+    #TODO: sprawdzić czy użytkownika ma odpowiednią rolę do uruchomienia tej funkcji
     choice = 0
     print()
     if isJson:
@@ -2115,7 +2133,10 @@ while True:
     choice = input("Wybierz z listy: ")
     print()
     if choice == '1':
-        addHire()
+        if adminTools.checkRole(roleName='librarian', username=profileUsername):
+            addHire()
+        else:
+            print(f'{Fore.RED}Nie masz uprawnień do tej funkcji{Style.RESET_ALL}')
     elif choice == '2':
         endHire()
     elif choice == '3':
