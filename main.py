@@ -40,6 +40,13 @@ global keycloak_openid
 keycloak_openid = KeycloakOpenID
 global token
 
+global viewerRole
+global librarianRole
+global adminRole
+viewerRole = 'viewer'
+librarianRole = 'librarian'
+adminRole = 'admin'
+
 init()
 class AdminTools:
 
@@ -107,7 +114,6 @@ class AdminTools:
 
         # Pobranie ról na poziomie królestwa dla użytkownika
         realm_roles = keycloakAdmin.get_realm_roles_of_user(user_id=user_id)
-        print(realm_roles)
 
         # Sprawdzenie, czy użytkownik posiada rolę "librarian" na poziomie królestwa
         if any(role['name'] == roleName for role in realm_roles):
@@ -2133,12 +2139,29 @@ while True:
     choice = input("Wybierz z listy: ")
     print()
     if choice == '1':
-        if adminTools.checkRole(roleName='librarian', username=profileUsername):
-            addHire()
+        isTokenActive = keycloak_openid.introspect(token['access_token'])
+        if isTokenActive['active']:
+            if adminTools.checkRole(roleName=librarianRole, username=profileUsername):
+                addHire()
+                token = keycloak_openid.refresh_token(token['refresh_token'])
+            else:
+                print(f'{Fore.RED}Nie masz uprawnień do tej funkcji{Style.RESET_ALL}')
         else:
-            print(f'{Fore.RED}Nie masz uprawnień do tej funkcji{Style.RESET_ALL}')
+            os.system('cls')
+            print(f'{Fore.RED}Twoja sesja wygasła.{Style.RESET_ALL}')
+            profiles()
     elif choice == '2':
-        endHire()
+        isTokenActive = keycloak_openid.introspect(token['access_token'])
+        if isTokenActive['active']:
+            if adminTools.checkRole(roleName=librarianRole, username=profileUsername):
+                endHire()
+                token = keycloak_openid.refresh_token(token['refresh_token'])
+            else:
+                print(f'{Fore.RED}Nie masz uprawnień do tej funkcji{Style.RESET_ALL}')
+        else:
+            os.system('cls')
+            print(f'{Fore.RED}Twoja sesja wygasła.{Style.RESET_ALL}')
+            profiles()
     elif choice == '3':
         print('[1] - Wyświetl trwające wypożyczenia')
         print('[2] - Wyświetl historię wypożyczeń')
@@ -2147,13 +2170,53 @@ while True:
         choice = input("Wybierz z listy: ")
         print()
         if choice == '1':
-            viewActiveHires()
+            isTokenActive = keycloak_openid.introspect(token['access_token'])
+            if isTokenActive['active']:
+                if adminTools.checkRole(roleName=viewerRole, username=profileUsername):
+                    viewActiveHires()
+                    token = keycloak_openid.refresh_token(token['refresh_token'])
+                else:
+                    print(f'{Fore.RED}Nie masz uprawnień do tej funkcji{Style.RESET_ALL}')
+            else:
+                os.system('cls')
+                print(f'{Fore.RED}Twoja sesja wygasła.{Style.RESET_ALL}')
+                profiles()
         elif choice == '2':
-            viewHistoryHires()
+            isTokenActive = keycloak_openid.introspect(token['access_token'])
+            if isTokenActive['active']:
+                if adminTools.checkRole(roleName=viewerRole, username=profileUsername):
+                    viewHistoryHires()
+                    token = keycloak_openid.refresh_token(token['refresh_token'])
+                else:
+                    print(f'{Fore.RED}Nie masz uprawnień do tej funkcji{Style.RESET_ALL}')
+            else:
+                os.system('cls')
+                print(f'{Fore.RED}Twoja sesja wygasła.{Style.RESET_ALL}')
+                profiles()
         elif choice == '3':
-            activeSearch()
+            isTokenActive = keycloak_openid.introspect(token['access_token'])
+            if isTokenActive['active']:
+                if adminTools.checkRole(roleName=viewerRole, username=profileUsername):
+                    activeSearch()
+                    token = keycloak_openid.refresh_token(token['refresh_token'])
+                else:
+                    print(f'{Fore.RED}Nie masz uprawnień do tej funkcji{Style.RESET_ALL}')
+            else:
+                os.system('cls')
+                print(f'{Fore.RED}Twoja sesja wygasła.{Style.RESET_ALL}')
+                profiles()
         elif choice == '4':
-            historySearch()
+            isTokenActive = keycloak_openid.introspect(token['access_token'])
+            if isTokenActive['active']:
+                if adminTools.checkRole(roleName=viewerRole, username=profileUsername):
+                    historySearch()
+                    token = keycloak_openid.refresh_token(token['refresh_token'])
+                else:
+                    print(f'{Fore.RED}Nie masz uprawnień do tej funkcji{Style.RESET_ALL}')
+            else:
+                os.system('cls')
+                print(f'{Fore.RED}Twoja sesja wygasła.{Style.RESET_ALL}')
+                profiles()
         else:
             print(f"{Fore.RED}Nie znaleziono takiej komendy. Spróbuj ponownie.{Style.RESET_ALL}")
     elif choice == "4":
@@ -2163,15 +2226,55 @@ while True:
         choice = input("Wybierz z listy: ")
         print()
         if choice == '1':
-            addDeposit()
+            isTokenActive = keycloak_openid.introspect(token['access_token'])
+            if isTokenActive['active']:
+                if adminTools.checkRole(roleName=librarianRole, username=profileUsername):
+                    addDeposit()
+                    token = keycloak_openid.refresh_token(token['refresh_token'])
+                else:
+                    print(f'{Fore.RED}Nie masz uprawnień do tej funkcji{Style.RESET_ALL}')
+            else:
+                os.system('cls')
+                print(f'{Fore.RED}Twoja sesja wygasła.{Style.RESET_ALL}')
+                profiles()
         elif choice == '2':
-            extension()
+            isTokenActive = keycloak_openid.introspect(token['access_token'])
+            if isTokenActive['active']:
+                if adminTools.checkRole(roleName=librarianRole, username=profileUsername):
+                    extension()
+                    token = keycloak_openid.refresh_token(token['refresh_token'])
+                else:
+                    print(f'{Fore.RED}Nie masz uprawnień do tej funkcji{Style.RESET_ALL}')
+            else:
+                os.system('cls')
+                print(f'{Fore.RED}Twoja sesja wygasła.{Style.RESET_ALL}')
+                profiles()
         elif choice == '3':
-            modifying()
+            isTokenActive = keycloak_openid.introspect(token['access_token'])
+            if isTokenActive['active']:
+                if adminTools.checkRole(roleName=librarianRole, username=profileUsername):
+                    modifying()
+                    token = keycloak_openid.refresh_token(token['refresh_token'])
+                else:
+                    print(f'{Fore.RED}Nie masz uprawnień do tej funkcji{Style.RESET_ALL}')
+            else:
+                os.system('cls')
+                print(f'{Fore.RED}Twoja sesja wygasła.{Style.RESET_ALL}')
+                profiles()
         else:
             print(f"{Fore.RED}Nie znaleziono takiej komendy. Spróbuj ponownie.{Style.RESET_ALL}")
     elif choice == '5':
-        viewTodayReturns()
+        isTokenActive = keycloak_openid.introspect(token['access_token'])
+        if isTokenActive['active']:
+            if adminTools.checkRole(roleName=librarianRole, username=profileUsername):
+                addHire()
+                token = keycloak_openid.refresh_token(token['refresh_token'])
+            else:
+                print(f'{Fore.RED}Nie masz uprawnień do tej funkcji{Style.RESET_ALL}')
+        else:
+            os.system('cls')
+            print(f'{Fore.RED}Twoja sesja wygasła.{Style.RESET_ALL}')
+            profiles()
     elif choice == 'cls':
         os.system('cls')
     elif choice == 'cfg mongo':
