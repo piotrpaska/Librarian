@@ -319,7 +319,6 @@ class AdminTools:
                     print(chr(key), end='', flush=True)
 
         chosenUser = usersIDs[int(id) - 1]
-        print(chosenUser)
 
         print("Enter username: ", end='', flush=True)  # use print instead of input to avousername blocking
         username = chosenUser["username"]
@@ -466,6 +465,8 @@ class AdminTools:
                          }
         if email != '':
             updatePayload["email"] = email
+        else:
+            updatePayload["email"] = ''
 
         realm_roles = keycloakAdmin.get_realm_roles_of_user(user_id=chosenUser['id'])
         for role in realm_roles:
