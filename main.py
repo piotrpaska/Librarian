@@ -615,7 +615,6 @@ def profiles():
             token = keycloak_openid.token(username, password)
             return True
         except Exception as error:
-            print(error)
             return False
 
     while True:
