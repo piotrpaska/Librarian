@@ -634,9 +634,11 @@ def profiles():
             if checkToken(inputUsername, inputPassword):
                 global profileUsername
                 global profilePassword
-                profileUsername = inputUsername
+                userinfo = keycloak_openid.userinfo(token['access_token'])
+                profileUsername = userinfo['preferred_username']
                 profilePassword = inputPassword
                 os.system('cls')
+                print(userinfo)
                 break
             else:
                 print(f'{Fore.RED}Niepoprawny login lub hasło.{Style.RESET_ALL}')
