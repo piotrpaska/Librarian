@@ -43,9 +43,9 @@ global token
 global viewerRole
 global librarianRole
 global adminRole
-viewerRole = '52edcaf1-5c34-42dc-8cd0-168637c79da4'
-librarianRole = '093d1d40-60ef-4af4-8970-f2e0f4cfc053'
-adminRole = '8bfa8729-d769-4363-9243-6fee6d8f6282'
+viewerRole = 'viewer'
+librarianRole = 'librarian'
+adminRole = 'admin'
 
 init()
 class AdminTools:
