@@ -43,9 +43,9 @@ global token
 global viewerRole
 global librarianRole
 global adminRole
-viewerRole = 'viewer'
-librarianRole = 'librarian'
-adminRole = 'admin'
+viewerRole = '52edcaf1-5c34-42dc-8cd0-168637c79da4'
+librarianRole = '093d1d40-60ef-4af4-8970-f2e0f4cfc053'
+adminRole = '8bfa8729-d769-4363-9243-6fee6d8f6282'
 
 init()
 class AdminTools:
@@ -102,7 +102,7 @@ class AdminTools:
     global keycloakAdmin
     keycloakAdmin = KeycloakAdmin(server_url='https://lemur-5.cloud-iam.com/auth/',
                                   username='admin',
-                                  password=adminPassword,
+                                  password='9F1ghter5',
                                   realm_name='librarian-keycloak',
                                   verify=True
                                   )
@@ -122,7 +122,6 @@ class AdminTools:
             return False
 
     def addProfile(self):
-        #TODO: dodać przypisanie roli w momencie tworzenia użytkownika
         global keycloakAdmin
 
         print()
@@ -132,6 +131,18 @@ class AdminTools:
         email = input('Enter email: ')
         firstName = input('Enter first name: ')
         lastName = input('Enter last name: ')
+        while True:
+            print(f'{Fore.LIGHTWHITE_EX}Roles{Style.RESET_ALL}\n'
+                  '[1] - Viewer\n'
+                  '[2] - Librarian\n'
+                  '[3] - admin')
+            roles = int(input('Select from list above: '))
+
+            if roles in range(0, 4):
+                break
+            else:
+                print(f'{Fore.RED}Nie ma takiej opcji.{Style.RESET_ALL}')
+                print()
         isEmailVerified = True
 
         if email != '':
@@ -189,6 +200,20 @@ class AdminTools:
         user_id = keycloakAdmin.get_user_id(username)
 
         keycloakAdmin.set_user_password(user_id, password, temporary=False)
+
+        global viewerRole
+        global librarianRole
+        global adminRole
+
+        if roles == 1:
+            keycloakAdmin.assign_realm_roles(user_id=user_id, roles=[{'id': '52edcaf1-5c34-42dc-8cd0-168637c79da4', 'name': 'viewer', 'description': '', 'composite': False, 'clientRole': False, 'containerId': 'librarian-keycloak'}])
+        elif roles == 2:
+            keycloakAdmin.assign_realm_roles(user_id=user_id, roles=[{'id': '093d1d40-60ef-4af4-8970-f2e0f4cfc053', 'name': 'librarian', 'description': '', 'composite': False, 'clientRole': False, 'containerId': 'librarian-keycloak'},
+                                                                     {'id': '52edcaf1-5c34-42dc-8cd0-168637c79da4', 'name': 'viewer', 'description': '', 'composite': False, 'clientRole': False, 'containerId': 'librarian-keycloak'}])
+        elif roles == 3:
+            keycloakAdmin.assign_realm_roles(user_id=user_id, roles=[{'id': '093d1d40-60ef-4af4-8970-f2e0f4cfc053', 'name': 'librarian', 'description': '', 'composite': False, 'clientRole': False, 'containerId': 'librarian-keycloak'},
+                                                                     {'id': '8bfa8729-d769-4363-9243-6fee6d8f6282', 'name': 'admin', 'description': '', 'composite': False, 'clientRole': False, 'containerId': 'librarian-keycloak'},
+                                                                     {'id': '52edcaf1-5c34-42dc-8cd0-168637c79da4', 'name': 'viewer', 'description': '', 'composite': False, 'clientRole': False, 'containerId': 'librarian-keycloak'}])
         print(f'{Fore.LIGHTGREEN_EX}Added profile{Style.RESET_ALL}')
 
 
@@ -2121,7 +2146,6 @@ mongoPreconfiguration()
 profiles()
 atexit.register(onExit)
 while True:
-    #TODO: sprawdzić czy użytkownika ma odpowiednią rolę do uruchomienia tej funkcji
     choice = 0
     print()
     if isJson:
