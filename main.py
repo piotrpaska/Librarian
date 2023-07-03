@@ -353,7 +353,9 @@ class AdminTools:
                     print(chr(key), end='', flush=True)
 
         print("Enter email: ", end='', flush=True)  # use print instead of input to avoemail blocking
-        email = chosenUser["email"]
+        email = ''
+        if 'email' in chosenUser:
+            email = chosenUser["email"]
         print(f"\rEnter email: {email} {''}\b", end='', flush=True)
         while True:
             if msvcrt.kbhit():
@@ -415,7 +417,7 @@ class AdminTools:
                     print(chr(key), end='', flush=True)
 
         print("Enter last name: ", end='', flush=True)  # use print instead of input to avolastName blocking
-        lastName = ""
+        lastName = chosenUser["lastName"]
         print(f"\rEnter last name: {lastName} {''}\b", end='', flush=True)
         while True:
             if msvcrt.kbhit():
@@ -445,11 +447,39 @@ class AdminTools:
                     lastName += chr(key)
                     print(chr(key), end='', flush=True)
 
-        keycloakAdmin.update_user(user_id=chosenUser['id'], payload={"username": username,
-                                                                     "email": email,
-                                                                     "firstName": firstName,
-                                                                     "lastName": lastName
-                                                                     })
+        while True:
+            print(f'{Fore.LIGHTWHITE_EX}Roles{Style.RESET_ALL}\n'
+                  '[1] - Viewer\n'
+                  '[2] - Librarian\n'
+                  '[3] - admin')
+            roles = int(input('Select from list above: '))
+
+            if roles in range(0, 4):
+                break
+            else:
+                print(f'{Fore.RED}Nie ma takiej opcji.{Style.RESET_ALL}')
+                print()
+
+        updatePayload = {"username": username,
+                         "firstName": firstName,
+                         "lastName": lastName
+                         }
+        if email != '':
+            updatePayload["email"] = email
+
+        realm_roles = keycloakAdmin.get_realm_roles_of_user(user_id=chosenUser['id'])
+        for role in realm_roles:
+            keycloakAdmin.delete_realm_roles_of_user(user_id=chosenUser['id'], roles=[role])
+        keycloakAdmin.update_user(user_id=chosenUser['id'], payload=updatePayload)
+        if roles == 1:
+            keycloakAdmin.assign_realm_roles(user_id=chosenUser['id'], roles=[{'id': '52edcaf1-5c34-42dc-8cd0-168637c79da4', 'name': 'viewer', 'description': '', 'composite': False, 'clientRole': False, 'containerId': 'librarian-keycloak'}])
+        elif roles == 2:
+            keycloakAdmin.assign_realm_roles(user_id=chosenUser['id'], roles=[{'id': '093d1d40-60ef-4af4-8970-f2e0f4cfc053', 'name': 'librarian', 'description': '', 'composite': False, 'clientRole': False, 'containerId': 'librarian-keycloak'},
+                                                                     {'id': '52edcaf1-5c34-42dc-8cd0-168637c79da4', 'name': 'viewer', 'description': '', 'composite': False, 'clientRole': False, 'containerId': 'librarian-keycloak'}])
+        elif roles == 3:
+            keycloakAdmin.assign_realm_roles(user_id=chosenUser['id'], roles=[{'id': '093d1d40-60ef-4af4-8970-f2e0f4cfc053', 'name': 'librarian', 'description': '', 'composite': False, 'clientRole': False, 'containerId': 'librarian-keycloak'},
+                                                                     {'id': '8bfa8729-d769-4363-9243-6fee6d8f6282', 'name': 'admin', 'description': '', 'composite': False, 'clientRole': False, 'containerId': 'librarian-keycloak'},
+                                                                     {'id': '52edcaf1-5c34-42dc-8cd0-168637c79da4', 'name': 'viewer', 'description': '', 'composite': False, 'clientRole': False, 'containerId': 'librarian-keycloak'}])
         print(f'{Fore.LIGHTGREEN_EX}Modified profile{Style.RESET_ALL}')
 
 
