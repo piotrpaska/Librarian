@@ -638,7 +638,6 @@ def profiles():
                 profileUsername = userinfo['preferred_username']
                 profilePassword = inputPassword
                 os.system('cls')
-                print(userinfo)
                 break
             else:
                 print(f'{Fore.RED}Niepoprawny login lub hasło.{Style.RESET_ALL}')
