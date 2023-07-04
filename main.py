@@ -2322,7 +2322,7 @@ while True:
         isTokenActive = keycloak_openid.introspect(token['access_token'])
         if isTokenActive['active']:
             if adminTools.checkRole(roleName=librarianRole, username=profileUsername):
-                addHire()
+                viewTodayReturns()
                 token = keycloak_openid.refresh_token(token['refresh_token'])
             else:
                 print(f'{Fore.RED}Nie masz uprawnień do tej funkcji{Style.RESET_ALL}')
