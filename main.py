@@ -11,7 +11,8 @@ import random
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-import signal
+from keycloak import KeycloakOpenID, KeycloakAdmin
+import atexit
 
 # Mongo variables
 global isJson
@@ -19,6 +20,10 @@ global client
 global db
 global activeCollection
 global historyCollection
+global profilesCollection
+
+global profileUsername
+global profilePassword
 
 # Json variables
 activeHiresFile = 'active.json'
@@ -28,6 +33,19 @@ dateFormat = "%d.%m.%Y"
 senderEmail = 'librarian.no.reply@gmail.com'
 receiveEmail = ['paska.piotrek@gmail.com']
 senderPassword = 'dkmirnvykimxpabo'
+
+adminPassword = '9F1ghter5'
+
+global keycloak_openid
+keycloak_openid = KeycloakOpenID
+global token
+
+global viewerRole
+global librarianRole
+global adminRole
+viewerRole = 'viewer'
+librarianRole = 'librarian'
+adminRole = 'admin'
 
 init()
 class AdminTools:
@@ -79,6 +97,437 @@ class AdminTools:
                     print(chr(key), end='', flush=True)
 
         return codeInput == confirmCode
+
+    global adminPassword
+    global keycloakAdmin
+    keycloakAdmin = KeycloakAdmin(server_url='https://lemur-5.cloud-iam.com/auth/',
+                                  username='admin',
+                                  password='9F1ghter5',
+                                  realm_name='librarian-keycloak',
+                                  verify=True
+                                  )
+
+    def checkRole(self, roleName: str, username: str) -> bool:
+        global keycloakAdmin
+        # Pobranie ID użytkownika na podstawie jego nazwy użytkownika
+        user_id = keycloakAdmin.get_user_id(username)
+
+        # Pobranie ról na poziomie królestwa dla użytkownika
+        realm_roles = keycloakAdmin.get_realm_roles_of_user(user_id=user_id)
+
+        # Sprawdzenie, czy użytkownik posiada rolę "librarian" na poziomie królestwa
+        if any(role['name'] == roleName for role in realm_roles):
+            return True
+        else:
+            return False
+
+    def addProfile(self):
+        global keycloakAdmin
+
+        print()
+        print(f'{Fore.LIGHTWHITE_EX}Adding user{Style.RESET_ALL}')
+        username = input('Enter username: ')
+        password = maskpass.askpass(prompt='Enter password: ', mask='*')
+        email = input('Enter email: ')
+        firstName = input('Enter first name: ')
+        lastName = input('Enter last name: ')
+        while True:
+            print(f'{Fore.LIGHTWHITE_EX}Roles{Style.RESET_ALL}\n'
+                  '[1] - Viewer\n'
+                  '[2] - Librarian\n'
+                  '[3] - admin')
+            roles = int(input('Select from list above: '))
+
+            if roles in range(0, 4):
+                break
+            else:
+                print(f'{Fore.RED}Nie ma takiej opcji.{Style.RESET_ALL}')
+                print()
+        isEmailVerified = True
+
+        if email != '':
+            #Weryfikacja email-a
+            verifyCode = str(random.randint(100000, 999999))
+            # Tworzenie wiadomości
+            message = MIMEMultipart()
+            message['From'] = self.senderEmail
+            message['To'] = ', '.join(self.receiveEmail)
+            message['Subject'] = 'Librarian admin'
+            body = f"""<h1>There is your confirmation code for librarian</h1><font size:"16">Here is your confirmation code: <b>{verifyCode}</b></font>"""
+            message.attach(MIMEText(body, 'html'))
+
+            # Utworzenie sesji SMTP
+            server = smtplib.SMTP('smtp.gmail.com', 587)
+            server.starttls()
+            server.login(self.senderEmail, self.password)
+
+            # Wysłanie wiadomości
+            text = message.as_string()
+            server.sendmail(self.senderEmail, self.receiveEmail, text)
+            server.quit()
+
+            i = 3
+            while i > 0:
+                verifyCodeInput = input('Enter email verify code: ')
+                if verifyCode == verifyCodeInput:
+                    isEmailVerified = True
+                    break
+                else:
+                    if i > 0:
+                        i = i - 1
+                        print(f'{Fore.RED}Wrong verify code. Remaining trials: {i}{Style.RESET_ALL}')
+                        print()
+                    else:
+                        print(f'{Fore.RED}Wrong verify code. Adding user canceled{Style.RESET_ALL}')
+                        isEmailVerified = False
+
+        if isEmailVerified == False:
+            print(f"{Fore.RED}Adding user canceled{Style.RESET_ALL}")
+            return
+
+
+        #creating user
+        user = {"username": username,
+                "email": email,
+                "enabled": True,
+                "firstName": firstName,
+                "lastName": lastName,
+                "emailVerified": isEmailVerified}
+
+        keycloakAdmin.create_user(user)
+
+        #Adding password
+        user_id = keycloakAdmin.get_user_id(username)
+
+        keycloakAdmin.set_user_password(user_id, password, temporary=False)
+
+        global viewerRole
+        global librarianRole
+        global adminRole
+
+        if roles == 1:
+            keycloakAdmin.assign_realm_roles(user_id=user_id, roles=[{'id': '52edcaf1-5c34-42dc-8cd0-168637c79da4', 'name': 'viewer', 'description': '', 'composite': False, 'clientRole': False, 'containerId': 'librarian-keycloak'}])
+        elif roles == 2:
+            keycloakAdmin.assign_realm_roles(user_id=user_id, roles=[{'id': '093d1d40-60ef-4af4-8970-f2e0f4cfc053', 'name': 'librarian', 'description': '', 'composite': False, 'clientRole': False, 'containerId': 'librarian-keycloak'},
+                                                                     {'id': '52edcaf1-5c34-42dc-8cd0-168637c79da4', 'name': 'viewer', 'description': '', 'composite': False, 'clientRole': False, 'containerId': 'librarian-keycloak'}])
+        elif roles == 3:
+            keycloakAdmin.assign_realm_roles(user_id=user_id, roles=[{'id': '093d1d40-60ef-4af4-8970-f2e0f4cfc053', 'name': 'librarian', 'description': '', 'composite': False, 'clientRole': False, 'containerId': 'librarian-keycloak'},
+                                                                     {'id': '8bfa8729-d769-4363-9243-6fee6d8f6282', 'name': 'admin', 'description': '', 'composite': False, 'clientRole': False, 'containerId': 'librarian-keycloak'},
+                                                                     {'id': '52edcaf1-5c34-42dc-8cd0-168637c79da4', 'name': 'viewer', 'description': '', 'composite': False, 'clientRole': False, 'containerId': 'librarian-keycloak'}])
+        print(f'{Fore.LIGHTGREEN_EX}Added profile{Style.RESET_ALL}')
+
+
+    def deleteProfile(self):
+        global keycloakAdmin
+
+        usersList = prettytable.PrettyTable(["Username"])
+        usersIDs = []
+
+        users = keycloakAdmin.get_users()
+        for user in users:
+            usersList.add_row([user["username"]])
+            usersIDs.append(user)
+        usersList.add_autoindex("ID")
+        usersList.title = "Users list"
+
+        print(usersList)
+        print("Enter user ID that you want to delete: ", end='',
+              flush=True)  # use print instead of input to avoid blocking
+        id = ""
+        while True:
+            if msvcrt.kbhit():
+                key = ord(msvcrt.getch())
+                if key == 27:  # escape key
+                    print()
+                    os.system('cls')
+                    return  # exit function
+                elif key == 13:  # enter key
+                    if id.isdigit():
+                        print()
+                        break  # exit loop
+                    else:
+                        continue
+                elif key == 8:  # backspace key
+                    if len(id) > 0:
+                        id = id[:-1]
+                        print(f"\rEnter user ID that you want to delete: {id} {''}\b", end='', flush=True)
+                elif key == 224:  # special keys (arrows, function keys, etc.)
+                    key = ord(msvcrt.getch())
+                    if key == 72:  # up arrow key
+                        continue
+                    elif key == 80:  # down arrow key
+                        continue
+                    elif key == 75:  # left arrow key
+                        continue
+                    elif key == 77:  # right arrow key
+                        continue
+                else:
+                    id += chr(key)
+                    print(chr(key), end='', flush=True)
+
+        keycloakAdmin.delete_user(usersIDs[int(id) - 1]['id'])
+        print(f'{Fore.LIGHTGREEN_EX}Deleted profile{Style.RESET_ALL}')
+
+
+    def modifyProfile(self):
+        #TODO: dodać możliwość zmiany roli
+        global keycloakAdmin
+
+        usersList = prettytable.PrettyTable(["Username"])
+        usersIDs = []
+
+        users = keycloakAdmin.get_users()
+        for user in users:
+            usersList.add_row([user["username"]])
+            usersIDs.append(user)
+        usersList.add_autoindex("ID")
+        usersList.title = "Users list"
+
+        print(usersList)
+        print("Enter user ID that you want to delete: ", end='',
+              flush=True)  # use print instead of input to avoid blocking
+        id = ""
+        while True:
+            if msvcrt.kbhit():
+                key = ord(msvcrt.getch())
+                if key == 27:  # escape key
+                    print()
+                    os.system('cls')
+                    return  # exit function
+                elif key == 13:  # enter key
+                    if id.isdigit():
+                        print()
+                        break  # exit loop
+                    else:
+                        continue
+                elif key == 8:  # backspace key
+                    if len(id) > 0:
+                        id = id[:-1]
+                        print(f"\rEnter user ID that you want to delete: {id} {''}\b", end='', flush=True)
+                elif key == 224:  # special keys (arrows, function keys, etc.)
+                    key = ord(msvcrt.getch())
+                    if key == 72:  # up arrow key
+                        continue
+                    elif key == 80:  # down arrow key
+                        continue
+                    elif key == 75:  # left arrow key
+                        continue
+                    elif key == 77:  # right arrow key
+                        continue
+                else:
+                    id += chr(key)
+                    print(chr(key), end='', flush=True)
+
+        chosenUser = usersIDs[int(id) - 1]
+
+        print("Enter username: ", end='', flush=True)  # use print instead of input to avousername blocking
+        username = chosenUser["username"]
+        print(f"\rEnter username: {username} {''}\b", end='', flush=True)
+        while True:
+            if msvcrt.kbhit():
+                key = ord(msvcrt.getch())
+                if key == 27:  # escape key
+                    print()
+                    os.system('cls')
+                    return  # exit function
+                elif key == 13:  # enter key
+                    print()
+                    break  # exit loop
+                elif key == 8:  # backspace key
+                    if len(username) > 0:
+                        username = username[:-1]
+                        print(f"\rEnter username: {username} {''}\b", end='', flush=True)
+                elif key == 224:  # special keys (arrows, function keys, etc.)
+                    key = ord(msvcrt.getch())
+                    if key == 72:  # up arrow key
+                        continue
+                    elif key == 80:  # down arrow key
+                        continue
+                    elif key == 75:  # left arrow key
+                        continue
+                    elif key == 77:  # right arrow key
+                        continue
+                else:
+                    username += chr(key)
+                    print(chr(key), end='', flush=True)
+
+        print("Enter email: ", end='', flush=True)  # use print instead of input to avoemail blocking
+        email = ''
+        if 'email' in chosenUser:
+            email = chosenUser["email"]
+        print(f"\rEnter email: {email} {''}\b", end='', flush=True)
+        while True:
+            if msvcrt.kbhit():
+                key = ord(msvcrt.getch())
+                if key == 27:  # escape key
+                    print()
+                    os.system('cls')
+                    return  # exit function
+                elif key == 13:  # enter key
+                    print()
+                    break  # exit loop
+                elif key == 8:  # backspace key
+                    if len(email) > 0:
+                        email = email[:-1]
+                        print(f"\rEnter email: {email} {''}\b", end='', flush=True)
+                elif key == 224:  # special keys (arrows, function keys, etc.)
+                    key = ord(msvcrt.getch())
+                    if key == 72:  # up arrow key
+                        continue
+                    elif key == 80:  # down arrow key
+                        continue
+                    elif key == 75:  # left arrow key
+                        continue
+                    elif key == 77:  # right arrow key
+                        continue
+                else:
+                    email += chr(key)
+                    print(chr(key), end='', flush=True)
+
+        print("Enter first name: ", end='', flush=True)  # use print instead of input to avofirstName blocking
+        firstName = chosenUser["firstName"]
+        print(f"\rEnter first name: {firstName} {''}\b", end='', flush=True)
+        while True:
+            if msvcrt.kbhit():
+                key = ord(msvcrt.getch())
+                if key == 27:  # escape key
+                    print()
+                    os.system('cls')
+                    return  # exit function
+                elif key == 13:  # enter key
+                    print()
+                    break  # exit loop
+                elif key == 8:  # backspace key
+                    if len(firstName) > 0:
+                        firstName = firstName[:-1]
+                        print(f"\rEnter first name: {firstName} {''}\b", end='', flush=True)
+                elif key == 224:  # special keys (arrows, function keys, etc.)
+                    key = ord(msvcrt.getch())
+                    if key == 72:  # up arrow key
+                        continue
+                    elif key == 80:  # down arrow key
+                        continue
+                    elif key == 75:  # left arrow key
+                        continue
+                    elif key == 77:  # right arrow key
+                        continue
+                else:
+                    firstName += chr(key)
+                    print(chr(key), end='', flush=True)
+
+        print("Enter last name: ", end='', flush=True)  # use print instead of input to avolastName blocking
+        lastName = chosenUser["lastName"]
+        print(f"\rEnter last name: {lastName} {''}\b", end='', flush=True)
+        while True:
+            if msvcrt.kbhit():
+                key = ord(msvcrt.getch())
+                if key == 27:  # escape key
+                    print()
+                    os.system('cls')
+                    return  # exit function
+                elif key == 13:  # enter key
+                    print()
+                    break  # exit loop
+                elif key == 8:  # backspace key
+                    if len(lastName) > 0:
+                        lastName = lastName[:-1]
+                        print(f"\rEnter last name: {lastName} {''}\b", end='', flush=True)
+                elif key == 224:  # special keys (arrows, function keys, etc.)
+                    key = ord(msvcrt.getch())
+                    if key == 72:  # up arrow key
+                        continue
+                    elif key == 80:  # down arrow key
+                        continue
+                    elif key == 75:  # left arrow key
+                        continue
+                    elif key == 77:  # right arrow key
+                        continue
+                else:
+                    lastName += chr(key)
+                    print(chr(key), end='', flush=True)
+
+        while True:
+            print(f'{Fore.LIGHTWHITE_EX}Roles{Style.RESET_ALL}\n'
+                  '[1] - Viewer\n'
+                  '[2] - Librarian\n'
+                  '[3] - admin')
+            roles = int(input('Select from list above: '))
+
+            if roles in range(0, 4):
+                break
+            else:
+                print(f'{Fore.RED}Nie ma takiej opcji.{Style.RESET_ALL}')
+                print()
+
+        updatePayload = {"username": username,
+                         "firstName": firstName,
+                         "lastName": lastName
+                         }
+        if email != '':
+            updatePayload["email"] = email
+        else:
+            updatePayload["email"] = ''
+
+        realm_roles = keycloakAdmin.get_realm_roles_of_user(user_id=chosenUser['id'])
+        for role in realm_roles:
+            keycloakAdmin.delete_realm_roles_of_user(user_id=chosenUser['id'], roles=[role])
+        keycloakAdmin.update_user(user_id=chosenUser['id'], payload=updatePayload)
+        if roles == 1:
+            keycloakAdmin.assign_realm_roles(user_id=chosenUser['id'], roles=[{'id': '52edcaf1-5c34-42dc-8cd0-168637c79da4', 'name': 'viewer', 'description': '', 'composite': False, 'clientRole': False, 'containerId': 'librarian-keycloak'}])
+        elif roles == 2:
+            keycloakAdmin.assign_realm_roles(user_id=chosenUser['id'], roles=[{'id': '093d1d40-60ef-4af4-8970-f2e0f4cfc053', 'name': 'librarian', 'description': '', 'composite': False, 'clientRole': False, 'containerId': 'librarian-keycloak'},
+                                                                     {'id': '52edcaf1-5c34-42dc-8cd0-168637c79da4', 'name': 'viewer', 'description': '', 'composite': False, 'clientRole': False, 'containerId': 'librarian-keycloak'}])
+        elif roles == 3:
+            keycloakAdmin.assign_realm_roles(user_id=chosenUser['id'], roles=[{'id': '093d1d40-60ef-4af4-8970-f2e0f4cfc053', 'name': 'librarian', 'description': '', 'composite': False, 'clientRole': False, 'containerId': 'librarian-keycloak'},
+                                                                     {'id': '8bfa8729-d769-4363-9243-6fee6d8f6282', 'name': 'admin', 'description': '', 'composite': False, 'clientRole': False, 'containerId': 'librarian-keycloak'},
+                                                                     {'id': '52edcaf1-5c34-42dc-8cd0-168637c79da4', 'name': 'viewer', 'description': '', 'composite': False, 'clientRole': False, 'containerId': 'librarian-keycloak'}])
+        print(f'{Fore.LIGHTGREEN_EX}Modified profile{Style.RESET_ALL}')
+
+
+    def changePassword(self, username):
+        try:
+            global keycloakAdmin
+            user_id = keycloakAdmin.get_user_id(username)
+            keycloakAdmin.send_update_account(user_id=user_id, payload=['UPDATE_PASSWORD'])
+            print(f'{Fore.GREEN}Udało się wysłać email.\n'
+                  f'Zobacz swoją skrzynkę pocztową i postępuj zgodnie z instruckjami zawartymi w email-u{Style.RESET_ALL}')
+        except Exception:
+            print(f'{Fore.RED}Zmiana hasła niepowiodła się. Możliwe że nie masz przypisanego adresu email do profilu\n'
+                  f'Poproś administratora o pomoc{Style.RESET_ALL}')
+            isEnd = False
+            while isEnd == False:
+                adminEmailChoice = input(f'Jeśli jest obok ciebie administrator wpisz? (y/n): ')
+                if adminEmailChoice == 'y':
+                    i = 3
+                    while i > 0:
+                        adminPasswordInput = maskpass.askpass('Wpisz hasło administratora: ', '*')
+                        if adminPasswordInput == adminPassword:
+                            print()
+                            while True:
+                                newPassword = input('Wpisz nowe hasło: ')
+                                repeatNewPassword = maskpass.askpass('Powtórz nowe hasło: ', '*')
+                                if newPassword == repeatNewPassword:
+                                    keycloakAdmin.set_user_password(user_id=user_id, password=newPassword, temporary=False)
+                                    print(f'{Fore.GREEN}Pomyślnie zmieniono hasło{Style.RESET_ALL}')
+                                    isEnd = True
+                                    break
+                                else:
+                                    print(f'{Fore.RED}Hasła się różnią.{Style.RESET_ALL}')
+                                    print()
+                            break
+                        else:
+                            i = i - 1
+                            if i > 0:
+                                print(f'{Fore.RED}Pozostałe próby: {i}{Style.RESET_ALL}')
+                            else:
+                                print(f'{Fore.RED}Zmiana hasła została anulowana.{Style.RESET_ALL}')
+                                isEnd = True
+                                break
+                elif adminEmailChoice == 'n':
+                    print(f'{Fore.RED}Zmiana hasła została anulowana.{Style.RESET_ALL}')
+                    break
+                else:
+                    print(f'{Fore.RED}Niepoprawna komenda.{Style.RESET_ALL}')
 
     def changeMode(self):
         try:
@@ -148,6 +597,56 @@ class AdminTools:
             print(f"{Fore.RED}You aren't in MongoDB mode{Style.RESET_ALL}")
 
 
+def profiles():
+    # Konfiguracja klienta Keycloak
+    keycloak_url = 'https://lemur-5.cloud-iam.com/auth/'
+    realm_name = 'librarian-keycloak'
+    client_id = 'python-app'
+    client_secret = 'xa1ze6H4EjrdOCrH0KDzKTHlDwKiLrB7'
+
+    # Inicjalizacja obiektu
+    global keycloak_openid
+    keycloak_openid = KeycloakOpenID(server_url=keycloak_url, client_id=client_id, realm_name=realm_name,
+                                     client_secret_key=client_secret)
+
+    # Logowanie
+    def checkToken(username, password):
+        try:
+            global token
+            token = keycloak_openid.token(username, password)
+            return True
+        except Exception as error:
+            return False
+
+    while True:
+        print(f'{Fore.LIGHTWHITE_EX}Zaloguj się za pomocą twojego profilu. Jeśli nie pamiętasz hasła wpisz "cp":{Style.RESET_ALL}')
+        inputUsername = input('Wpisz login lub "cp" w celu zmiany hasła: ')
+        if inputUsername == 'cp':
+            usernmeForChangePassword = input('Wpisz login: ')
+            print()
+            adminTools.changePassword(usernmeForChangePassword)
+            print()
+            print(f'{Fore.LIGHTWHITE_EX}Jeśli zmieniłeś już hasło zaloguj się ponownie z nowym hasłem{Style.RESET_ALL}')
+            print()
+
+        if inputUsername != 'cp':
+            inputPassword = maskpass.askpass('Wpisz hasło: ', '*')
+
+            if checkToken(inputUsername, inputPassword):
+                global profileUsername
+                global profilePassword
+                userinfo = keycloak_openid.userinfo(token['access_token'])
+                profileUsername = userinfo['preferred_username']
+                profilePassword = inputPassword
+                os.system('cls')
+                break
+            else:
+                print(f'{Fore.RED}Niepoprawny login lub hasło.{Style.RESET_ALL}')
+                print()
+                continue
+
+
+
 def mongoPreconfiguration():
     connectionString = str
     dotenv_path = find_dotenv()
@@ -185,11 +684,13 @@ def mongoPreconfiguration():
             global db
             global activeCollection
             global historyCollection
+            global profilesCollection
             client = pymongo.MongoClient(connectionString)
             # TODO Check target database
             db = client.Testing
             activeCollection = db.activeRents
             historyCollection = db.historyRents
+            profilesCollection = client.Users.profiles
         except Exception as error:
             print(Fore.RED + str(error) + Style.RESET_ALL)
 
@@ -454,7 +955,6 @@ def endHire():
                 delOptRange = range(1, int(data_length + 1))
                 if int(documentChoice) in delOptRange:
                     print()
-                    print("Wypożyczenie zakończone")
                     break  # exit loop
                 else:
                     continue
@@ -1665,30 +2165,58 @@ def modifying():
             print(Fore.RED + str(error) + Style.RESET_ALL)
         else:
             print(f'{Fore.GREEN}Zmodyfikowano wypożyczenie{Style.RESET_ALL}')
-            
+
+
+def onExit():
+    global keycloak_openid
+    global token
+    keycloak_openid.logout(token["refresh_token"])
 
 adminTools = AdminTools(senderEmail, receiveEmail, senderPassword)
 mongoPreconfiguration()
+profiles()
+atexit.register(onExit)
 while True:
     choice = 0
     print()
     if isJson:
-        print(f'{Fore.LIGHTWHITE_EX}Tryb lokalny{Style.RESET_ALL}')
+        print(f'{Fore.LIGHTWHITE_EX}Zalogowano jako {Fore.LIGHTGREEN_EX}{profileUsername}{Style.RESET_ALL}- Tryb lokalny{Style.RESET_ALL}')
     else:
-        print(f"{Fore.LIGHTWHITE_EX}ZALOGOWANO JAKO {Fore.LIGHTGREEN_EX}{get_key(find_dotenv(), 'MONGODB_USER')}{Fore.LIGHTWHITE_EX} - Tryb MongoDB{Style.RESET_ALL}")
+        print(f"{Fore.LIGHTWHITE_EX}ZALOGOWANO JAKO {Fore.LIGHTGREEN_EX}{profileUsername}{Fore.LIGHTWHITE_EX} - Tryb MongoDB{Style.RESET_ALL}")
     print("----------------------------------------------------------------------------")
     print("[1] - Dodaj wypożyczenie")
     print("[2] - Zakończ wypożyczenie")
     print("[3] - Wypożyczone książki")
     print("[4] - Zarządzaj wypożyczeniami")
     print("[5] - Wyświetl książki z dzisiejszą datą zwrotu")
+    print("'cp' - Zmień hasło do profilu")
 
     choice = input("Wybierz z listy: ")
     print()
     if choice == '1':
-        addHire()
+        isTokenActive = keycloak_openid.introspect(token['access_token'])
+        if isTokenActive['active']:
+            if adminTools.checkRole(roleName=librarianRole, username=profileUsername):
+                addHire()
+                token = keycloak_openid.refresh_token(token['refresh_token'])
+            else:
+                print(f'{Fore.RED}Nie masz uprawnień do tej funkcji{Style.RESET_ALL}')
+        else:
+            os.system('cls')
+            print(f'{Fore.RED}Twoja sesja wygasła.{Style.RESET_ALL}')
+            profiles()
     elif choice == '2':
-        endHire()
+        isTokenActive = keycloak_openid.introspect(token['access_token'])
+        if isTokenActive['active']:
+            if adminTools.checkRole(roleName=librarianRole, username=profileUsername):
+                endHire()
+                token = keycloak_openid.refresh_token(token['refresh_token'])
+            else:
+                print(f'{Fore.RED}Nie masz uprawnień do tej funkcji{Style.RESET_ALL}')
+        else:
+            os.system('cls')
+            print(f'{Fore.RED}Twoja sesja wygasła.{Style.RESET_ALL}')
+            profiles()
     elif choice == '3':
         print('[1] - Wyświetl trwające wypożyczenia')
         print('[2] - Wyświetl historię wypożyczeń')
@@ -1697,13 +2225,53 @@ while True:
         choice = input("Wybierz z listy: ")
         print()
         if choice == '1':
-            viewActiveHires()
+            isTokenActive = keycloak_openid.introspect(token['access_token'])
+            if isTokenActive['active']:
+                if adminTools.checkRole(roleName=viewerRole, username=profileUsername):
+                    viewActiveHires()
+                    token = keycloak_openid.refresh_token(token['refresh_token'])
+                else:
+                    print(f'{Fore.RED}Nie masz uprawnień do tej funkcji{Style.RESET_ALL}')
+            else:
+                os.system('cls')
+                print(f'{Fore.RED}Twoja sesja wygasła.{Style.RESET_ALL}')
+                profiles()
         elif choice == '2':
-            viewHistoryHires()
+            isTokenActive = keycloak_openid.introspect(token['access_token'])
+            if isTokenActive['active']:
+                if adminTools.checkRole(roleName=viewerRole, username=profileUsername):
+                    viewHistoryHires()
+                    token = keycloak_openid.refresh_token(token['refresh_token'])
+                else:
+                    print(f'{Fore.RED}Nie masz uprawnień do tej funkcji{Style.RESET_ALL}')
+            else:
+                os.system('cls')
+                print(f'{Fore.RED}Twoja sesja wygasła.{Style.RESET_ALL}')
+                profiles()
         elif choice == '3':
-            activeSearch()
+            isTokenActive = keycloak_openid.introspect(token['access_token'])
+            if isTokenActive['active']:
+                if adminTools.checkRole(roleName=viewerRole, username=profileUsername):
+                    activeSearch()
+                    token = keycloak_openid.refresh_token(token['refresh_token'])
+                else:
+                    print(f'{Fore.RED}Nie masz uprawnień do tej funkcji{Style.RESET_ALL}')
+            else:
+                os.system('cls')
+                print(f'{Fore.RED}Twoja sesja wygasła.{Style.RESET_ALL}')
+                profiles()
         elif choice == '4':
-            historySearch()
+            isTokenActive = keycloak_openid.introspect(token['access_token'])
+            if isTokenActive['active']:
+                if adminTools.checkRole(roleName=viewerRole, username=profileUsername):
+                    historySearch()
+                    token = keycloak_openid.refresh_token(token['refresh_token'])
+                else:
+                    print(f'{Fore.RED}Nie masz uprawnień do tej funkcji{Style.RESET_ALL}')
+            else:
+                os.system('cls')
+                print(f'{Fore.RED}Twoja sesja wygasła.{Style.RESET_ALL}')
+                profiles()
         else:
             print(f"{Fore.RED}Nie znaleziono takiej komendy. Spróbuj ponownie.{Style.RESET_ALL}")
     elif choice == "4":
@@ -1713,15 +2281,55 @@ while True:
         choice = input("Wybierz z listy: ")
         print()
         if choice == '1':
-            addDeposit()
+            isTokenActive = keycloak_openid.introspect(token['access_token'])
+            if isTokenActive['active']:
+                if adminTools.checkRole(roleName=librarianRole, username=profileUsername):
+                    addDeposit()
+                    token = keycloak_openid.refresh_token(token['refresh_token'])
+                else:
+                    print(f'{Fore.RED}Nie masz uprawnień do tej funkcji{Style.RESET_ALL}')
+            else:
+                os.system('cls')
+                print(f'{Fore.RED}Twoja sesja wygasła.{Style.RESET_ALL}')
+                profiles()
         elif choice == '2':
-            extension()
+            isTokenActive = keycloak_openid.introspect(token['access_token'])
+            if isTokenActive['active']:
+                if adminTools.checkRole(roleName=librarianRole, username=profileUsername):
+                    extension()
+                    token = keycloak_openid.refresh_token(token['refresh_token'])
+                else:
+                    print(f'{Fore.RED}Nie masz uprawnień do tej funkcji{Style.RESET_ALL}')
+            else:
+                os.system('cls')
+                print(f'{Fore.RED}Twoja sesja wygasła.{Style.RESET_ALL}')
+                profiles()
         elif choice == '3':
-            modifying()
+            isTokenActive = keycloak_openid.introspect(token['access_token'])
+            if isTokenActive['active']:
+                if adminTools.checkRole(roleName=librarianRole, username=profileUsername):
+                    modifying()
+                    token = keycloak_openid.refresh_token(token['refresh_token'])
+                else:
+                    print(f'{Fore.RED}Nie masz uprawnień do tej funkcji{Style.RESET_ALL}')
+            else:
+                os.system('cls')
+                print(f'{Fore.RED}Twoja sesja wygasła.{Style.RESET_ALL}')
+                profiles()
         else:
             print(f"{Fore.RED}Nie znaleziono takiej komendy. Spróbuj ponownie.{Style.RESET_ALL}")
     elif choice == '5':
-        viewTodayReturns()
+        isTokenActive = keycloak_openid.introspect(token['access_token'])
+        if isTokenActive['active']:
+            if adminTools.checkRole(roleName=librarianRole, username=profileUsername):
+                viewTodayReturns()
+                token = keycloak_openid.refresh_token(token['refresh_token'])
+            else:
+                print(f'{Fore.RED}Nie masz uprawnień do tej funkcji{Style.RESET_ALL}')
+        else:
+            os.system('cls')
+            print(f'{Fore.RED}Twoja sesja wygasła.{Style.RESET_ALL}')
+            profiles()
     elif choice == 'cls':
         os.system('cls')
     elif choice == 'cfg mongo':
@@ -1735,6 +2343,9 @@ while True:
         print("[2] - Reset active rents list")
         print("[3] - Reset history")
         print("[4] - Reset all")
+        print("[5] - Add profile")
+        print("[6] - Delete profile")
+        print("[7] - Modify profile")
         choice = input("Wybierz z listy: ")
         if choice == '1':
             adminTools.changeMode()
@@ -1744,7 +2355,19 @@ while True:
             adminTools.resetHistory()
         elif choice == '4':
             adminTools.resetAll()
+        elif choice == '5':
+            adminTools.addProfile()
+        elif choice == '6':
+            adminTools.deleteProfile()
+        elif choice == '7':
+            adminTools.modifyProfile()
         else:
             print(f"{Fore.RED}Nie znaleziono takiej komendy. Spróbuj ponownie.{Style.RESET_ALL}")
+    elif choice == 'logout':
+        os.system('cls')
+        keycloak_openid.logout(token["refresh_token"])
+        profiles()
+    elif choice == 'cp':
+        adminTools.changePassword(profileUsername)
     else:
         print(f"{Fore.RED}Nie znaleziono takiej komendy. Spróbuj ponownie.{Style.RESET_ALL}")
