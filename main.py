@@ -60,11 +60,10 @@ class AdminTools:
         server.quit()
 
         try:
-            codeInput = inputimeout(prompt="Enter confirmation code from email: ", timeout=120)
+            codeInput = inputimeout(prompt="Enter confirmation code from email: ", timeout=5)
         except Exception:
-            #TODO: delete sleep
-            print("Timeout")
-            time.sleep(1000)
+            raise TimeoutError
+            return
 
         return codeInput == confirmCode
 
@@ -80,8 +79,8 @@ class AdminTools:
                 print('Please restart program')
             else:
                 print(f"""{Fore.RED}You don't have permissions{Style.RESET_ALL}""")
-        except Exception:
-            print('Czas minął')
+        except TimeoutError:
+            print(f"{Fore.RED}Timeout{Style.RESET_ALL}")
 
     def resetActive(self):
         try:
@@ -94,11 +93,8 @@ class AdminTools:
                     print(f"""{Fore.RED}You don't have permissions{Style.RESET_ALL}""")
             else:
                 print(f"{Fore.RED}You aren't in MongoDB mode{Style.RESET_ALL}")
-        except Exception:
-            print('Czas minął')
-            print(f"""{Fore.RED}You don't have permissions{Style.RESET_ALL}""")
-        else:
-            print(f"{Fore.RED}You aren't in MongoDB mode{Style.RESET_ALL}")
+        except TimeoutError:
+            print(f"{Fore.RED}Timeout{Style.RESET_ALL}")
 
     def resetHistory(self):
         try:
@@ -111,12 +107,8 @@ class AdminTools:
                     print(f"""{Fore.RED}You don't have permissions{Style.RESET_ALL}""")
             else:
                 print(f"{Fore.RED}You aren't in MongoDB mode{Style.RESET_ALL}")
-        except Exception:
-            print('Czas minął')
-            print(f"""{Fore.RED}You don't have permissions{Style.RESET_ALL}""")
-        else:
-            print(f"{Fore.RED}You aren't in MongoDB mode{Style.RESET_ALL}")
-
+        except TimeoutError:
+            print(f"{Fore.RED}Timeout{Style.RESET_ALL}")
     def resetAll(self):
         try:
             if not isJson:
@@ -129,11 +121,8 @@ class AdminTools:
                     print(f"""{Fore.RED}You don't have permissions{Style.RESET_ALL}""")
             else:
                 print(f"{Fore.RED}You aren't in MongoDB mode{Style.RESET_ALL}")
-        except Exception:
-            print('Czas minął')
-            print(f"""{Fore.RED}You don't have permissions{Style.RESET_ALL}""")
-        else:
-            print(f"{Fore.RED}You aren't in MongoDB mode{Style.RESET_ALL}")
+        except TimeoutError:
+            print(f"{Fore.RED}Timeout{Style.RESET_ALL}")
 
 
 def mongoPreconfiguration():
