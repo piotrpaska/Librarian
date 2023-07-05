@@ -13,6 +13,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from keycloak import KeycloakOpenID, KeycloakAdmin
 import atexit
+import yaml
 
 # Mongo variables
 global isJson
@@ -20,32 +21,40 @@ global client
 global db
 global activeCollection
 global historyCollection
-global profilesCollection
+global mongoUsersCollection
 
 global profileUsername
 global profilePassword
 
-# Json variables
-activeHiresFile = 'active.json'
-historyFile = 'history.json'
-dateFormat = "%d.%m.%Y"
-
-senderEmail = 'librarian.no.reply@gmail.com'
-receiveEmail = ['paska.piotrek@gmail.com']
-senderPassword = 'dkmirnvykimxpabo'
-
-adminPassword = '9F1ghter5'
-
-global keycloak_openid
-keycloak_openid = KeycloakOpenID
-global token
-
 global viewerRole
 global librarianRole
 global adminRole
-viewerRole = 'viewer'
-librarianRole = 'librarian'
-adminRole = 'admin'
+
+global token
+global keycloak_openid
+
+with open('config.yml', 'r') as f:
+    yamlFile = yaml.safe_load(f)
+
+# Json variables
+activeHiresFile = yamlFile['active_hires_file_name']
+historyFile = yamlFile['history_file_name']
+dateFormat = yamlFile['date_format']
+
+senderEmail = yamlFile['sender_email']
+receiveEmail = yamlFile['admins_emails']
+senderPassword = yamlFile['sender_password']
+
+adminPassword = '9F1ghter5'
+
+keycloak_openid = KeycloakOpenID
+
+viewerRole = yamlFile['viewer_role_name']
+librarianRole = yamlFile['librarian_role_name']
+adminRole = yamlFile['admin_role_name']
+
+keycloakServerUrl = yamlFile['keycloak']['server_url']
+keycloakRealm = yamlFile['keycloak']['realm_name']
 
 init()
 class AdminTools:
@@ -100,10 +109,10 @@ class AdminTools:
 
     global adminPassword
     global keycloakAdmin
-    keycloakAdmin = KeycloakAdmin(server_url='https://lemur-5.cloud-iam.com/auth/',
-                                  username='admin',
-                                  password='9F1ghter5',
-                                  realm_name='librarian-keycloak',
+    keycloakAdmin = KeycloakAdmin(server_url=keycloakServerUrl,
+                                  username=yamlFile['keycloak']['admin']['username'],
+                                  password=yamlFile['keycloak']['admin']['password'],
+                                  realm_name=keycloakRealm,
                                   verify=True
                                   )
 
@@ -184,7 +193,6 @@ class AdminTools:
         if isEmailVerified == False:
             print(f"{Fore.RED}Adding user canceled{Style.RESET_ALL}")
             return
-
 
         #creating user
         user = {"username": username,
@@ -558,8 +566,6 @@ class AdminTools:
         except Exception:
             print('Czas minął')
             print(f"""{Fore.RED}You don't have permissions{Style.RESET_ALL}""")
-        else:
-            print(f"{Fore.RED}You aren't in MongoDB mode{Style.RESET_ALL}")
 
     def resetHistory(self):
         try:
@@ -575,8 +581,6 @@ class AdminTools:
         except Exception:
             print('Czas minął')
             print(f"""{Fore.RED}You don't have permissions{Style.RESET_ALL}""")
-        else:
-            print(f"{Fore.RED}You aren't in MongoDB mode{Style.RESET_ALL}")
 
     def resetAll(self):
         try:
@@ -593,16 +597,13 @@ class AdminTools:
         except Exception:
             print('Czas minął')
             print(f"""{Fore.RED}You don't have permissions{Style.RESET_ALL}""")
-        else:
-            print(f"{Fore.RED}You aren't in MongoDB mode{Style.RESET_ALL}")
-
 
 def profiles():
     # Konfiguracja klienta Keycloak
-    keycloak_url = 'https://lemur-5.cloud-iam.com/auth/'
-    realm_name = 'librarian-keycloak'
-    client_id = 'python-app'
-    client_secret = 'xa1ze6H4EjrdOCrH0KDzKTHlDwKiLrB7'
+    keycloak_url = keycloakServerUrl
+    realm_name = keycloakRealm
+    client_id = yamlFile['keycloak']['openID']['client_id']
+    client_secret = yamlFile['keycloak']['openID']['client_secret']
 
     # Inicjalizacja obiektu
     global keycloak_openid
@@ -663,7 +664,9 @@ def mongoPreconfiguration():
                 print(f'{Fore.LIGHTWHITE_EX}Konfiguracja dostępu do bazy danych{Style.RESET_ALL}')
                 userInput = input("Podaj nazwę użytkownika: ")
                 passwordInput = maskpass.askpass(prompt='Podaj hasło do bazy danych MongoDB: ', mask='*')
-                connectionString = f"mongodb+srv://default:default@librarian.3akhsbc.mongodb.net/?retryWrites=true&w=majority"
+                #TODO: Replace <password to default>
+                connectionString = ''
+                connectionString = yamlFile['mongodb_connection_string'].replace('<username>', 'default').replace('<password>', 'default')
                 usersClient = pymongo.MongoClient(connectionString)
                 usersDb = usersClient.Users
                 usersCollection = usersDb.users
@@ -679,18 +682,18 @@ def mongoPreconfiguration():
                     continue
 
         try:
-            connectionString = f"mongodb+srv://{userInput}:{passwordInput}@librarian.3akhsbc.mongodb.net/?retryWrites=true&w=majority"
+            connectionString = yamlFile['mongodb_connection_string'].replace('<username>', userInput).replace('<password>', passwordInput)
             global client
             global db
             global activeCollection
             global historyCollection
-            global profilesCollection
+            global mongoUsersCollection
             client = pymongo.MongoClient(connectionString)
             # TODO Check target database
-            db = client.Testing
-            activeCollection = db.activeRents
-            historyCollection = db.historyRents
-            profilesCollection = client.Users.profiles
+            db = client[yamlFile['mongo_rents_db_name']]
+            activeCollection = db[yamlFile['active_rents_collection_name']]
+            historyCollection = db['history_rents_collection_name']
+            mongoUsersCollection = client[yamlFile['mongo_users_db']][yamlFile['mongo_users_collection']]
         except Exception as error:
             print(Fore.RED + str(error) + Style.RESET_ALL)
 
