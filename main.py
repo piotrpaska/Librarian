@@ -14,6 +14,7 @@ from email.mime.multipart import MIMEMultipart
 from keycloak import KeycloakOpenID, KeycloakAdmin
 import atexit
 import yaml
+import sqlite3
 
 # Mongo variables
 global isJson
@@ -28,7 +29,6 @@ global profilePassword
 
 global viewerRole
 global librarianRole
-global adminRole
 
 global token
 global keycloak_openid
@@ -45,8 +45,6 @@ senderEmail = yamlFile['sender_email']
 receiveEmail = yamlFile['admins_emails']
 senderPassword = yamlFile['sender_password']
 
-adminPassword = '9F1ghter5'
-
 keycloak_openid = KeycloakOpenID
 
 viewerRole = yamlFile['viewer_role_name']
@@ -55,6 +53,12 @@ adminRole = yamlFile['admin_role_name']
 
 keycloakServerUrl = yamlFile['keycloak']['server_url']
 keycloakRealm = yamlFile['keycloak']['realm_name']
+
+passwordsDBconnection = sqlite3.connect('database.db')
+passwordsDBcursor = passwordsDBconnection.cursor()
+
+passwordsDBconnection.execute("""SELECT * FROM passwords WHERE username='admin'""")
+adminPassword = passwordsDBcursor.fetchone()
 
 init()
 class AdminTools:
@@ -107,7 +111,6 @@ class AdminTools:
 
         return codeInput == confirmCode
 
-    global adminPassword
     global keycloakAdmin
     keycloakAdmin = KeycloakAdmin(server_url=keycloakServerUrl,
                                   username=yamlFile['keycloak']['admin']['username'],
@@ -537,6 +540,25 @@ class AdminTools:
                 else:
                     print(f'{Fore.RED}Niepoprawna komenda.{Style.RESET_ALL}')
 
+    def changeAdminPassword(self):
+        global passwordsDBconnection
+        global passwordsDBcursor
+        global adminPassword
+        confirmPassword = maskpass.askpass('Enter current admin password: ', '*')
+        if confirmPassword == adminPassword:
+            while True:
+                newPassword = maskpass.askpass('Enter new password: ', '*')
+                repeatPassword = maskpass.askpass('Repeat password: ', '*')
+
+                if newPassword == repeatPassword:
+                    passwordsDBcursor.execute(f"UPDATE passwords SET password=? WHERE username = 'admin'", (newPassword,))
+                    passwordsDBconnection.commit()
+                    adminPassword = newPassword
+                    break
+                else:
+                    print(f"""{Fore.RED}Passwords don't match{Style.RESET_ALL}""")
+        else:
+            print(f"""{Fore.RED}Incorrect password{Style.RESET_ALL}""")
     def changeMode(self):
         try:
             if self.emailCodeSend():
@@ -2173,7 +2195,11 @@ def modifying():
 def onExit():
     global keycloak_openid
     global token
+    global passwordsDBconnection
+    global passwordsDBcursor
     keycloak_openid.logout(token["refresh_token"])
+    passwordsDBcursor.close()
+    passwordsDBconnection.close()
 
 adminTools = AdminTools(senderEmail, receiveEmail, senderPassword)
 mongoPreconfiguration()
@@ -2349,6 +2375,7 @@ while True:
         print("[5] - Add profile")
         print("[6] - Delete profile")
         print("[7] - Modify profile")
+        print("[8] - Change admin Password")
         choice = input("Wybierz z listy: ")
         if choice == '1':
             adminTools.changeMode()
@@ -2364,6 +2391,8 @@ while True:
             adminTools.deleteProfile()
         elif choice == '7':
             adminTools.modifyProfile()
+        elif choice == '8':
+            adminTools.changeAdminPassword()
         else:
             print(f"{Fore.RED}Nie znaleziono takiej komendy. Spróbuj ponownie.{Style.RESET_ALL}")
     elif choice == 'logout':
