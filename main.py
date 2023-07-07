@@ -54,12 +54,11 @@ adminRole = yamlFile['admin_role_name']
 keycloakServerUrl = yamlFile['keycloak']['server_url']
 keycloakRealm = yamlFile['keycloak']['realm_name']
 
-passwordsDBconnection = sqlite3.connect('database.db')
+passwordsDBconnection = sqlite3.connect('db.db')
 passwordsDBcursor = passwordsDBconnection.cursor()
 
-passwordsDBconnection.execute("""SELECT * FROM passwords WHERE username='admin'""")
-adminPassword = passwordsDBcursor.fetchone()
-
+passwordsDBcursor.execute("""SELECT * from pwds WHERE username='admin'""")
+adminPassword = passwordsDBcursor.fetchone()[1]
 init()
 class AdminTools:
 
@@ -281,7 +280,6 @@ class AdminTools:
 
 
     def modifyProfile(self):
-        #TODO: dodać możliwość zmiany roli
         global keycloakAdmin
 
         usersList = prettytable.PrettyTable(["Username"])
@@ -679,14 +677,17 @@ def mongoPreconfiguration():
     else:
         isJson = False
     if not isJson:
-        userInput = get_key(dotenv_path, 'MONGODB_USER')
-        passwordInput = get_key(dotenv_path, 'MONGODB_PASSWORD')
+        global passwordsDBconnection
+        global passwordsDBcursor
+        passwordsDBcursor.execute("""select * from pwds where type='mongo'""")
+        mongoUserData = passwordsDBcursor.fetchone()
+        userInput = mongoUserData[0]
+        passwordInput = mongoUserData[1]
         if userInput == 'None' and passwordInput == 'None':
             while True:
                 print(f'{Fore.LIGHTWHITE_EX}Konfiguracja dostępu do bazy danych{Style.RESET_ALL}')
                 userInput = input("Podaj nazwę użytkownika: ")
                 passwordInput = maskpass.askpass(prompt='Podaj hasło do bazy danych MongoDB: ', mask='*')
-                #TODO: Replace <password to default>
                 connectionString = ''
                 connectionString = yamlFile['mongodb_connection_string'].replace('<username>', 'default').replace('<password>', 'default')
                 usersClient = pymongo.MongoClient(connectionString)
@@ -694,8 +695,9 @@ def mongoPreconfiguration():
                 usersCollection = usersDb.users
                 usersDict = usersCollection.find_one({"username": str(userInput), "password": str(passwordInput)})
                 if usersDict != None:
-                    set_key(dotenv_path, "MONGODB_USER", userInput)
-                    set_key(dotenv_path, "MONGODB_PASSWORD", passwordInput)
+                    passwordsDBcursor.execute(
+                        "UPDATE pwds SET username=?, password=? WHERE type='mongo'", (userInput, passwordInput,))
+                    passwordsDBconnection.commit()
                     break
                 else:
                     print()
@@ -718,6 +720,8 @@ def mongoPreconfiguration():
             mongoUsersCollection = client[yamlFile['mongo_users_db']][yamlFile['mongo_users_collection']]
         except Exception as error:
             print(Fore.RED + str(error) + Style.RESET_ALL)
+
+        os.system('cls')
 
 
 def addHire():
@@ -2363,8 +2367,8 @@ while True:
         os.system('cls')
     elif choice == 'cfg mongo':
         os.system('cls')
-        set_key(find_dotenv(), "MONGODB_USER", 'None')
-        set_key(find_dotenv(), "MONGODB_PASSWORD", 'None')
+        passwordsDBcursor.execute("UPDATE pwds SET username='None', password='None' WHERE type='mongo'")
+        passwordsDBconnection.commit()
         mongoPreconfiguration()
     elif choice == 'cfg admin':
         os.system('cls')
