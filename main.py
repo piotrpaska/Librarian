@@ -15,6 +15,7 @@ from keycloak import KeycloakOpenID, KeycloakAdmin
 import atexit
 import yaml
 import sqlite3
+from cryptography.fernet import Fernet
 
 # Mongo variables
 global isJson
@@ -58,8 +59,17 @@ passwordsDBconnection = sqlite3.connect('db.db')
 passwordsDBcursor = passwordsDBconnection.cursor()
 
 passwordsDBcursor.execute("""SELECT * from pwds WHERE username='admin'""")
-adminPassword = passwordsDBcursor.fetchone()[1]
+encryptedAdminPassword = passwordsDBcursor.fetchone()[1]
+with open('fernet_key.txt', 'rb') as keyFile:
+    key = keyFile.read()
+
+cipher = Fernet(key)
+
+adminPassword = cipher.decrypt(encryptedAdminPassword).decode()
+
 init()
+
+#TODO: hashowanie haseł
 class AdminTools:
 
     def __init__(self, senderEmail: str, receiveEmail: list, password: str):
@@ -544,12 +554,17 @@ class AdminTools:
         global adminPassword
         confirmPassword = maskpass.askpass('Enter current admin password: ', '*')
         if confirmPassword == adminPassword:
+            key = Fernet.generate_key()
+            with open('fernet_key.txt', 'wb') as keyFile:
+                keyFile.write(key)
+            cipher = Fernet(key)
             while True:
                 newPassword = maskpass.askpass('Enter new password: ', '*')
                 repeatPassword = maskpass.askpass('Repeat password: ', '*')
 
                 if newPassword == repeatPassword:
-                    passwordsDBcursor.execute(f"UPDATE passwords SET password=? WHERE username = 'admin'", (newPassword,))
+                    encryptedPassword = cipher.encrypt(newPassword.encode())
+                    passwordsDBcursor.execute(f"UPDATE pwds SET password=? WHERE username = 'admin'", (encryptedPassword,))
                     passwordsDBconnection.commit()
                     adminPassword = newPassword
                     break
