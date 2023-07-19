@@ -58,18 +58,18 @@ keycloakRealm = yamlFile['keycloak']['realm_name']
 passwordsDBconnection = sqlite3.connect('db.db')
 passwordsDBcursor = passwordsDBconnection.cursor()
 
-passwordsDBcursor.execute("""SELECT * from pwds WHERE username='admin'""")
+passwordsDBcursor.execute("""SELECT * from pwds WHERE type='admin'""")
 encryptedAdminPassword = passwordsDBcursor.fetchone()[1]
 with open('fernet_key.txt', 'rb') as keyFile:
-    key = keyFile.read()
+    fernetKey = keyFile.read()
 
-cipher = Fernet(key)
+global cipher
+cipher = Fernet(fernetKey)
 
 adminPassword = cipher.decrypt(encryptedAdminPassword).decode()
 
 init()
 
-#TODO: hashowanie haseł
 class AdminTools:
 
     def __init__(self, senderEmail: str, receiveEmail: list, password: str):
@@ -554,10 +554,7 @@ class AdminTools:
         global adminPassword
         confirmPassword = maskpass.askpass('Enter current admin password: ', '*')
         if confirmPassword == adminPassword:
-            key = Fernet.generate_key()
-            with open('fernet_key.txt', 'wb') as keyFile:
-                keyFile.write(key)
-            cipher = Fernet(key)
+            cipher = Fernet(fernetKey)
             while True:
                 newPassword = maskpass.askpass('Enter new password: ', '*')
                 repeatPassword = maskpass.askpass('Repeat password: ', '*')
@@ -694,10 +691,14 @@ def mongoPreconfiguration():
     if not isJson:
         global passwordsDBconnection
         global passwordsDBcursor
+        global cipher
         passwordsDBcursor.execute("""select * from pwds where type='mongo'""")
         mongoUserData = passwordsDBcursor.fetchone()
-        userInput = mongoUserData[0]
-        passwordInput = mongoUserData[1]
+        encryptedUserInput = mongoUserData[0]
+        encryptedPasswordInputwordInput = mongoUserData[1]
+        userInput = cipher.decrypt(encryptedUserInput).decode()
+        passwordInput = cipher.decrypt(encryptedPasswordInputwordInput).decode()
+
         if userInput == 'None' and passwordInput == 'None':
             while True:
                 print(f'{Fore.LIGHTWHITE_EX}Konfiguracja dostępu do bazy danych{Style.RESET_ALL}')
@@ -710,8 +711,10 @@ def mongoPreconfiguration():
                 usersCollection = usersDb.users
                 usersDict = usersCollection.find_one({"username": str(userInput), "password": str(passwordInput)})
                 if usersDict != None:
+                    encryptedUserInput = cipher.encrypt(userInput.encode())
+                    encryptedPasswordInputwordInput = cipher.encrypt(passwordInput.encode())
                     passwordsDBcursor.execute(
-                        "UPDATE pwds SET username=?, password=? WHERE type='mongo'", (userInput, passwordInput,))
+                        "UPDATE pwds SET username=?, password=? WHERE type='mongo'", (encryptedUserInput, encryptedPasswordInputwordInput,))
                     passwordsDBconnection.commit()
                     break
                 else:
@@ -721,6 +724,8 @@ def mongoPreconfiguration():
                     continue
 
         try:
+            print(userInput)
+            print(passwordInput)
             connectionString = yamlFile['mongodb_connection_string'].replace('<username>', userInput).replace('<password>', passwordInput)
             global client
             global db
@@ -728,7 +733,6 @@ def mongoPreconfiguration():
             global historyCollection
             global mongoUsersCollection
             client = pymongo.MongoClient(connectionString)
-            # TODO Check target database
             db = client[yamlFile['mongo_rents_db_name']]
             activeCollection = db[yamlFile['active_rents_collection_name']]
             historyCollection = db['history_rents_collection_name']
@@ -736,7 +740,7 @@ def mongoPreconfiguration():
         except Exception as error:
             print(Fore.RED + str(error) + Style.RESET_ALL)
 
-        os.system('cls')
+
 
 
 def addHire():
@@ -1098,7 +1102,7 @@ def viewActiveHires():
         try:
             entries = activeCollection.find()
         except Exception as error:
-            print(Fore.RED + str(error) + Style.RESET_ALL)
+            pass
         for item in entries:
             documentIDs.append(item)  # pamiatac o numeracji od 0 w tablicy IDkow a od 1 w tabeli co się wyswietla !!!!
             name = item["name"]
@@ -2382,7 +2386,8 @@ while True:
         os.system('cls')
     elif choice == 'cfg mongo':
         os.system('cls')
-        passwordsDBcursor.execute("UPDATE pwds SET username='None', password='None' WHERE type='mongo'")
+        encryptedNone = cipher.encrypt(b'None')
+        passwordsDBcursor.execute("UPDATE pwds SET username=?, password=? WHERE type='mongo'", (encryptedNone, encryptedNone,))
         passwordsDBconnection.commit()
         mongoPreconfiguration()
     elif choice == 'cfg admin':
