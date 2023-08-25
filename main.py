@@ -78,9 +78,9 @@ class AdminTools:
         server.quit()
 
         try:
-            codeInput = inputimeout(prompt="Enter confirmation code from email: ", timeout=5)
+            codeInput = inputimeout(prompt="Enter confirmation code from email: ", timeout=120)
         except Exception:
-            raise TimeoutError
+            print(f"{Fore.RED}Timeout{Style.RESET_ALL}")
             return
 
         return codeInput == confirmCode
@@ -257,7 +257,6 @@ class AdminTools:
 
 
     def modifyProfile(self):
-        #TODO: dodać możliwość zmiany roli
         global keycloakAdmin
 
         usersList = prettytable.PrettyTable(["Username"])
@@ -517,61 +516,37 @@ class AdminTools:
                     print(f'{Fore.RED}Niepoprawna komenda.{Style.RESET_ALL}')
 
     def changeMode(self):
-        try:
-            if self.emailCodeSend():
-                print(f'{Fore.GREEN}Auth confirmed{Style.RESET_ALL}')
-                if get_key(find_dotenv(), 'JSON') == 'True':
-                    set_key(find_dotenv(), 'JSON', 'False')
-                elif get_key(find_dotenv(), 'JSON') == 'False':
-                    set_key(find_dotenv(), 'JSON', 'True')
-                print(f'{Fore.GREEN}Mode changed successfully{Style.RESET_ALL}')
-                print('Please restart program')
-            else:
-                print(f"""{Fore.RED}You don't have permissions{Style.RESET_ALL}""")
-        except TimeoutError:
-            print(f"{Fore.RED}Timeout{Style.RESET_ALL}")
+        print(f'{Fore.GREEN}Auth confirmed{Style.RESET_ALL}')
+        if get_key(find_dotenv(), 'JSON') == 'True':
+            set_key(find_dotenv(), 'JSON', 'False')
+        elif get_key(find_dotenv(), 'JSON') == 'False':
+            set_key(find_dotenv(), 'JSON', 'True')
+        print(f'{Fore.GREEN}Mode changed successfully{Style.RESET_ALL}')
+        print('Please restart program')
 
     def resetActive(self):
-        try:
-            if not isJson:
-                if self.emailCodeSend():
-                    print(f'{Fore.GREEN}Auth confirmed{Style.RESET_ALL}')
-                    activeCollection.delete_many({})
-                    print(f'{Fore.GREEN}Active rents list is clear{Style.RESET_ALL}')
-                else:
-                    print(f"""{Fore.RED}You don't have permissions{Style.RESET_ALL}""")
-            else:
-                print(f"{Fore.RED}You aren't in MongoDB mode{Style.RESET_ALL}")
-        except TimeoutError:
-            print(f"{Fore.RED}Timeout{Style.RESET_ALL}")
+        if not isJson:
+            print(f'{Fore.GREEN}Auth confirmed{Style.RESET_ALL}')
+            activeCollection.delete_many({})
+            print(f'{Fore.GREEN}Active rents list is clear{Style.RESET_ALL}')
+        else:
+            print(f"{Fore.RED}You aren't in MongoDB mode{Style.RESET_ALL}")
 
     def resetHistory(self):
-        try:
-            if not isJson:
-                if self.emailCodeSend():
-                    print(f'{Fore.GREEN}Auth confirmed{Style.RESET_ALL}')
-                    historyCollection.delete_many({})
-                    print(f'{Fore.GREEN}History is clear{Style.RESET_ALL}')
-                else:
-                    print(f"""{Fore.RED}You don't have permissions{Style.RESET_ALL}""")
-            else:
-                print(f"{Fore.RED}You aren't in MongoDB mode{Style.RESET_ALL}")
-        except TimeoutError:
-            print(f"{Fore.RED}Timeout{Style.RESET_ALL}")
+        if not isJson:
+            print(f'{Fore.GREEN}Auth confirmed{Style.RESET_ALL}')
+            historyCollection.delete_many({})
+            print(f'{Fore.GREEN}History is clear{Style.RESET_ALL}')
+        else:
+            print(f"{Fore.RED}You aren't in MongoDB mode{Style.RESET_ALL}")
     def resetAll(self):
-        try:
-            if not isJson:
-                if self.emailCodeSend():
-                    print(f'{Fore.GREEN}Auth confirmed{Style.RESET_ALL}')
-                    activeCollection.delete_many({})
-                    historyCollection.delete_many({})
-                    print(f'{Fore.GREEN}Database is fully reset{Style.RESET_ALL}')
-                else:
-                    print(f"""{Fore.RED}You don't have permissions{Style.RESET_ALL}""")
-            else:
-                print(f"{Fore.RED}You aren't in MongoDB mode{Style.RESET_ALL}")
-        except TimeoutError:
-            print(f"{Fore.RED}Timeout{Style.RESET_ALL}")
+        if not isJson:
+            print(f'{Fore.GREEN}Auth confirmed{Style.RESET_ALL}')
+            activeCollection.delete_many({})
+            historyCollection.delete_many({})
+            print(f'{Fore.GREEN}Database is fully reset{Style.RESET_ALL}')
+        else:
+            print(f"{Fore.RED}You aren't in MongoDB mode{Style.RESET_ALL}")
 
 
 def profiles():
@@ -2316,30 +2291,40 @@ while True:
         mongoPreconfiguration()
     elif choice == 'cfg admin':
         os.system('cls')
-        print(f"[1] - Change mode - current: {Fore.LIGHTBLUE_EX}{get_key(find_dotenv(), 'JSON')}{Style.RESET_ALL}")
-        print("[2] - Reset active rents list")
-        print("[3] - Reset history")
-        print("[4] - Reset all")
-        print("[5] - Add profile")
-        print("[6] - Delete profile")
-        print("[7] - Modify profile")
-        choice = input("Wybierz z listy: ")
-        if choice == '1':
-            adminTools.changeMode()
-        elif choice == '2':
-            adminTools.resetActive()
-        elif choice == '3':
-            adminTools.resetHistory()
-        elif choice == '4':
-            adminTools.resetAll()
-        elif choice == '5':
-            adminTools.addProfile()
-        elif choice == '6':
-            adminTools.deleteProfile()
-        elif choice == '7':
-            adminTools.modifyProfile()
+        if adminTools.emailCodeSend():
+            while True:
+                print()
+                print("----------------------------------------------------------------------------")
+                print(f"[1] - Change mode - current: {Fore.LIGHTBLUE_EX}{get_key(find_dotenv(), 'JSON')}{Style.RESET_ALL}")
+                print("[2] - Reset active rents list")
+                print("[3] - Reset history")
+                print("[4] - Reset all")
+                print("[5] - Add profile")
+                print("[6] - Delete profile")
+                print("[7] - Modify profile")
+                print('[quit] - Close admin menu')
+                choice = input("Wybierz z listy: ")
+                if choice == '1':
+                    adminTools.changeMode()
+                elif choice == '2':
+                    adminTools.resetActive()
+                elif choice == '3':
+                    adminTools.resetHistory()
+                elif choice == '4':
+                    adminTools.resetAll()
+                elif choice == '5':
+                    adminTools.addProfile()
+                elif choice == '6':
+                    adminTools.deleteProfile()
+                elif choice == '7':
+                    adminTools.modifyProfile()
+                elif choice == 'quit':
+                    os.system('cls')
+                    break
+                else:
+                    print(f"{Fore.RED}Nie znaleziono takiej komendy. Spróbuj ponownie.{Style.RESET_ALL}")
         else:
-            print(f"{Fore.RED}Nie znaleziono takiej komendy. Spróbuj ponownie.{Style.RESET_ALL}")
+            print(f"{Fore.RED}You don't have permission to perform this action{Style.RESET_ALL}")
     elif choice == 'logout':
         os.system('cls')
         keycloak_openid.logout(token["refresh_token"])
