@@ -14,6 +14,7 @@ from email.mime.multipart import MIMEMultipart
 from inputimeout import inputimeout
 from keycloak import KeycloakOpenID, KeycloakAdmin
 import atexit
+import logging
 
 # Mongo variables
 global isJson
@@ -1791,7 +1792,7 @@ def extension():
         else:
             print(f'{Fore.GREEN}Przedłużono wypożyczenie{Style.RESET_ALL}')
 
-            
+
 def modifying():
     if isJson:
         with open(activeHiresFile, "r") as f:
@@ -2124,6 +2125,8 @@ def onExit():
     global token
     keycloak_openid.logout(token["refresh_token"])
 
+
+logging.basicConfig(format="[%(asctime)s %(levelname)s]: %(message)s", datefmt="d.m.Y H:M:S")
 adminTools = AdminTools(senderEmail, receiveEmail, senderPassword)
 mongoPreconfiguration()
 profiles()
