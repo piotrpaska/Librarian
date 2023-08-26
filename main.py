@@ -49,7 +49,7 @@ viewerRole = 'viewer'
 librarianRole = 'librarian'
 adminRole = 'admin'
 
-logging.basicConfig(format="[%(asctime)s %(levelname)s]: %(message)s", datefmt="%d.%m.%Y %H:%M:%S", filename='logs.log', filemode='a', level=logging.INFO)
+logging.basicConfig(format="[%(asctime)s %(levelname)s]: %(message)s", datefmt="%d.%m.%Y %H:%M:%S", filename='log.log', filemode='a', level=logging.INFO)
 init()
 class AdminTools:
     def __init__(self, senderEmail: str, receiveEmail: list, password: str):
@@ -85,6 +85,7 @@ class AdminTools:
             return
 
         return codeInput == confirmCode
+
 
     global adminPassword
     global keycloakAdmin
