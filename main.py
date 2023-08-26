@@ -624,6 +624,7 @@ def mongoPreconfiguration():
                 if usersDict != None:
                     set_key(dotenv_path, "MONGODB_USER", userInput)
                     set_key(dotenv_path, "MONGODB_PASSWORD", passwordInput)
+                    logging.warning(f"Changed MongoDB credentials to {userInput}")
                     break
                 else:
                     print()
@@ -863,6 +864,7 @@ def addHire():
                 with open(activeHiresFile, "w") as f:
                     json.dump(temp, f, indent=4)
                 print(f'{Fore.GREEN}Dodano wypożyczenie{Style.RESET_ALL}')
+                logging.info(f'{profileUsername} added new hire to local json: {name}, {lastName}, {bookTitle}')
             except Exception as error:
                 print(Fore.RED + str(error) + Style.RESET_ALL)
         elif sure == 0:
@@ -875,6 +877,7 @@ def addHire():
                 print(Fore.RED + str(error) + Style.RESET_ALL)
             else:
                 print(f'{Fore.GREEN}Dodano wypożyczenie{Style.RESET_ALL}')
+                logging.info(f'{profileUsername} added new hire to MongoDB: {name}, {lastName}, {bookTitle}')
         elif sure == 0:
             print(f"{Fore.GREEN}Anulowano dodanie wypożyczenia{Style.RESET_ALL}")
 
@@ -940,6 +943,7 @@ def endHire():
                     temp.append(entry)
                 with open(historyFile, "w") as f:
                     json.dump(temp, f, indent=4)
+                logging.info(f"{profileUsername} Finished hire on local json: {entry['name']}, {entry['lastName']}, {entry['bookTitle']}")
                 i = i + 1
             else:
                 new_data.append(entry)
@@ -957,6 +961,8 @@ def endHire():
         except Exception as error:
             print(Fore.RED + str(error) + Style.RESET_ALL)
         else:
+            logging.info(
+                f"{profileUsername} Finished hire in MongoDB: {chosenDocument['name']}, {chosenDocument['lastName']}, {chosenDocument['bookTitle']}")
             print(f'{Fore.GREEN}Zakończono wypożyczenie{Style.RESET_ALL}')
 
 
@@ -1523,6 +1529,8 @@ def addDeposit():
                     rentalDate = datetime.datetime.strptime(rentalDateSTR, dateFormat)
                     maxReturnDate = rentalDate + datetime.timedelta(weeks=2)
                     entry["maxDate"] = str(f"{maxReturnDate.strftime(dateFormat)}")
+                    logging.info(
+                        f"{profileUsername} Changed deposit to {entry['deposit']} on local json: {entry['name']}, {entry['lastName']}, {entry['bookTitle']}")
                 else:
                     entry["maxDate"] = '14:10'
                 newData.append(entry)
@@ -1551,6 +1559,8 @@ def addDeposit():
         except Exception as error:
             print(Fore.RED + str(error) + Style.RESET_ALL)
         else:
+            logging.info(
+                f"{profileUsername} Changed deposit to {chosenDocument['deposit']} on local json: {chosenDocument['name']}, {chosenDocument['lastName']}, {chosenDocument['bookTitle']}")
             print(f'{Fore.GREEN}Zmieniono kaucję{Style.RESET_ALL}')
 
 
@@ -1767,6 +1777,8 @@ def extension():
                     maxDate = maxDate + datetime.timedelta(weeks=2)
                     entry["maxDate"] = maxDate.strftime(dateFormat)
                     newData.append(entry)
+                    logging.info(
+                        f"{profileUsername} Extended hire on local json: {entry['name']}, {entry['lastName']}, {entry['bookTitle']}")
                     i = i + 1
                 else:
                     newData.append(entry)
@@ -1790,6 +1802,8 @@ def extension():
         except Exception as error:
             print(Fore.RED + str(error) + Style.RESET_ALL)
         else:
+            logging.info(
+                f"{profileUsername} Extended hire in MongoDB: {chosenDocument['name']}, {chosenDocument['lastName']}, {chosenDocument['bookTitle']}")
             print(f'{Fore.GREEN}Przedłużono wypożyczenie{Style.RESET_ALL}')
 
 
@@ -1976,6 +1990,8 @@ def modifying():
                 entry['klasa'] = klasa
                 entry['bookTitle'] = bookTitle
                 newData.append(entry)
+                logging.info(
+                    f"{profileUsername} Modified hire on local json: {entry['name']}, {entry['lastName']}, {entry['bookTitle']}")
                 i = i + 1
             else:
                 newData.append(entry)
@@ -2117,6 +2133,8 @@ def modifying():
         except Exception as error:
             print(Fore.RED + str(error) + Style.RESET_ALL)
         else:
+            logging.info(
+                f"{profileUsername} Modified hire in MongoDB: {chosenDocument['name']}, {chosenDocument['lastName']}, {chosenDocument['bookTitle']}")
             print(f'{Fore.GREEN}Zmodyfikowano wypożyczenie{Style.RESET_ALL}')
 
 
