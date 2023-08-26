@@ -49,9 +49,9 @@ viewerRole = 'viewer'
 librarianRole = 'librarian'
 adminRole = 'admin'
 
+logging.basicConfig(format="[%(asctime)s %(levelname)s]: %(message)s", datefmt="%d.%m.%Y %H:%M:%S", filename='logs.log', filemode='a', level=logging.INFO)
 init()
 class AdminTools:
-
     def __init__(self, senderEmail: str, receiveEmail: list, password: str):
         self.senderEmail = senderEmail
         self.receiveEmail = receiveEmail
@@ -202,6 +202,7 @@ class AdminTools:
             keycloakAdmin.assign_realm_roles(user_id=user_id, roles=[{'id': '093d1d40-60ef-4af4-8970-f2e0f4cfc053', 'name': 'librarian', 'description': '', 'composite': False, 'clientRole': False, 'containerId': 'librarian-keycloak'},
                                                                      {'id': '8bfa8729-d769-4363-9243-6fee6d8f6282', 'name': 'admin', 'description': '', 'composite': False, 'clientRole': False, 'containerId': 'librarian-keycloak'},
                                                                      {'id': '52edcaf1-5c34-42dc-8cd0-168637c79da4', 'name': 'viewer', 'description': '', 'composite': False, 'clientRole': False, 'containerId': 'librarian-keycloak'}])
+        logging.info(f"Created profile: {username}")
         print(f'{Fore.LIGHTGREEN_EX}Added profile{Style.RESET_ALL}')
 
 
@@ -253,7 +254,10 @@ class AdminTools:
                     id += chr(key)
                     print(chr(key), end='', flush=True)
 
+        username = keycloakAdmin.get_user(usersIDs[int(id) - 1]['id'])
+        print(username)
         keycloakAdmin.delete_user(usersIDs[int(id) - 1]['id'])
+        logging.info(f"Deleted profile: {username['username']}")
         print(f'{Fore.LIGHTGREEN_EX}Deleted profile{Style.RESET_ALL}')
 
 
@@ -468,6 +472,7 @@ class AdminTools:
             keycloakAdmin.assign_realm_roles(user_id=chosenUser['id'], roles=[{'id': '093d1d40-60ef-4af4-8970-f2e0f4cfc053', 'name': 'librarian', 'description': '', 'composite': False, 'clientRole': False, 'containerId': 'librarian-keycloak'},
                                                                      {'id': '8bfa8729-d769-4363-9243-6fee6d8f6282', 'name': 'admin', 'description': '', 'composite': False, 'clientRole': False, 'containerId': 'librarian-keycloak'},
                                                                      {'id': '52edcaf1-5c34-42dc-8cd0-168637c79da4', 'name': 'viewer', 'description': '', 'composite': False, 'clientRole': False, 'containerId': 'librarian-keycloak'}])
+        logging.info(f"Modified profile: {username}")
         print(f'{Fore.LIGHTGREEN_EX}Modified profile{Style.RESET_ALL}')
 
 
@@ -495,6 +500,7 @@ class AdminTools:
                                 repeatNewPassword = maskpass.askpass('Powtórz nowe hasło: ', '*')
                                 if newPassword == repeatNewPassword:
                                     keycloakAdmin.set_user_password(user_id=user_id, password=newPassword, temporary=False)
+                                    logging.info(f"{username} Changed profile password")
                                     print(f'{Fore.GREEN}Pomyślnie zmieniono hasło{Style.RESET_ALL}')
                                     isEnd = True
                                     break
@@ -522,6 +528,7 @@ class AdminTools:
             set_key(find_dotenv(), 'JSON', 'False')
         elif get_key(find_dotenv(), 'JSON') == 'False':
             set_key(find_dotenv(), 'JSON', 'True')
+        logging.info(f"Changed data mode")
         print(f'{Fore.GREEN}Mode changed successfully{Style.RESET_ALL}')
         print('Please restart program')
 
@@ -529,6 +536,7 @@ class AdminTools:
         if not isJson:
             print(f'{Fore.GREEN}Auth confirmed{Style.RESET_ALL}')
             activeCollection.delete_many({})
+            logging.info(f"Cleared rents list")
             print(f'{Fore.GREEN}Active rents list is clear{Style.RESET_ALL}')
         else:
             print(f"{Fore.RED}You aren't in MongoDB mode{Style.RESET_ALL}")
@@ -537,6 +545,7 @@ class AdminTools:
         if not isJson:
             print(f'{Fore.GREEN}Auth confirmed{Style.RESET_ALL}')
             historyCollection.delete_many({})
+            logging.info(f"Cleared history rents list")
             print(f'{Fore.GREEN}History is clear{Style.RESET_ALL}')
         else:
             print(f"{Fore.RED}You aren't in MongoDB mode{Style.RESET_ALL}")
@@ -545,6 +554,7 @@ class AdminTools:
             print(f'{Fore.GREEN}Auth confirmed{Style.RESET_ALL}')
             activeCollection.delete_many({})
             historyCollection.delete_many({})
+            logging.info(f"Cleared rents history and active rents list")
             print(f'{Fore.GREEN}Database is fully reset{Style.RESET_ALL}')
         else:
             print(f"{Fore.RED}You aren't in MongoDB mode{Style.RESET_ALL}")
@@ -2144,7 +2154,6 @@ def onExit():
     keycloak_openid.logout(token["refresh_token"])
 
 
-logging.basicConfig(format="[%(asctime)s %(levelname)s]: %(message)s", datefmt="d.m.Y H:M:S")
 adminTools = AdminTools(senderEmail, receiveEmail, senderPassword)
 mongoPreconfiguration()
 profiles()
