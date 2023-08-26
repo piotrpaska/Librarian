@@ -656,6 +656,7 @@ def mongoPreconfiguration():
             historyCollection = db.historyRents
             profilesCollection = client.Users.profiles
         except Exception as error:
+            logging.error(f"mongoPreconfiguration: {error}")
             print(Fore.RED + str(error) + Style.RESET_ALL)
 
 
@@ -876,6 +877,7 @@ def addHire():
                 print(f'{Fore.GREEN}Dodano wypożyczenie{Style.RESET_ALL}')
                 logging.info(f'{profileUsername} added new hire to local json: {name}, {lastName}, {bookTitle}')
             except Exception as error:
+                logging.error(error)
                 print(Fore.RED + str(error) + Style.RESET_ALL)
         elif sure == 0:
             print(f"{Fore.GREEN}Anulowano dodanie wypożyczenia{Style.RESET_ALL}")
@@ -884,6 +886,7 @@ def addHire():
             try:
                 activeCollection.insert_one(hireData)
             except Exception as error:
+                logging.error(error)
                 print(Fore.RED + str(error) + Style.RESET_ALL)
             else:
                 print(f'{Fore.GREEN}Dodano wypożyczenie{Style.RESET_ALL}')
@@ -969,6 +972,7 @@ def endHire():
             historyCollection.insert_one(chosenDocument)
             activeCollection.delete_one({'_id': chosenDocument['_id']})
         except Exception as error:
+            logging.error(error)
             print(Fore.RED + str(error) + Style.RESET_ALL)
         else:
             logging.info(
@@ -1567,6 +1571,7 @@ def addDeposit():
             }
             activeCollection.update_one({"_id": chosenDocument["_id"]}, update=updates)
         except Exception as error:
+            logging.error(error)
             print(Fore.RED + str(error) + Style.RESET_ALL)
         else:
             logging.info(
@@ -2141,6 +2146,7 @@ def modifying():
             }
             activeCollection.update_one({"_id": chosenDocument["_id"]}, update=updates)
         except Exception as error:
+            logging.error(error)
             print(Fore.RED + str(error) + Style.RESET_ALL)
         else:
             logging.info(
