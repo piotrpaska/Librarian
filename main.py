@@ -794,7 +794,16 @@ def addHire():
 
     hireData["schoolClass"] = interactiveInput("Podaj klasę czytelnika (np. 2a): ")
 
-    hireData["bookTitle"] = interactiveInput("Wpisz tytuł wypożyczonej książki: ")
+    while True:
+        viewBooksList()
+        bookCode = interactiveInput("Wpisz kod wypożyczonej książki: ")
+        bookDocument = booksListCollection.find_one({"code": bookCode})
+        if bookDocument != None:
+            hireData["bookTitle"] = bookDocument["title"]
+            break
+        else:
+            print(f"{Fore.RED}Nie ma takiego kodu{Style.RESET_ALL}")
+            print()
 
     print("Wpisz wartość kaucji (jeśli nie wpłacił kaucji kliknij ENTER): ", end='',
           flush=True)  # use print instead of input to avoid blocking
