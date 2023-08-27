@@ -25,6 +25,9 @@ global activeCollection
 global historyCollection
 global mongoUsersCollection
 
+global passwordsDBconnection
+global passwordsDBcursor
+
 global profileUsername
 global profilePassword
 
@@ -34,42 +37,71 @@ global librarianRole
 global token
 global keycloak_openid
 
+global cipher
+
+global adminPassword
+
 with open('config.yml', 'r') as f:
     yamlFile = yaml.safe_load(f)
 
-# Json variables
+# Read YAML config
+# Local json files
 activeHiresFile = yamlFile['active_hires_file_name']
 historyFile = yamlFile['history_file_name']
 dateFormat = yamlFile['date_format']
 
+# Emails config
 senderEmail = yamlFile['sender_email']
 receiveEmail = yamlFile['admins_emails']
 senderPassword = yamlFile['sender_password']
 
-keycloak_openid = KeycloakOpenID
-
+# Keycloak role names
 viewerRole = yamlFile['viewer_role_name']
 librarianRole = yamlFile['librarian_role_name']
 adminRole = yamlFile['admin_role_name']
 
+# Keycloak server URL and realm
 keycloakServerUrl = yamlFile['keycloak']['server_url']
 keycloakRealm = yamlFile['keycloak']['realm_name']
 
+# Make connection to passwords DB
 passwordsDBconnection = sqlite3.connect('db.db')
 passwordsDBcursor = passwordsDBconnection.cursor()
 
-passwordsDBcursor.execute("""SELECT * from pwds WHERE type='admin'""")
-encryptedAdminPassword = passwordsDBcursor.fetchone()[1]
+# Get decrypt key
 with open('fernet_key.txt', 'rb') as keyFile:
     fernetKey = keyFile.read()
 
-global cipher
-cipher = Fernet(fernetKey)
+# Check if decrypt key is empty
+if fernetKey == b'':
+    # If yes reset DB to default values
+    # admin password = admin
+    # mongo credentials = Null (empty place)
+    key = Fernet.generate_key()
+    with open('fernet_key.txt', 'wb') as keyFile:
+        keyFile.write(key)
 
+    cipher = Fernet(key)
+    data = b'None'
+    adminData = b'admin'
+    encryptedata = cipher.encrypt(data)
+    adminEncryptedata = cipher.encrypt(adminData)
+    passwordsDBcursor.execute("UPDATE pwds SET username = ?, password=? WHERE type = 'mongo'",
+                              (encryptedata, encryptedata,))
+    passwordsDBcursor.execute("UPDATE pwds SET password=? WHERE type = 'admin'",
+                              (adminEncryptedata,))
+    passwordsDBconnection.commit()
+else:
+    # If no create decrypt object
+    cipher = Fernet(fernetKey)
+
+# Get encrypted admin password
+passwordsDBcursor.execute("""SELECT * from pwds WHERE type='admin'""")
+encryptedAdminPassword = passwordsDBcursor.fetchone()[1]
+# Decrypt admin password
 adminPassword = cipher.decrypt(encryptedAdminPassword).decode()
 
 init()
-
 class AdminTools:
 
     def __init__(self, senderEmail: str, receiveEmail: list, password: str):
@@ -129,7 +161,6 @@ class AdminTools:
                                   )
 
     def checkRole(self, roleName: str, username: str) -> bool:
-        global keycloakAdmin
         # Pobranie ID użytkownika na podstawie jego nazwy użytkownika
         user_id = keycloakAdmin.get_user_id(username)
 
@@ -143,8 +174,6 @@ class AdminTools:
             return False
 
     def addProfile(self):
-        global keycloakAdmin
-
         print()
         print(f'{Fore.LIGHTWHITE_EX}Adding user{Style.RESET_ALL}')
         username = input('Enter username: ')
@@ -238,7 +267,6 @@ class AdminTools:
 
 
     def deleteProfile(self):
-        global keycloakAdmin
 
         usersList = prettytable.PrettyTable(["Username"])
         usersIDs = []
@@ -290,7 +318,6 @@ class AdminTools:
 
 
     def modifyProfile(self):
-        global keycloakAdmin
 
         usersList = prettytable.PrettyTable(["Username"])
         usersIDs = []
@@ -505,7 +532,6 @@ class AdminTools:
 
     def changePassword(self, username):
         try:
-            global keycloakAdmin
             user_id = keycloakAdmin.get_user_id(username)
             keycloakAdmin.send_update_account(user_id=user_id, payload=['UPDATE_PASSWORD'])
             print(f'{Fore.GREEN}Udało się wysłać email.\n'
@@ -548,20 +574,18 @@ class AdminTools:
                 else:
                     print(f'{Fore.RED}Niepoprawna komenda.{Style.RESET_ALL}')
 
+
     def changeAdminPassword(self):
-        global passwordsDBconnection
-        global passwordsDBcursor
         global adminPassword
         confirmPassword = maskpass.askpass('Enter current admin password: ', '*')
         if confirmPassword == adminPassword:
-            cipher = Fernet(fernetKey)
             while True:
                 newPassword = maskpass.askpass('Enter new password: ', '*')
                 repeatPassword = maskpass.askpass('Repeat password: ', '*')
 
                 if newPassword == repeatPassword:
                     encryptedPassword = cipher.encrypt(newPassword.encode())
-                    passwordsDBcursor.execute(f"UPDATE pwds SET password=? WHERE username = 'admin'", (encryptedPassword,))
+                    passwordsDBcursor.execute(f"UPDATE pwds SET password=? WHERE type = 'admin'", (encryptedPassword,))
                     passwordsDBconnection.commit()
                     adminPassword = newPassword
                     break
@@ -569,6 +593,8 @@ class AdminTools:
                     print(f"""{Fore.RED}Passwords don't match{Style.RESET_ALL}""")
         else:
             print(f"""{Fore.RED}Incorrect password{Style.RESET_ALL}""")
+
+
     def changeMode(self):
         try:
             if self.emailCodeSend():
@@ -691,7 +717,6 @@ def mongoPreconfiguration():
     if not isJson:
         global passwordsDBconnection
         global passwordsDBcursor
-        global cipher
         passwordsDBcursor.execute("""select * from pwds where type='mongo'""")
         mongoUserData = passwordsDBcursor.fetchone()
         encryptedUserInput = mongoUserData[0]
@@ -704,7 +729,6 @@ def mongoPreconfiguration():
                 print(f'{Fore.LIGHTWHITE_EX}Konfiguracja dostępu do bazy danych{Style.RESET_ALL}')
                 userInput = input("Podaj nazwę użytkownika: ")
                 passwordInput = maskpass.askpass(prompt='Podaj hasło do bazy danych MongoDB: ', mask='*')
-                connectionString = ''
                 connectionString = yamlFile['mongodb_connection_string'].replace('<username>', 'default').replace('<password>', 'default')
                 usersClient = pymongo.MongoClient(connectionString)
                 usersDb = usersClient.Users
@@ -724,8 +748,6 @@ def mongoPreconfiguration():
                     continue
 
         try:
-            print(userInput)
-            print(passwordInput)
             connectionString = yamlFile['mongodb_connection_string'].replace('<username>', userInput).replace('<password>', passwordInput)
             global client
             global db
@@ -1887,7 +1909,7 @@ def extension():
         else:
             print(f'{Fore.GREEN}Przedłużono wypożyczenie{Style.RESET_ALL}')
 
-            
+
 def modifying():
     if isJson:
         with open(activeHiresFile, "r") as f:
