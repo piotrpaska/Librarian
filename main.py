@@ -799,8 +799,12 @@ def addHire():
         bookCode = interactiveInput("Wpisz kod wypożyczonej książki: ")
         bookDocument = booksListCollection.find_one({"code": bookCode})
         if bookDocument != None:
-            hireData["bookTitle"] = bookDocument["title"]
-            break
+            if int(bookDocument["onStock"]) > 0:
+                hireData["bookTitle"] = bookDocument["title"]
+                break
+            else:
+                print(f"{Fore.RED}Nie ma tych książek na stanie{Style.RESET_ALL}")
+                print()
         else:
             print(f"{Fore.RED}Nie ma takiego kodu{Style.RESET_ALL}")
             print()
@@ -894,6 +898,10 @@ def addHire():
         if sure == 1:
             try:
                 activeCollection.insert_one(hireData)
+                updates = {
+                    "$set": {"onStock": int(bookDocument["onStock"] - 1), "rented": int(bookDocument["rented"] + 1)}
+                }
+                booksListCollection.update_one({"_id": bookDocument["_id"]}, update=updates)
             except Exception as error:
                 logging.error(error)
                 print(Fore.RED + str(error) + Style.RESET_ALL)
