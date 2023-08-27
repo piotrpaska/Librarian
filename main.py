@@ -11,11 +11,13 @@ import random
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from inputimeout import inputimeout
 from keycloak import KeycloakOpenID, KeycloakAdmin
 import atexit
 import yaml
 import sqlite3
 from cryptography.fernet import Fernet
+import logging
 
 # Mongo variables
 global isJson
@@ -101,9 +103,9 @@ encryptedAdminPassword = passwordsDBcursor.fetchone()[1]
 # Decrypt admin password
 adminPassword = cipher.decrypt(encryptedAdminPassword).decode()
 
+logging.basicConfig(format="[%(asctime)s %(levelname)s]: %(message)s", datefmt="%d.%m.%Y %H:%M:%S", filename='log.log', filemode='a', level=logging.INFO)
 init()
 class AdminTools:
-
     def __init__(self, senderEmail: str, receiveEmail: list, password: str):
         self.senderEmail = senderEmail
         self.receiveEmail = receiveEmail
@@ -130,28 +132,15 @@ class AdminTools:
         server.sendmail(self.senderEmail, self.receiveEmail, text)
         server.quit()
 
-        print("Enter confirmation code from email: ", end='', flush=True)  # use print instead of input to avoid blocking
-        codeInput = ""
-        while True:
-            if msvcrt.kbhit():
-                key = ord(msvcrt.getch())
-                if key == 27:  # escape key
-                    print()
-                    os.system('cls')
-                    return  # exit function
-                elif key == 13:  # enter key
-                    print()
-                    break  # exit loop
-                elif key == 8:  # backspace key
-                    if len(codeInput) > 0:
-                        codeInput = codeInput[:-1]
-                        print(f"\rEnter confirmation code from email: {codeInput} {''}\b", end='', flush=True)
-                else:
-                    codeInput += chr(key)
-                    print(chr(key), end='', flush=True)
+        try:
+            codeInput = inputimeout(prompt="Enter confirmation code from email: ", timeout=120)
+        except Exception:
+            print(f"{Fore.RED}Timeout{Style.RESET_ALL}")
+            return
 
         return codeInput == confirmCode
-
+    
+   
     global keycloakAdmin
     keycloakAdmin = KeycloakAdmin(server_url=keycloakServerUrl,
                                   username=yamlFile['keycloak']['admin']['username'],
@@ -263,6 +252,7 @@ class AdminTools:
             keycloakAdmin.assign_realm_roles(user_id=user_id, roles=[{'id': '093d1d40-60ef-4af4-8970-f2e0f4cfc053', 'name': 'librarian', 'description': '', 'composite': False, 'clientRole': False, 'containerId': 'librarian-keycloak'},
                                                                      {'id': '8bfa8729-d769-4363-9243-6fee6d8f6282', 'name': 'admin', 'description': '', 'composite': False, 'clientRole': False, 'containerId': 'librarian-keycloak'},
                                                                      {'id': '52edcaf1-5c34-42dc-8cd0-168637c79da4', 'name': 'viewer', 'description': '', 'composite': False, 'clientRole': False, 'containerId': 'librarian-keycloak'}])
+        logging.info(f"Created profile: {username}")
         print(f'{Fore.LIGHTGREEN_EX}Added profile{Style.RESET_ALL}')
 
 
@@ -313,7 +303,10 @@ class AdminTools:
                     id += chr(key)
                     print(chr(key), end='', flush=True)
 
+        username = keycloakAdmin.get_user(usersIDs[int(id) - 1]['id'])
+        print(username)
         keycloakAdmin.delete_user(usersIDs[int(id) - 1]['id'])
+        logging.info(f"Deleted profile: {username['username']}")
         print(f'{Fore.LIGHTGREEN_EX}Deleted profile{Style.RESET_ALL}')
 
 
@@ -527,6 +520,7 @@ class AdminTools:
             keycloakAdmin.assign_realm_roles(user_id=chosenUser['id'], roles=[{'id': '093d1d40-60ef-4af4-8970-f2e0f4cfc053', 'name': 'librarian', 'description': '', 'composite': False, 'clientRole': False, 'containerId': 'librarian-keycloak'},
                                                                      {'id': '8bfa8729-d769-4363-9243-6fee6d8f6282', 'name': 'admin', 'description': '', 'composite': False, 'clientRole': False, 'containerId': 'librarian-keycloak'},
                                                                      {'id': '52edcaf1-5c34-42dc-8cd0-168637c79da4', 'name': 'viewer', 'description': '', 'composite': False, 'clientRole': False, 'containerId': 'librarian-keycloak'}])
+        logging.info(f"Modified profile: {username}")
         print(f'{Fore.LIGHTGREEN_EX}Modified profile{Style.RESET_ALL}')
 
 
@@ -553,6 +547,7 @@ class AdminTools:
                                 repeatNewPassword = maskpass.askpass('Powtórz nowe hasło: ', '*')
                                 if newPassword == repeatNewPassword:
                                     keycloakAdmin.set_user_password(user_id=user_id, password=newPassword, temporary=False)
+                                    logging.info(f"{username} Changed profile password")
                                     print(f'{Fore.GREEN}Pomyślnie zmieniono hasło{Style.RESET_ALL}')
                                     isEnd = True
                                     break
@@ -596,65 +591,41 @@ class AdminTools:
 
 
     def changeMode(self):
-        try:
-            if self.emailCodeSend():
-                print(f'{Fore.GREEN}Auth confirmed{Style.RESET_ALL}')
-                if get_key(find_dotenv(), 'JSON') == 'True':
-                    set_key(find_dotenv(), 'JSON', 'False')
-                elif get_key(find_dotenv(), 'JSON') == 'False':
-                    set_key(find_dotenv(), 'JSON', 'True')
-                print(f'{Fore.GREEN}Mode changed successfully{Style.RESET_ALL}')
-                print('Please restart program')
-            else:
-                print(f"""{Fore.RED}You don't have permissions{Style.RESET_ALL}""")
-        except Exception:
-            print('Czas minął')
+        print(f'{Fore.GREEN}Auth confirmed{Style.RESET_ALL}')
+        if get_key(find_dotenv(), 'JSON') == 'True':
+            set_key(find_dotenv(), 'JSON', 'False')
+        elif get_key(find_dotenv(), 'JSON') == 'False':
+            set_key(find_dotenv(), 'JSON', 'True')
+        logging.info(f"Changed data mode")
+        print(f'{Fore.GREEN}Mode changed successfully{Style.RESET_ALL}')
+        print('Please restart program')
 
     def resetActive(self):
-        try:
-            if not isJson:
-                if self.emailCodeSend():
-                    print(f'{Fore.GREEN}Auth confirmed{Style.RESET_ALL}')
-                    activeCollection.delete_many({})
-                    print(f'{Fore.GREEN}Active rents list is clear{Style.RESET_ALL}')
-                else:
-                    print(f"""{Fore.RED}You don't have permissions{Style.RESET_ALL}""")
-            else:
-                print(f"{Fore.RED}You aren't in MongoDB mode{Style.RESET_ALL}")
-        except Exception:
-            print('Czas minął')
-            print(f"""{Fore.RED}You don't have permissions{Style.RESET_ALL}""")
+        if not isJson:
+            print(f'{Fore.GREEN}Auth confirmed{Style.RESET_ALL}')
+            activeCollection.delete_many({})
+            logging.info(f"Cleared rents list")
+            print(f'{Fore.GREEN}Active rents list is clear{Style.RESET_ALL}')
+        else:
+            print(f"{Fore.RED}You aren't in MongoDB mode{Style.RESET_ALL}")
 
     def resetHistory(self):
-        try:
-            if not isJson:
-                if self.emailCodeSend():
-                    print(f'{Fore.GREEN}Auth confirmed{Style.RESET_ALL}')
-                    historyCollection.delete_many({})
-                    print(f'{Fore.GREEN}History is clear{Style.RESET_ALL}')
-                else:
-                    print(f"""{Fore.RED}You don't have permissions{Style.RESET_ALL}""")
-            else:
-                print(f"{Fore.RED}You aren't in MongoDB mode{Style.RESET_ALL}")
-        except Exception:
-            print('Czas minął')
-            print(f"""{Fore.RED}You don't have permissions{Style.RESET_ALL}""")
-
+        if not isJson:
+            print(f'{Fore.GREEN}Auth confirmed{Style.RESET_ALL}')
+            historyCollection.delete_many({})
+            logging.info(f"Cleared history rents list")
+            print(f'{Fore.GREEN}History is clear{Style.RESET_ALL}')
+        else:
+            print(f"{Fore.RED}You aren't in MongoDB mode{Style.RESET_ALL}")
     def resetAll(self):
-        try:
-            if not isJson:
-                if self.emailCodeSend():
-                    print(f'{Fore.GREEN}Auth confirmed{Style.RESET_ALL}')
-                    activeCollection.delete_many({})
-                    historyCollection.delete_many({})
-                    print(f'{Fore.GREEN}Database is fully reset{Style.RESET_ALL}')
-                else:
-                    print(f"""{Fore.RED}You don't have permissions{Style.RESET_ALL}""")
-            else:
-                print(f"{Fore.RED}You aren't in MongoDB mode{Style.RESET_ALL}")
-        except Exception:
-            print('Czas minął')
-            print(f"""{Fore.RED}You don't have permissions{Style.RESET_ALL}""")
+        if not isJson:
+            print(f'{Fore.GREEN}Auth confirmed{Style.RESET_ALL}')
+            activeCollection.delete_many({})
+            historyCollection.delete_many({})
+            logging.info(f"Cleared rents history and active rents list")
+            print(f'{Fore.GREEN}Database is fully reset{Style.RESET_ALL}')
+        else:
+            print(f"{Fore.RED}You aren't in MongoDB mode{Style.RESET_ALL}")
 
 def profiles():
     # Konfiguracja klienta Keycloak
@@ -740,6 +711,7 @@ def mongoPreconfiguration():
                     passwordsDBcursor.execute(
                         "UPDATE pwds SET username=?, password=? WHERE type='mongo'", (encryptedUserInput, encryptedPasswordInputwordInput,))
                     passwordsDBconnection.commit()
+                    logging.warning(f"Changed MongoDB credentials to {userInput}")
                     break
                 else:
                     print()
@@ -760,6 +732,7 @@ def mongoPreconfiguration():
             historyCollection = db['history_rents_collection_name']
             mongoUsersCollection = client[yamlFile['mongo_users_db']][yamlFile['mongo_users_collection']]
         except Exception as error:
+            logging.error(f"mongoPreconfiguration: {error}")
             print(Fore.RED + str(error) + Style.RESET_ALL)
 
 
@@ -980,7 +953,9 @@ def addHire():
                 with open(activeHiresFile, "w") as f:
                     json.dump(temp, f, indent=4)
                 print(f'{Fore.GREEN}Dodano wypożyczenie{Style.RESET_ALL}')
+                logging.info(f'{profileUsername} added new hire to local json: {name}, {lastName}, {bookTitle}')
             except Exception as error:
+                logging.error(error)
                 print(Fore.RED + str(error) + Style.RESET_ALL)
         elif sure == 0:
             print(f"{Fore.GREEN}Anulowano dodanie wypożyczenia{Style.RESET_ALL}")
@@ -989,9 +964,11 @@ def addHire():
             try:
                 activeCollection.insert_one(hireData)
             except Exception as error:
+                logging.error(error)
                 print(Fore.RED + str(error) + Style.RESET_ALL)
             else:
                 print(f'{Fore.GREEN}Dodano wypożyczenie{Style.RESET_ALL}')
+                logging.info(f'{profileUsername} added new hire to MongoDB: {name}, {lastName}, {bookTitle}')
         elif sure == 0:
             print(f"{Fore.GREEN}Anulowano dodanie wypożyczenia{Style.RESET_ALL}")
 
@@ -1057,6 +1034,7 @@ def endHire():
                     temp.append(entry)
                 with open(historyFile, "w") as f:
                     json.dump(temp, f, indent=4)
+                logging.info(f"{profileUsername} Finished hire on local json: {entry['name']}, {entry['lastName']}, {entry['bookTitle']}")
                 i = i + 1
             else:
                 new_data.append(entry)
@@ -1072,8 +1050,11 @@ def endHire():
             historyCollection.insert_one(chosenDocument)
             activeCollection.delete_one({'_id': chosenDocument['_id']})
         except Exception as error:
+            logging.error(error)
             print(Fore.RED + str(error) + Style.RESET_ALL)
         else:
+            logging.info(
+                f"{profileUsername} Finished hire in MongoDB: {chosenDocument['name']}, {chosenDocument['lastName']}, {chosenDocument['bookTitle']}")
             print(f'{Fore.GREEN}Zakończono wypożyczenie{Style.RESET_ALL}')
 
 
@@ -1640,6 +1621,8 @@ def addDeposit():
                     rentalDate = datetime.datetime.strptime(rentalDateSTR, dateFormat)
                     maxReturnDate = rentalDate + datetime.timedelta(weeks=2)
                     entry["maxDate"] = str(f"{maxReturnDate.strftime(dateFormat)}")
+                    logging.info(
+                        f"{profileUsername} Changed deposit to {entry['deposit']} on local json: {entry['name']}, {entry['lastName']}, {entry['bookTitle']}")
                 else:
                     entry["maxDate"] = '14:10'
                 newData.append(entry)
@@ -1666,8 +1649,11 @@ def addDeposit():
             }
             activeCollection.update_one({"_id": chosenDocument["_id"]}, update=updates)
         except Exception as error:
+            logging.error(error)
             print(Fore.RED + str(error) + Style.RESET_ALL)
         else:
+            logging.info(
+                f"{profileUsername} Changed deposit to {chosenDocument['deposit']} on local json: {chosenDocument['name']}, {chosenDocument['lastName']}, {chosenDocument['bookTitle']}")
             print(f'{Fore.GREEN}Zmieniono kaucję{Style.RESET_ALL}')
 
 
@@ -1884,6 +1870,8 @@ def extension():
                     maxDate = maxDate + datetime.timedelta(weeks=2)
                     entry["maxDate"] = maxDate.strftime(dateFormat)
                     newData.append(entry)
+                    logging.info(
+                        f"{profileUsername} Extended hire on local json: {entry['name']}, {entry['lastName']}, {entry['bookTitle']}")
                     i = i + 1
                 else:
                     newData.append(entry)
@@ -1907,6 +1895,8 @@ def extension():
         except Exception as error:
             print(Fore.RED + str(error) + Style.RESET_ALL)
         else:
+            logging.info(
+                f"{profileUsername} Extended hire in MongoDB: {chosenDocument['name']}, {chosenDocument['lastName']}, {chosenDocument['bookTitle']}")
             print(f'{Fore.GREEN}Przedłużono wypożyczenie{Style.RESET_ALL}')
 
 
@@ -2093,6 +2083,8 @@ def modifying():
                 entry['klasa'] = klasa
                 entry['bookTitle'] = bookTitle
                 newData.append(entry)
+                logging.info(
+                    f"{profileUsername} Modified hire on local json: {entry['name']}, {entry['lastName']}, {entry['bookTitle']}")
                 i = i + 1
             else:
                 newData.append(entry)
@@ -2232,8 +2224,11 @@ def modifying():
             }
             activeCollection.update_one({"_id": chosenDocument["_id"]}, update=updates)
         except Exception as error:
+            logging.error(error)
             print(Fore.RED + str(error) + Style.RESET_ALL)
         else:
+            logging.info(
+                f"{profileUsername} Modified hire in MongoDB: {chosenDocument['name']}, {chosenDocument['lastName']}, {chosenDocument['bookTitle']}")
             print(f'{Fore.GREEN}Zmodyfikowano wypożyczenie{Style.RESET_ALL}')
 
 
@@ -2245,6 +2240,7 @@ def onExit():
     keycloak_openid.logout(token["refresh_token"])
     passwordsDBcursor.close()
     passwordsDBconnection.close()
+
 
 adminTools = AdminTools(senderEmail, receiveEmail, senderPassword)
 mongoPreconfiguration()
@@ -2414,33 +2410,40 @@ while True:
         mongoPreconfiguration()
     elif choice == 'cfg admin':
         os.system('cls')
-        print(f"[1] - Change mode - current: {Fore.LIGHTBLUE_EX}{get_key(find_dotenv(), 'JSON')}{Style.RESET_ALL}")
-        print("[2] - Reset active rents list")
-        print("[3] - Reset history")
-        print("[4] - Reset all")
-        print("[5] - Add profile")
-        print("[6] - Delete profile")
-        print("[7] - Modify profile")
-        print("[8] - Change admin Password")
-        choice = input("Wybierz z listy: ")
-        if choice == '1':
-            adminTools.changeMode()
-        elif choice == '2':
-            adminTools.resetActive()
-        elif choice == '3':
-            adminTools.resetHistory()
-        elif choice == '4':
-            adminTools.resetAll()
-        elif choice == '5':
-            adminTools.addProfile()
-        elif choice == '6':
-            adminTools.deleteProfile()
-        elif choice == '7':
-            adminTools.modifyProfile()
-        elif choice == '8':
-            adminTools.changeAdminPassword()
+        if adminTools.emailCodeSend():
+            while True:
+                print()
+                print("----------------------------------------------------------------------------")
+                print(f"[1] - Change mode - current: {Fore.LIGHTBLUE_EX}{get_key(find_dotenv(), 'JSON')}{Style.RESET_ALL}")
+                print("[2] - Reset active rents list")
+                print("[3] - Reset history")
+                print("[4] - Reset all")
+                print("[5] - Add profile")
+                print("[6] - Delete profile")
+                print("[7] - Modify profile")
+                print('[quit] - Close admin menu')
+                choice = input("Wybierz z listy: ")
+                if choice == '1':
+                    adminTools.changeMode()
+                elif choice == '2':
+                    adminTools.resetActive()
+                elif choice == '3':
+                    adminTools.resetHistory()
+                elif choice == '4':
+                    adminTools.resetAll()
+                elif choice == '5':
+                    adminTools.addProfile()
+                elif choice == '6':
+                    adminTools.deleteProfile()
+                elif choice == '7':
+                    adminTools.modifyProfile()
+                elif choice == 'quit':
+                    os.system('cls')
+                    break
+                else:
+                    print(f"{Fore.RED}Nie znaleziono takiej komendy. Spróbuj ponownie.{Style.RESET_ALL}")
         else:
-            print(f"{Fore.RED}Nie znaleziono takiej komendy. Spróbuj ponownie.{Style.RESET_ALL}")
+            print(f"{Fore.RED}You don't have permission to perform this action{Style.RESET_ALL}")
     elif choice == 'logout':
         os.system('cls')
         keycloak_openid.logout(token["refresh_token"])
