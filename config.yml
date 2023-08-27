@@ -1,0 +1,50 @@
+#Nazwa pliku zapisującego aktywne wypożyczenia w trybie lokalnym
+active_hires_file_name: active.json
+#Nazwa pliku zapisującego historię wypożyczeń w trybie lokalnym
+history_file_name: history.json
+#Format w jakim zapisywana jest data wypożyczenia lub zwrotu książki itp.
+date_format: '%d.%m.%Y'
+# Adres
+mongodb_connection_string: mongodb+srv://<username>:<password>
+# Nazwa bazy danych w której będziesz trzymać wszytskie dane o wypożyczeniach
+mongo_rents_db_name:
+# Nazwa bazy danych w której trzymasz listę referencji aby program mógł się zalogować do MongoDB
+mongo_users_db: Users
+# Nazwa kolekcji w której trzymasz listę referencji aby program mógł się zalogować do MongoDB
+mongo_users_collection: users
+# Nazwa kolekcji w której będziesz trzymać listę trwających wypożyczeń
+active_rents_collection_name: activeRents
+# Nazwa kolekcji w której będziesz trzymać historię wypożyczeń
+history_rents_collection_name: historyRents
+#Email, z którego będziesz wysyłać emaile z kodem potwierdzającym, zmianą hasła itp.
+sender_email:
+#Emaile administratorów
+admins_emails:
+    - example@example.com
+#Program wysyła emaile przez serwery Gmail
+sender_password:
+
+# Nazwy ról w bazie Keycloak
+# Zawsze muszą być tylko 3 role (wglądacz, bibliotekarz i administrator)
+# Możesz zmieniać nazwy dla własnej wygody
+viewer_role_name: viewer
+librarian_role_name: librarian
+admin_role_name: admin
+
+# Konfiguracja dostępu do bazy Keycloak
+keycloak:
+    # Adres URL twojego serwera do bazy keycloak
+    server_url: 'https://example.com/auth/'
+    # Nazwa realmu
+    realm_name:
+    openID:
+        # Nazwa klienta przez którego się łączysz
+        client_id:
+        # Client-SecretKey - potrzebny aby połączyć się przez klienta do bazy keyclaok
+        client_secret: ''
+
+    admin:
+        # Nazwa użytkownika mającego uprawnienia administratora
+        username:
+        # Hasło użytkownika mającego uprawnienia administratora
+        password:
