@@ -737,142 +737,57 @@ def mongoPreconfiguration():
 
 
 
+def interactiveInput(message: str) -> str:
+    """
+    This function can detect ESCAPE and ENTER key while writing. When ENTER pressed function returns the value.
+    When ESCAPE pressed function doesn't return anything and clear the screen. Function ignores arrows.
+    """
+
+    print(f"{message}", end='', flush=True)  # use print instead of input to avoid blocking
+    var = ""
+    while True:
+        if msvcrt.kbhit():
+            key = ord(msvcrt.getch())
+            if key == 27:  # escape key
+                print()
+                os.system('cls')
+                return  # exit function
+            elif key == 13:  # enter key
+                print()
+                break  # exit loop
+            elif key == 8:  # backspace key
+                if len(var) > 0:
+                    var = var[:-1]
+                    print(f"\r{message}{var} {''}\b", end='', flush=True)
+            elif key == 224:  # special keys (arrows, function keys, etc.)
+                key = ord(msvcrt.getch())
+                if key == 72:  # up arrow key
+                    continue
+                elif key == 80:  # down arrow key
+                    continue
+                elif key == 75:  # left arrow key
+                    continue
+                elif key == 77:  # right arrow key
+                    continue
+            else:
+                var += chr(key)
+                print(chr(key), end='', flush=True)
+
+    return str(var)
+
 
 def addHire():
     """Zapisywane dane to: imię, nazwisko, klasa, tytuł książki, data wypożyczenia, kaucja"""
     sure = 0
     hireData = {}
 
-    # imię
-    print("Wpisz imię: ", end='', flush=True)  # use print instead of input to avoid blocking
-    name = ""
-    while True:
-        if msvcrt.kbhit():
-            key = ord(msvcrt.getch())
-            if key == 27:  # escape key
-                print()
-                os.system('cls')
-                return  # exit function
-            elif key == 13:  # enter key
-                print()
-                break  # exit loop
-            elif key == 8:  # backspace key
-                if len(name) > 0:
-                    name = name[:-1]
-                    print(f"\rWpisz imię: {name} {''}\b", end='', flush=True)
-            elif key == 224:  # special keys (arrows, function keys, etc.)
-                key = ord(msvcrt.getch())
-                if key == 72:  # up arrow key
-                    continue
-                elif key == 80:  # down arrow key
-                    continue
-                elif key == 75:  # left arrow key
-                    continue
-                elif key == 77:  # right arrow key
-                    continue
-            else:
-                name += chr(key)
-                print(chr(key), end='', flush=True)
+    hireData["name"] = interactiveInput("Wpisz imię: ")
 
-    hireData["name"] = name
+    hireData["lastName"] = interactiveInput("Wpisz nazwisko: ")
 
-    # nazwisko
-    print("Wpisz nazwisko: ", end='', flush=True)  # use print instead of input to avoid blocking
-    lastName = ""
-    while True:
-        if msvcrt.kbhit():
-            key = ord(msvcrt.getch())
-            if key == 27:  # escape key
-                print()
-                os.system('cls')
-                return  # exit function
-            elif key == 13:  # enter key
-                print()
-                break  # exit loop
-            elif key == 8:  # backspace key
-                if len(lastName) > 0:
-                    lastName = lastName[:-1]
-                    print(f"\rWpisz nazwisko: {lastName} {''}\b", end='', flush=True)
-            elif key == 224:  # special keys (arrows, function keys, etc.)
-                key = ord(msvcrt.getch())
-                if key == 72:  # up arrow key
-                    continue
-                elif key == 80:  # down arrow key
-                    continue
-                elif key == 75:  # left arrow key
-                    continue
-                elif key == 77:  # right arrow key
-                    continue
-            else:
-                lastName += chr(key)
-                print(chr(key), end='', flush=True)
+    hireData["klasa"] = interactiveInput("Podaj klasę czytelnika (np. 2a): ")
 
-    hireData["lastName"] = lastName
-
-    print("Podaj klasę czytelnika (np. 2a): ", end='', flush=True)  # use print instead of input to avoid blocking
-    klasa = ""
-    while True:
-        if msvcrt.kbhit():
-            key = ord(msvcrt.getch())
-            if key == 27:  # escape key
-                print()
-                os.system('cls')
-                return  # exit function
-            elif key == 13:  # enter key
-                print()
-                break  # exit loop
-            elif key == 8:  # backspace key
-                if len(klasa) > 0:
-                    klasa = klasa[:-1]
-                    print(f"\rPodaj klasę czytelnika (np. 2a): {klasa} {''}\b", end='', flush=True)
-            elif key == 224:  # special keys (arrows, function keys, etc.)
-                key = ord(msvcrt.getch())
-                if key == 72:  # up arrow key
-                    continue
-                elif key == 80:  # down arrow key
-                    continue
-                elif key == 75:  # left arrow key
-                    continue
-                elif key == 77:  # right arrow key
-                    continue
-            else:
-                klasa += chr(key)
-                print(chr(key), end='', flush=True)
-
-    hireData["klasa"] = klasa
-
-    # tytuł książki
-    print("Wpisz tytuł wypożyczonej książki: ", end='', flush=True)  # use print instead of input to avoid blocking
-    bookTitle = ""
-    while True:
-        if msvcrt.kbhit():
-            key = ord(msvcrt.getch())
-            if key == 27:  # escape key
-                print()
-                os.system('cls')
-                return  # exit function
-            elif key == 13:  # enter key
-                print()
-                break  # exit loop
-            elif key == 8:  # backspace key
-                if len(bookTitle) > 0:
-                    bookTitle = bookTitle[:-1]
-                    print(f"\rWpisz tytuł wypożyczonej książki: {bookTitle} {''}\b", end='', flush=True)
-            elif key == 224:  # special keys (arrows, function keys, etc.)
-                key = ord(msvcrt.getch())
-                if key == 72:  # up arrow key
-                    continue
-                elif key == 80:  # down arrow key
-                    continue
-                elif key == 75:  # left arrow key
-                    continue
-                elif key == 77:  # right arrow key
-                    continue
-            else:
-                bookTitle += chr(key)
-                print(chr(key), end='', flush=True)
-
-    hireData["bookTitle"] = bookTitle
+    hireData["bookTitle"] = interactiveInput("Wpisz tytuł wypożyczonej książki: ")
 
     print("Wpisz wartość kaucji (jeśli nie wpłacił kaucji kliknij ENTER): ", end='',
           flush=True)  # use print instead of input to avoid blocking
@@ -953,7 +868,7 @@ def addHire():
                 with open(activeHiresFile, "w") as f:
                     json.dump(temp, f, indent=4)
                 print(f'{Fore.GREEN}Dodano wypożyczenie{Style.RESET_ALL}')
-                logging.info(f'{profileUsername} added new hire to local json: {name}, {lastName}, {bookTitle}')
+                logging.info(f'{profileUsername} added new hire to local json: {hireData["name"]}, {hireData["lastName"]}, {hireData["bookTitle"]}')
             except Exception as error:
                 logging.error(error)
                 print(Fore.RED + str(error) + Style.RESET_ALL)
@@ -968,7 +883,7 @@ def addHire():
                 print(Fore.RED + str(error) + Style.RESET_ALL)
             else:
                 print(f'{Fore.GREEN}Dodano wypożyczenie{Style.RESET_ALL}')
-                logging.info(f'{profileUsername} added new hire to MongoDB: {name}, {lastName}, {bookTitle}')
+                logging.info(f'{profileUsername} added new hire to MongoDB: {hireData["name"]}, {hireData["lastName"]}, {hireData["bookTitle"]}')
         elif sure == 0:
             print(f"{Fore.GREEN}Anulowano dodanie wypożyczenia{Style.RESET_ALL}")
 
