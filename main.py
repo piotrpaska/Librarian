@@ -737,142 +737,61 @@ def mongoPreconfiguration():
 
 
 
+def interactiveInput(message: str, startValue = "") -> str:
+    """
+    This function can detect ESCAPE and ENTER key while writing. When ENTER pressed function returns the value.
+    When ESCAPE pressed function doesn't return anything and clear the screen. Function ignores arrows.
+
+    :param message: This is the prompt for input
+    :param startValue: This is useful when you want to start with some value (Useful for editing already existing data)
+    """
+
+    print(f"{message}", end='', flush=True)  # use print instead of input to avoid blocking
+    var = startValue
+    print(f"\r{message}{var} {''}\b", end='', flush=True)
+    while True:
+        if msvcrt.kbhit():
+            key = ord(msvcrt.getch())
+            if key == 27:  # escape key
+                print()
+                os.system('cls')
+                return  # exit function
+            elif key == 13:  # enter key
+                print()
+                break  # exit loop
+            elif key == 8:  # backspace key
+                if len(var) > 0:
+                    var = var[:-1]
+                    print(f"\r{message}{var} {''}\b", end='', flush=True)
+            elif key == 224:  # special keys (arrows, function keys, etc.)
+                key = ord(msvcrt.getch())
+                if key == 72:  # up arrow key
+                    continue
+                elif key == 80:  # down arrow key
+                    continue
+                elif key == 75:  # left arrow key
+                    continue
+                elif key == 77:  # right arrow key
+                    continue
+            else:
+                var += chr(key)
+                print(chr(key), end='', flush=True)
+
+    return str(var)
+
 
 def addHire():
     """Zapisywane dane to: imię, nazwisko, klasa, tytuł książki, data wypożyczenia, kaucja"""
     sure = 0
     hireData = {}
 
-    # imię
-    print("Wpisz imię: ", end='', flush=True)  # use print instead of input to avoid blocking
-    name = ""
-    while True:
-        if msvcrt.kbhit():
-            key = ord(msvcrt.getch())
-            if key == 27:  # escape key
-                print()
-                os.system('cls')
-                return  # exit function
-            elif key == 13:  # enter key
-                print()
-                break  # exit loop
-            elif key == 8:  # backspace key
-                if len(name) > 0:
-                    name = name[:-1]
-                    print(f"\rWpisz imię: {name} {''}\b", end='', flush=True)
-            elif key == 224:  # special keys (arrows, function keys, etc.)
-                key = ord(msvcrt.getch())
-                if key == 72:  # up arrow key
-                    continue
-                elif key == 80:  # down arrow key
-                    continue
-                elif key == 75:  # left arrow key
-                    continue
-                elif key == 77:  # right arrow key
-                    continue
-            else:
-                name += chr(key)
-                print(chr(key), end='', flush=True)
+    hireData["name"] = interactiveInput("Wpisz imię: ")
 
-    hireData["name"] = name
+    hireData["lastName"] = interactiveInput("Wpisz nazwisko: ")
 
-    # nazwisko
-    print("Wpisz nazwisko: ", end='', flush=True)  # use print instead of input to avoid blocking
-    lastName = ""
-    while True:
-        if msvcrt.kbhit():
-            key = ord(msvcrt.getch())
-            if key == 27:  # escape key
-                print()
-                os.system('cls')
-                return  # exit function
-            elif key == 13:  # enter key
-                print()
-                break  # exit loop
-            elif key == 8:  # backspace key
-                if len(lastName) > 0:
-                    lastName = lastName[:-1]
-                    print(f"\rWpisz nazwisko: {lastName} {''}\b", end='', flush=True)
-            elif key == 224:  # special keys (arrows, function keys, etc.)
-                key = ord(msvcrt.getch())
-                if key == 72:  # up arrow key
-                    continue
-                elif key == 80:  # down arrow key
-                    continue
-                elif key == 75:  # left arrow key
-                    continue
-                elif key == 77:  # right arrow key
-                    continue
-            else:
-                lastName += chr(key)
-                print(chr(key), end='', flush=True)
+    hireData["schoolClass"] = interactiveInput("Podaj klasę czytelnika (np. 2a): ")
 
-    hireData["lastName"] = lastName
-
-    print("Podaj klasę czytelnika (np. 2a): ", end='', flush=True)  # use print instead of input to avoid blocking
-    klasa = ""
-    while True:
-        if msvcrt.kbhit():
-            key = ord(msvcrt.getch())
-            if key == 27:  # escape key
-                print()
-                os.system('cls')
-                return  # exit function
-            elif key == 13:  # enter key
-                print()
-                break  # exit loop
-            elif key == 8:  # backspace key
-                if len(klasa) > 0:
-                    klasa = klasa[:-1]
-                    print(f"\rPodaj klasę czytelnika (np. 2a): {klasa} {''}\b", end='', flush=True)
-            elif key == 224:  # special keys (arrows, function keys, etc.)
-                key = ord(msvcrt.getch())
-                if key == 72:  # up arrow key
-                    continue
-                elif key == 80:  # down arrow key
-                    continue
-                elif key == 75:  # left arrow key
-                    continue
-                elif key == 77:  # right arrow key
-                    continue
-            else:
-                klasa += chr(key)
-                print(chr(key), end='', flush=True)
-
-    hireData["klasa"] = klasa
-
-    # tytuł książki
-    print("Wpisz tytuł wypożyczonej książki: ", end='', flush=True)  # use print instead of input to avoid blocking
-    bookTitle = ""
-    while True:
-        if msvcrt.kbhit():
-            key = ord(msvcrt.getch())
-            if key == 27:  # escape key
-                print()
-                os.system('cls')
-                return  # exit function
-            elif key == 13:  # enter key
-                print()
-                break  # exit loop
-            elif key == 8:  # backspace key
-                if len(bookTitle) > 0:
-                    bookTitle = bookTitle[:-1]
-                    print(f"\rWpisz tytuł wypożyczonej książki: {bookTitle} {''}\b", end='', flush=True)
-            elif key == 224:  # special keys (arrows, function keys, etc.)
-                key = ord(msvcrt.getch())
-                if key == 72:  # up arrow key
-                    continue
-                elif key == 80:  # down arrow key
-                    continue
-                elif key == 75:  # left arrow key
-                    continue
-                elif key == 77:  # right arrow key
-                    continue
-            else:
-                bookTitle += chr(key)
-                print(chr(key), end='', flush=True)
-
-    hireData["bookTitle"] = bookTitle
+    hireData["bookTitle"] = interactiveInput("Wpisz tytuł wypożyczonej książki: ")
 
     print("Wpisz wartość kaucji (jeśli nie wpłacił kaucji kliknij ENTER): ", end='',
           flush=True)  # use print instead of input to avoid blocking
@@ -927,7 +846,7 @@ def addHire():
     summary = prettytable.PrettyTable(
         ['Imię', 'Nazwisko', 'Klasa', 'Tytuł książki', 'Data wypożyczenia', 'Zwrot do', 'Kaucja'])
     summary.add_row(
-        [hireData["name"], hireData["lastName"], hireData["klasa"], hireData["bookTitle"], hireData["rentalDate"],
+        [hireData["name"], hireData["lastName"], hireData[["schoolClass"]], hireData["bookTitle"], hireData["rentalDate"],
          hireData["maxDate"], hireData["deposit"]])
     print(summary)
 
@@ -953,7 +872,7 @@ def addHire():
                 with open(activeHiresFile, "w") as f:
                     json.dump(temp, f, indent=4)
                 print(f'{Fore.GREEN}Dodano wypożyczenie{Style.RESET_ALL}')
-                logging.info(f'{profileUsername} added new hire to local json: {name}, {lastName}, {bookTitle}')
+                logging.info(f'{profileUsername} added new hire to local json: {hireData["name"]}, {hireData["lastName"]}, {hireData["bookTitle"]}')
             except Exception as error:
                 logging.error(error)
                 print(Fore.RED + str(error) + Style.RESET_ALL)
@@ -968,7 +887,7 @@ def addHire():
                 print(Fore.RED + str(error) + Style.RESET_ALL)
             else:
                 print(f'{Fore.GREEN}Dodano wypożyczenie{Style.RESET_ALL}')
-                logging.info(f'{profileUsername} added new hire to MongoDB: {name}, {lastName}, {bookTitle}')
+                logging.info(f'{profileUsername} added new hire to MongoDB: {hireData["name"]}, {hireData["lastName"]}, {hireData["bookTitle"]}')
         elif sure == 0:
             print(f"{Fore.GREEN}Anulowano dodanie wypożyczenia{Style.RESET_ALL}")
 
@@ -1068,7 +987,7 @@ def viewActiveHires():
         for item in jsonFile:
             name = item["name"]
             lastName = item["lastName"]
-            rentClass = item["klasa"]
+            rentClass = item[["schoolClass"]]
             bookTitle = item["bookTitle"]
             rentalDateSTR = item["rentalDate"]
             maxDateSTR = item["maxDate"]
@@ -1110,7 +1029,7 @@ def viewActiveHires():
             documentIDs.append(item)  # pamiatac o numeracji od 0 w tablicy IDkow a od 1 w tabeli co się wyswietla !!!!
             name = item["name"]
             lastName = item["lastName"]
-            rentClass = item["klasa"]
+            rentClass = item[["schoolClass"]]
             bookTitle = item["bookTitle"]
             rentalDateSTR = item["rentalDate"]
             maxDateSTR = item["maxDate"]
@@ -1163,7 +1082,7 @@ def viewHistoryHires():
         for item in jsonFile:
             name = item["name"]
             lastName = item["lastName"]
-            rentClass = item["klasa"]
+            rentClass = item[["schoolClass"]]
             bookTitle = item["bookTitle"]
             rentalDate = item["rentalDate"]
             maxDate = item["maxDate"]
@@ -1179,7 +1098,7 @@ def viewHistoryHires():
         for item in entries:
             name = item["name"]
             lastName = item["lastName"]
-            rentClass = item["klasa"]
+            rentClass = item[["schoolClass"]]
             bookTitle = item["bookTitle"]
             rentalDate = item["rentalDate"]
             maxDate = item["maxDate"]
@@ -1235,36 +1154,8 @@ def activeSearch():
                 choice += chr(key)
                 print(chr(key), end='', flush=True)
 
-    print("Wprowadź szukaną frazę: ", end='', flush=True)  # use print instead of input to avoid blocking
-    phrase = ""
-    while True:
-        if msvcrt.kbhit():
-            key = ord(msvcrt.getch())
-            if key == 27:  # escape key
-                print()
-                os.system('cls')
-                return  # exit function
-            elif key == 13:  # enter key
-                print()
-                phrase = phrase
-                break  # exit loop
-            elif key == 8:  # backspace key
-                if len(phrase) > 0:
-                    phrase = phrase[:-1]
-                    print(f"\rWprowadź szukaną frazę: {phrase} {''}\b", end='', flush=True)
-            elif key == 224:  # special keys (arrows, function keys, etc.)
-                key = ord(msvcrt.getch())
-                if key == 72:  # up arrow key
-                    continue
-                elif key == 80:  # down arrow key
-                    continue
-                elif key == 75:  # left arrow key
-                    continue
-                elif key == 77:  # right arrow key
-                    continue
-            else:
-                phrase += chr(key)
-                print(chr(key), end='', flush=True)
+    phrase = interactiveInput("Wprowadź szukaną frazę: ")
+
     results = prettytable.PrettyTable(
         ['Imię', 'Nazwisko', 'Klasa', 'Tytuł książki', 'Data wypożyczenia', 'Zwrot do', 'Kaucja', 'Status'])
     results.title = f'Szukana fraza: {phrase}'
@@ -1276,7 +1167,7 @@ def activeSearch():
 
             name = item["name"]
             lastName = item["lastName"]
-            rentClass = item["klasa"]
+            rentClass = item[["schoolClass"]]
             bookTitle = item["bookTitle"]
             rentalDateSTR = item["rentalDate"]
             maxDateSTR = item["maxDate"]
@@ -1327,7 +1218,7 @@ def activeSearch():
 
             name = item["name"]
             lastName = item["lastName"]
-            rentClass = item["klasa"]
+            rentClass = item[["schoolClass"]]
             bookTitle = item["bookTitle"]
             rentalDateSTR = item["rentalDate"]
             maxDateSTR = item["maxDate"]
@@ -1416,36 +1307,8 @@ def historySearch():
                 choice += chr(key)
                 print(chr(key), end='', flush=True)
 
-    print("Wprowadź szukaną frazę: ", end='', flush=True)  # use print instead of input to avoid blocking
-    phrase = ""
-    while True:
-        if msvcrt.kbhit():
-            key = ord(msvcrt.getch())
-            if key == 27:  # escape key
-                print()
-                os.system('cls')
-                return  # exit function
-            elif key == 13:  # enter key
-                print()
-                phrase = phrase
-                break  # exit loop
-            elif key == 8:  # backspace key
-                if len(phrase) > 0:
-                    phrase = phrase[:-1]
-                    print(f"\rWprowadź szukaną frazę: {phrase} {''}\b", end='', flush=True)
-            elif key == 224:  # special keys (arrows, function keys, etc.)
-                key = ord(msvcrt.getch())
-                if key == 72:  # up arrow key
-                    continue
-                elif key == 80:  # down arrow key
-                    continue
-                elif key == 75:  # left arrow key
-                    continue
-                elif key == 77:  # right arrow key
-                    continue
-            else:
-                phrase += chr(key)
-                print(chr(key), end='', flush=True)
+    phrase = interactiveInput("Wprowadź szukaną frazę: ")
+
     results = prettytable.PrettyTable(
         ['Imię', 'Nazwisko', 'Klasa', 'Tytuł książki', 'Data wypożyczenia', 'Zwrot do', 'Data zwrotu', 'Kaucja'])
     results.title = f'Szukana fraza: {phrase}'
@@ -1457,7 +1320,7 @@ def historySearch():
 
             name = item["name"]
             lastName = item["lastName"]
-            rentClass = item["klasa"]
+            rentClass = item["schoolClass"]
             bookTitle = item["bookTitle"]
             rentalDate = item["rentalDate"]
             maxDate = item["maxDate"]
@@ -1489,7 +1352,7 @@ def historySearch():
 
             name = item["name"]
             lastName = item["lastName"]
-            rentClass = item["klasa"]
+            rentClass = item["schoolClass"]
             bookTitle = item["bookTitle"]
             rentalDate = item["rentalDate"]
             maxDate = item["maxDate"]
@@ -1669,7 +1532,7 @@ def viewTodayReturns():
             maxReturnDate = ''
             name = entry["name"]
             lastName = entry["lastName"]
-            rentClass = entry["klasa"]
+            rentClass = entry["schoolClass"]
             bookTitle = entry["bookTitle"]
             rentalDate = entry["rentalDate"]
             maxDateSTR = entry["maxDate"]
@@ -1703,7 +1566,7 @@ def viewTodayReturns():
         for entry in entries:
             name = entry["name"]
             lastName = entry["lastName"]
-            rentClass = entry["klasa"]
+            rentClass = entry["schoolClass"]
             bookTitle = entry["bookTitle"]
             rentalDateSTR = entry["rentalDate"]
             maxDateSTR = entry["maxDate"]
@@ -1768,7 +1631,7 @@ def extension():
         for item in temp:
             name = item["name"]
             lastName = item["lastName"]
-            rentClass = item["klasa"]
+            rentClass = item["schoolClass"]
             bookTitle = item["bookTitle"]
             rentalDateSTR = item["rentalDate"]
             maxDateSTR = item["maxDate"]
@@ -1794,7 +1657,7 @@ def extension():
         for item in entries:
             name = item["name"]
             lastName = item["lastName"]
-            rentClass = item["klasa"]
+            rentClass = item["schoolClass"]
             bookTitle = item["bookTitle"]
             rentalDateSTR = item["rentalDate"]
             maxDateSTR = item["maxDate"]
@@ -1955,129 +1818,14 @@ def modifying():
         i = 1
         for entry in temp:
             if i == int(documentChoice):
-                print("Zmień imię: ", end='', flush=True)  # use print instead of input to avoid blocking
-                name = entry["name"]
-                print(f"\rZmień imię: {name} {''}\b", end='', flush=True)
-                while True:
-                    if msvcrt.kbhit():
-                        key = ord(msvcrt.getch())
-                        if key == 27:  # escape key
-                            print()
-                            os.system('cls')
-                            return  # exit function
-                        elif key == 13:  # enter key
-                            print()
-                            break  # exit loop
-                        elif key == 8:  # backspace key
-                            if len(name) > 0:
-                                name = name[:-1]
-                                print(f"\rZmień imię: {name} {''}\b", end='', flush=True)
-                        elif key == 224:  # special keys (arrows, function keys, etc.)
-                            key = ord(msvcrt.getch())
-                            if key == 72:  # up arrow key
-                                continue
-                            elif key == 80:  # down arrow key
-                                continue
-                            elif key == 75:  # left arrow key
-                                continue
-                            elif key == 77:  # right arrow key
-                                continue
-                        else:
-                            name += chr(key)
-                            print(chr(key), end='', flush=True)
+                name = interactiveInput("Zmień imię: ", entry["name"])
 
-                print("Zmień nazwisko: ", end='', flush=True)  # use print instead of input to avoid blocking
-                lastName = entry['lastName']
-                print(f"\rZmień nazwisko: {lastName} {''}\b", end='', flush=True)
-                while True:
-                    if msvcrt.kbhit():
-                        key = ord(msvcrt.getch())
-                        if key == 27:  # escape key
-                            print()
-                            os.system('cls')
-                            return  # exit function
-                        elif key == 13:  # enter key
-                            print()
-                            break  # exit loop
-                        elif key == 8:  # backspace key
-                            if len(lastName) > 0:
-                                lastName = lastName[:-1]
-                                print(f"\rZmień nazwisko: {lastName} {''}\b", end='', flush=True)
-                        elif key == 224:  # special keys (arrows, function keys, etc.)
-                            key = ord(msvcrt.getch())
-                            if key == 72:  # up arrow key
-                                continue
-                            elif key == 80:  # down arrow key
-                                continue
-                            elif key == 75:  # left arrow key
-                                continue
-                            elif key == 77:  # right arrow key
-                                continue
-                        else:
-                            lastName += chr(key)
-                            print(chr(key), end='', flush=True)
+                lastName = interactiveInput("Zmień nazwisko: ", entry["lastName"])
 
-                print("Zmień klasę: ", end='', flush=True)  # use print instead of input to avoid blocking
-                klasa = entry['klasa']
-                print(f"\rZmień klasę: {klasa} {''}\b", end='', flush=True)
-                while True:
-                    if msvcrt.kbhit():
-                        key = ord(msvcrt.getch())
-                        if key == 27:  # escape key
-                            print()
-                            os.system('cls')
-                            return  # exit function
-                        elif key == 13:  # enter key
-                            print()
-                            break  # exit loop
-                        elif key == 8:  # backspace key
-                            if len(klasa) > 0:
-                                klasa = klasa[:-1]
-                                print(f"\rZmień klasę: {klasa} {''}\b", end='', flush=True)
-                        elif key == 224:  # special keys (arrows, function keys, etc.)
-                            key = ord(msvcrt.getch())
-                            if key == 72:  # up arrow key
-                                continue
-                            elif key == 80:  # down arrow key
-                                continue
-                            elif key == 75:  # left arrow key
-                                continue
-                            elif key == 77:  # right arrow key
-                                continue
-                        else:
-                            klasa += chr(key)
-                            print(chr(key), end='', flush=True)
+                klasa = interactiveInput("Zmień klasę: ", entry["schoolClass"])
 
-                print("Zmień tytuł książki: ", end='', flush=True)  # use print instead of input to avoid blocking
-                bookTitle = entry['bookTitle']
-                print(f"\rZmień tytuł książki: {bookTitle} {''}\b", end='', flush=True)
-                while True:
-                    if msvcrt.kbhit():
-                        key = ord(msvcrt.getch())
-                        if key == 27:  # escape key
-                            print()
-                            os.system('cls')
-                            return  # exit function
-                        elif key == 13:  # enter key
-                            print()
-                            break  # exit loop
-                        elif key == 8:  # backspace key
-                            if len(bookTitle) > 0:
-                                bookTitle = bookTitle[:-1]
-                                print(f"\rZmień tytuł książki: {bookTitle} {''}\b", end='', flush=True)
-                        elif key == 224:  # special keys (arrows, function keys, etc.)
-                            key = ord(msvcrt.getch())
-                            if key == 72:  # up arrow key
-                                continue
-                            elif key == 80:  # down arrow key
-                                continue
-                            elif key == 75:  # left arrow key
-                                continue
-                            elif key == 77:  # right arrow key
-                                continue
-                        else:
-                            bookTitle += chr(key)
-                            print(chr(key), end='', flush=True)
+                bookTitle = interactiveInput("Zmień tytuł książki: ", entry["bookTitle"])
+
                 entry['name'] = name
                 entry['lastName'] = lastName
                 entry['klasa'] = klasa
@@ -2096,129 +1844,15 @@ def modifying():
     else:
         try:
             chosenDocument = activeCollection.find_one({'_id': documentIDs[int(documentChoice) - 1]["_id"]})
-            print("Zmień imię: ", end='', flush=True)  # use print instead of input to avoid blocking
-            name = chosenDocument["name"]
-            print(f"\rZmień imię: {name} {''}\b", end='', flush=True)
-            while True:
-                if msvcrt.kbhit():
-                    key = ord(msvcrt.getch())
-                    if key == 27:  # escape key
-                        print()
-                        os.system('cls')
-                        return  # exit function
-                    elif key == 13:  # enter key
-                        print()
-                        break  # exit loop
-                    elif key == 8:  # backspace key
-                        if len(name) > 0:
-                            name = name[:-1]
-                            print(f"\rZmień imię: {name} {''}\b", end='', flush=True)
-                    elif key == 224:  # special keys (arrows, function keys, etc.)
-                        key = ord(msvcrt.getch())
-                        if key == 72:  # up arrow key
-                            continue
-                        elif key == 80:  # down arrow key
-                            continue
-                        elif key == 75:  # left arrow key
-                            continue
-                        elif key == 77:  # right arrow key
-                            continue
-                    else:
-                        name += chr(key)
-                        print(chr(key), end='', flush=True)
 
-            print("Zmień nazwisko: ", end='', flush=True)  # use print instead of input to avoid blocking
-            lastName = chosenDocument['lastName']
-            print(f"\rZmień nazwisko: {lastName} {''}\b", end='', flush=True)
-            while True:
-                if msvcrt.kbhit():
-                    key = ord(msvcrt.getch())
-                    if key == 27:  # escape key
-                        print()
-                        os.system('cls')
-                        return  # exit function
-                    elif key == 13:  # enter key
-                        print()
-                        break  # exit loop
-                    elif key == 8:  # backspace key
-                        if len(lastName) > 0:
-                            lastName = lastName[:-1]
-                            print(f"\rZmień nazwisko: {lastName} {''}\b", end='', flush=True)
-                    elif key == 224:  # special keys (arrows, function keys, etc.)
-                        key = ord(msvcrt.getch())
-                        if key == 72:  # up arrow key
-                            continue
-                        elif key == 80:  # down arrow key
-                            continue
-                        elif key == 75:  # left arrow key
-                            continue
-                        elif key == 77:  # right arrow key
-                            continue
-                    else:
-                        lastName += chr(key)
-                        print(chr(key), end='', flush=True)
+            name = interactiveInput("Zmień imię: ", chosenDocument["name"])
 
-            print("Zmień klasę: ", end='', flush=True)  # use print instead of input to avoid blocking
-            klasa = chosenDocument['klasa']
-            print(f"\rZmień klasę: {klasa} {''}\b", end='', flush=True)
-            while True:
-                if msvcrt.kbhit():
-                    key = ord(msvcrt.getch())
-                    if key == 27:  # escape key
-                        print()
-                        os.system('cls')
-                        return  # exit function
-                    elif key == 13:  # enter key
-                        print()
-                        break  # exit loop
-                    elif key == 8:  # backspace key
-                        if len(klasa) > 0:
-                            klasa = klasa[:-1]
-                            print(f"\rZmień klasę: {klasa} {''}\b", end='', flush=True)
-                    elif key == 224:  # special keys (arrows, function keys, etc.)
-                        key = ord(msvcrt.getch())
-                        if key == 72:  # up arrow key
-                            continue
-                        elif key == 80:  # down arrow key
-                            continue
-                        elif key == 75:  # left arrow key
-                            continue
-                        elif key == 77:  # right arrow key
-                            continue
-                    else:
-                        klasa += chr(key)
-                        print(chr(key), end='', flush=True)
+            lastName = interactiveInput("Zmień nazwisko: ", chosenDocument["lastName"])
 
-            print("Zmień tytuł książki: ", end='', flush=True)  # use print instead of input to avoid blocking
-            bookTitle = chosenDocument['bookTitle']
-            print(f"\rZmień tytuł książki: {bookTitle} {''}\b", end='', flush=True)
-            while True:
-                if msvcrt.kbhit():
-                    key = ord(msvcrt.getch())
-                    if key == 27:  # escape key
-                        print()
-                        os.system('cls')
-                        return  # exit function
-                    elif key == 13:  # enter key
-                        print()
-                        break  # exit loop
-                    elif key == 8:  # backspace key
-                        if len(bookTitle) > 0:
-                            bookTitle = bookTitle[:-1]
-                            print(f"\rZmień tytuł książki: {bookTitle} {''}\b", end='', flush=True)
-                    elif key == 224:  # special keys (arrows, function keys, etc.)
-                        key = ord(msvcrt.getch())
-                        if key == 72:  # up arrow key
-                            continue
-                        elif key == 80:  # down arrow key
-                            continue
-                        elif key == 75:  # left arrow key
-                            continue
-                        elif key == 77:  # right arrow key
-                            continue
-                    else:
-                        bookTitle += chr(key)
-                        print(chr(key), end='', flush=True)
+            klasa = interactiveInput("Zmień klasę: ", chosenDocument["schoolClass"])
+
+            bookTitle = interactiveInput("Zmień tytuł książki: ", chosenDocument["bookTitle"])
+
             updates = {
                 "$set": {"name": name, "lastName":lastName,"klasa":klasa, "bookTitle":bookTitle}
             }
