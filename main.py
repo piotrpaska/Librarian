@@ -2421,6 +2421,7 @@ while True:
                 print("[5] - Add profile")
                 print("[6] - Delete profile")
                 print("[7] - Modify profile")
+                print("[8] - Change admin password")
                 print('[quit] - Close admin menu')
                 choice = input("Wybierz z listy: ")
                 if choice == '1':
@@ -2437,6 +2438,8 @@ while True:
                     adminTools.deleteProfile()
                 elif choice == '7':
                     adminTools.modifyProfile()
+                elif choice == '8':
+                    adminTools.changeAdminPassword()
                 elif choice == 'quit':
                     os.system('cls')
                     break
