@@ -846,7 +846,7 @@ def addHire():
     summary = prettytable.PrettyTable(
         ['Imię', 'Nazwisko', 'Klasa', 'Tytuł książki', 'Data wypożyczenia', 'Zwrot do', 'Kaucja'])
     summary.add_row(
-        [hireData["name"], hireData["lastName"], hireData[["schoolClass"]], hireData["bookTitle"], hireData["rentalDate"],
+        [hireData["name"], hireData["lastName"], hireData["schoolClass"], hireData["bookTitle"], hireData["rentalDate"],
          hireData["maxDate"], hireData["deposit"]])
     print(summary)
 
@@ -987,7 +987,7 @@ def viewActiveHires():
         for item in jsonFile:
             name = item["name"]
             lastName = item["lastName"]
-            rentClass = item[["schoolClass"]]
+            rentClass = item["schoolClass"]
             bookTitle = item["bookTitle"]
             rentalDateSTR = item["rentalDate"]
             maxDateSTR = item["maxDate"]
@@ -1029,7 +1029,7 @@ def viewActiveHires():
             documentIDs.append(item)  # pamiatac o numeracji od 0 w tablicy IDkow a od 1 w tabeli co się wyswietla !!!!
             name = item["name"]
             lastName = item["lastName"]
-            rentClass = item[["schoolClass"]]
+            rentClass = item["schoolClass"]
             bookTitle = item["bookTitle"]
             rentalDateSTR = item["rentalDate"]
             maxDateSTR = item["maxDate"]
@@ -1082,7 +1082,7 @@ def viewHistoryHires():
         for item in jsonFile:
             name = item["name"]
             lastName = item["lastName"]
-            rentClass = item[["schoolClass"]]
+            rentClass = item["schoolClass"]
             bookTitle = item["bookTitle"]
             rentalDate = item["rentalDate"]
             maxDate = item["maxDate"]
@@ -1098,7 +1098,7 @@ def viewHistoryHires():
         for item in entries:
             name = item["name"]
             lastName = item["lastName"]
-            rentClass = item[["schoolClass"]]
+            rentClass = item["schoolClass"]
             bookTitle = item["bookTitle"]
             rentalDate = item["rentalDate"]
             maxDate = item["maxDate"]
@@ -1167,7 +1167,7 @@ def activeSearch():
 
             name = item["name"]
             lastName = item["lastName"]
-            rentClass = item[["schoolClass"]]
+            rentClass = item["schoolClass"]
             bookTitle = item["bookTitle"]
             rentalDateSTR = item["rentalDate"]
             maxDateSTR = item["maxDate"]
@@ -1218,7 +1218,7 @@ def activeSearch():
 
             name = item["name"]
             lastName = item["lastName"]
-            rentClass = item[["schoolClass"]]
+            rentClass = item["schoolClass"]
             bookTitle = item["bookTitle"]
             rentalDateSTR = item["rentalDate"]
             maxDateSTR = item["maxDate"]
