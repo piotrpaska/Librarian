@@ -988,6 +988,11 @@ def endHire():
             chosenDocument["returnDate"] = datetime.datetime.today().strftime(dateFormat)
             historyCollection.insert_one(chosenDocument)
             activeCollection.delete_one({'_id': chosenDocument['_id']})
+            bookDocument = booksListCollection.find_one({"title": chosenDocument["bookTitle"]})
+            updates = {
+                "$set": {"onStock": int(bookDocument["onStock"] + 1), "rented": int(bookDocument["rented"] - 1)}
+            }
+            booksListCollection.update_one({"_id": bookDocument["_id"]}, update=updates)
         except Exception as error:
             logging.error(error)
             print(Fore.RED + str(error) + Style.RESET_ALL)
