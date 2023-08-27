@@ -26,6 +26,7 @@ global db
 global activeCollection
 global historyCollection
 global mongoUsersCollection
+global booksListCollection
 
 global passwordsDBconnection
 global passwordsDBcursor
@@ -726,10 +727,12 @@ def mongoPreconfiguration():
             global activeCollection
             global historyCollection
             global mongoUsersCollection
+            global booksListCollection
             client = pymongo.MongoClient(connectionString)
             db = client[yamlFile['mongo_rents_db_name']]
             activeCollection = db[yamlFile['active_rents_collection_name']]
-            historyCollection = db['history_rents_collection_name']
+            historyCollection = db[yamlFile['history_rents_collection_name']]
+            booksListCollection = db[yamlFile['books_list_collection_name']]
             mongoUsersCollection = client[yamlFile['mongo_users_db']][yamlFile['mongo_users_collection']]
         except Exception as error:
             logging.error(f"mongoPreconfiguration: {error}")
@@ -975,6 +978,24 @@ def endHire():
             logging.info(
                 f"{profileUsername} Finished hire in MongoDB: {chosenDocument['name']}, {chosenDocument['lastName']}, {chosenDocument['bookTitle']}")
             print(f'{Fore.GREEN}Zakończono wypożyczenie{Style.RESET_ALL}')
+
+
+def viewBooksList():
+    results = prettytable.PrettyTable(['Kod', 'Tytuł', 'Na stanie', 'Wypożyczone'])
+    results.title = 'Spis książek'
+
+    if not isJson:
+        documents = booksListCollection.find()
+        for document in documents:
+            results.add_row([document['code'], document['title'], document['onStock'], document['rented']])
+
+        if len(results.rows) == 0:
+            print()
+            print('Lista jest pusta')
+        else:
+            print(results)
+    else:
+        print(f"{Fore.RED}Spis książek nie działa w trybie lokalnym{Style.RESET_ALL}")
 
 
 def viewActiveHires():
@@ -1924,8 +1945,9 @@ while True:
     elif choice == '3':
         print('[1] - Wyświetl trwające wypożyczenia')
         print('[2] - Wyświetl historię wypożyczeń')
-        print('[3] - Przeszukaj trwające wypożyczenia')
-        print('[4] - Przeszukaj historię wypożyczeń')
+        print('[3] - Wyświetl historię wypożyczeń')
+        print('[4] - Przeszukaj trwające wypożyczenia')
+        print('[5] - Przeszukaj historię wypożyczeń')
         choice = input("Wybierz z listy: ")
         print()
         if choice == '1':
@@ -1956,7 +1978,7 @@ while True:
             isTokenActive = keycloak_openid.introspect(token['access_token'])
             if isTokenActive['active']:
                 if adminTools.checkRole(roleName=viewerRole, username=profileUsername):
-                    activeSearch()
+                    viewBooksList()
                     token = keycloak_openid.refresh_token(token['refresh_token'])
                 else:
                     print(f'{Fore.RED}Nie masz uprawnień do tej funkcji{Style.RESET_ALL}')
@@ -1965,6 +1987,18 @@ while True:
                 print(f'{Fore.RED}Twoja sesja wygasła.{Style.RESET_ALL}')
                 profiles()
         elif choice == '4':
+            isTokenActive = keycloak_openid.introspect(token['access_token'])
+            if isTokenActive['active']:
+                if adminTools.checkRole(roleName=viewerRole, username=profileUsername):
+                    activeSearch()
+                    token = keycloak_openid.refresh_token(token['refresh_token'])
+                else:
+                    print(f'{Fore.RED}Nie masz uprawnień do tej funkcji{Style.RESET_ALL}')
+            else:
+                os.system('cls')
+                print(f'{Fore.RED}Twoja sesja wygasła.{Style.RESET_ALL}')
+                profiles()
+        elif choice == '5':
             isTokenActive = keycloak_openid.introspect(token['access_token'])
             if isTokenActive['active']:
                 if adminTools.checkRole(roleName=viewerRole, username=profileUsername):
