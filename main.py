@@ -1009,7 +1009,11 @@ def viewBooksList():
     if not isJson:
         documents = booksListCollection.find()
         for document in documents:
-            results.add_row([document['code'], document['title'], document['onStock'], document['rented']])
+            if int(document["onStock"]) <= 0:
+                onStock = f"""{Style.BRIGHT}{Fore.RED}{document["onStock"]}{Style.RESET_ALL}"""
+            else:
+                onStock = f"""{Style.BRIGHT}{Fore.GREEN}{document["onStock"]}{Style.RESET_ALL}"""
+            results.add_row([document['code'], document['title'], onStock, document['rented']])
 
         if len(results.rows) == 0:
             print()
