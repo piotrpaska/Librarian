@@ -1898,10 +1898,45 @@ def modifying():
 
             klasa = interactiveInput("Zmień klasę: ", chosenDocument["schoolClass"])
 
-            bookTitle = interactiveInput("Zmień tytuł książki: ", chosenDocument["bookTitle"])
+            while True:
+                viewBooksList()
+                bookCode = interactiveInput("Wpisz kod wypożyczonej książki (lub wciśnij enter aby nie zmieniać książki): ")
+                if bookCode == "":
+                    bookTitle = chosenDocument["bookTitle"]
+                    break
+                else:
+                    newBookDocument = booksListCollection.find_one({"code": bookCode})
+                    if newBookDocument != None:
+                        if int(newBookDocument["onStock"]) > 0:
+                            bookTitle = newBookDocument["title"]
+                            # New book update
+                            updateNewBookDocument = {
+                                "$set": {"onStock": int(newBookDocument["onStock"] - 1),
+                                         "rented": int(newBookDocument["rented"] + 1)}
+                            }
+                            booksListCollection.update_one({"_id": newBookDocument["_id"]},
+                                                           update=updateNewBookDocument)
+
+                            # Update previous book
+                            previousBook = booksListCollection.find_one({"title": chosenDocument["bookTitle"]})
+
+                            updatePreviousBookDocument = {
+                                "$set": {"onStock": int(previousBook["onStock"] + 1),
+                                         "rented": int(previousBook["rented"] - 1)}
+                            }
+
+                            booksListCollection.update_one({"_id": previousBook["_id"]},
+                                                           update=updatePreviousBookDocument)
+                            break
+                        else:
+                            print(f"{Fore.RED}Nie ma tych książek na stanie{Style.RESET_ALL}")
+                            print()
+                    else:
+                        print(f"{Fore.RED}Nie ma takiego kodu{Style.RESET_ALL}")
+                        print()
 
             updates = {
-                "$set": {"name": name, "lastName":lastName,"klasa":klasa, "bookTitle":bookTitle}
+                "$set": {"name": name, "lastName": lastName,"klasa": klasa, "bookTitle": bookTitle}
             }
             activeCollection.update_one({"_id": chosenDocument["_id"]}, update=updates)
         except Exception as error:
