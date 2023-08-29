@@ -19,7 +19,7 @@ import sqlite3
 from cryptography.fernet import Fernet
 import logging
 import cv2
-from pyzbar.pyzbar import decode
+from pyzbar.pyzbar import decode, ZBarSymbol
 import numpy as np
 
 # Mongo variables
@@ -886,7 +886,7 @@ def qrScan():
     while cap.isOpened():
         success, img = cap.read()
 
-        for barcode in decode(img):
+        for barcode in decode(img, symbols=[ZBarSymbol.QRCODE]):
             print(barcode.data)
             isQRcode = True
             decodedCode = barcode.data.decode('utf-8')
@@ -914,19 +914,45 @@ def addHire():
     hireData["schoolClass"] = interactiveInput("Podaj klasę czytelnika (np. 2a): ")
 
     while True:
-        viewBooksList()
-        bookCode = interactiveInput("Wpisz kod wypożyczonej książki: ")
-        bookDocument = booksListCollection.find_one({"code": bookCode})
-        if bookDocument != None:
-            if int(bookDocument["onStock"]) > 0:
+        while True:
+            try:
+                print("[0] - Zeskanuj kod QR")
+                print("[1] - Wpisz kod ręcznie")
+
+                bookChoiceWay = int(input("Wybierz sposób wybrania książki: "))
+                if bookChoiceWay != 1 and bookChoiceWay != 0:
+                    raise Exception
+                break
+            except Exception:
+                print(f"{Fore.RED}Nie znaleziono takiej komendy. Spróbuj ponownie.{Style.RESET_ALL}")
+                continue
+
+        if bookChoiceWay == 0:
+            bookCode = qrScan()
+            bookDocument = booksListCollection.find_one({"code": bookCode})
+            if bookDocument == None:
+                print(f"{Fore.RED}Nie ma takiego kodu{Style.RESET_ALL}")
+                print()
+                continue
+            else:
                 hireData["bookTitle"] = bookDocument["title"]
                 break
-            else:
-                print(f"{Fore.RED}Nie ma tych książek na stanie{Style.RESET_ALL}")
-                print()
-        else:
-            print(f"{Fore.RED}Nie ma takiego kodu{Style.RESET_ALL}")
-            print()
+        elif bookChoiceWay == 1:
+            while True:
+                viewBooksList()
+                bookCode = interactiveInput("Wpisz kod wypożyczonej książki: ")
+                bookDocument = booksListCollection.find_one({"code": bookCode})
+                if bookDocument != None:
+                    if int(bookDocument["onStock"]) > 0:
+                        hireData["bookTitle"] = bookDocument["title"]
+                        break
+                    else:
+                        print(f"{Fore.RED}Nie ma tych książek na stanie{Style.RESET_ALL}")
+                        print()
+                else:
+                    print(f"{Fore.RED}Nie ma takiego kodu{Style.RESET_ALL}")
+                    print()
+            break
 
     print("Wpisz wartość kaucji (jeśli nie wpłacił kaucji kliknij ENTER): ", end='',
           flush=True)  # use print instead of input to avoid blocking
