@@ -628,6 +628,28 @@ class AdminTools:
         else:
             print(f"{Fore.RED}You aren't in MongoDB mode{Style.RESET_ALL}")
 
+    def addBook(self):
+        print()
+        print(f'{Fore.LIGHTWHITE_EX}Adding book{Style.RESET_ALL}')
+        bookCode = interactiveInput("Enter book's code: ")
+        bookTitle = interactiveInput("Enter book's title: ")
+        bookAmount = interactiveInput("Enter amount of books: ")
+
+        data = {
+            "code": bookCode,
+            "title": bookTitle,
+            "onStock": int(bookAmount),
+            "rented": 0
+        }
+
+        booksListCollection.insert_one(data)
+        logging.info(f"Created book: {bookTitle}")
+        print(f'{Fore.LIGHTGREEN_EX}Added book{Style.RESET_ALL}')
+
+
+    def deleteBook(self):
+        pass
+
 def profiles():
     # Konfiguracja klienta Keycloak
     keycloak_url = keycloakServerUrl
@@ -2150,7 +2172,9 @@ while True:
                 print("[5] - Add profile")
                 print("[6] - Delete profile")
                 print("[7] - Modify profile")
-                print("[8] - Change admin password")
+                print("[8] - Add book")
+                print("[9] - Delete book")
+                print("[10] - Change admin password")
                 print('[quit] - Close admin menu')
                 choice = input("Wybierz z listy: ")
                 if choice == '1':
@@ -2168,6 +2192,10 @@ while True:
                 elif choice == '7':
                     adminTools.modifyProfile()
                 elif choice == '8':
+                    adminTools.addBook()
+                elif choice == '9':
+                    adminTools.deleteBook()
+                elif choice == '10':
                     adminTools.changeAdminPassword()
                 elif choice == 'quit':
                     os.system('cls')
