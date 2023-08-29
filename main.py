@@ -648,7 +648,37 @@ class AdminTools:
 
 
     def deleteBook(self):
-        pass
+        table = prettytable.PrettyTable(["Code", "Title", "onStock", "rented"])
+        table.title = "Books list"
+        books = booksListCollection.find()
+
+        if not isJson:
+            documents = booksListCollection.find()
+            for document in documents:
+                if int(document["onStock"]) <= 0:
+                    onStock = f"""{Style.BRIGHT}{Fore.RED}{document["onStock"]}{Style.RESET_ALL}"""
+                else:
+                    onStock = f"""{Style.BRIGHT}{Fore.GREEN}{document["onStock"]}{Style.RESET_ALL}"""
+
+                table.add_row([document['code'], document['title'], onStock, document['rented']])
+
+            if len(table.rows) == 0:
+                print()
+                print('Lista jest pusta')
+                return
+            else:
+                print(table)
+        else:
+            print(f"{Fore.RED}Spis książek nie działa w trybie lokalnym{Style.RESET_ALL}")
+
+        code = interactiveInput("Enter book's code that you want to delete: ")
+
+        bookTitle = booksListCollection.find_one({"code": code})
+        booksListCollection.delete_one({"code": code})
+        logging.info(f"""Deleted book: {bookTitle["title"]}""")
+        print(f'{Fore.LIGHTGREEN_EX}Deleted book{Style.RESET_ALL}')
+
+
 
 def profiles():
     # Konfiguracja klienta Keycloak
