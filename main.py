@@ -26,6 +26,7 @@ global db
 global activeCollection
 global historyCollection
 global mongoUsersCollection
+global booksListCollection
 
 global passwordsDBconnection
 global passwordsDBcursor
@@ -627,6 +628,97 @@ class AdminTools:
         else:
             print(f"{Fore.RED}You aren't in MongoDB mode{Style.RESET_ALL}")
 
+    def addBook(self):
+        print()
+        print(f'{Fore.LIGHTWHITE_EX}Adding book{Style.RESET_ALL}')
+        bookCode = interactiveInput("Enter book's code: ")
+        bookTitle = interactiveInput("Enter book's title: ")
+        bookAmount = interactiveInput("Enter amount of books: ")
+
+        data = {
+            "code": bookCode,
+            "title": bookTitle,
+            "onStock": int(bookAmount),
+            "rented": 0
+        }
+
+        booksListCollection.insert_one(data)
+        logging.info(f"Created book: {bookTitle}")
+        print(f'{Fore.LIGHTGREEN_EX}Added book{Style.RESET_ALL}')
+
+
+    def deleteBook(self):
+        table = prettytable.PrettyTable(["Code", "Title", "onStock", "rented"])
+        table.title = "Books list"
+
+        if not isJson:
+            documents = booksListCollection.find()
+            for document in documents:
+                if int(document["onStock"]) <= 0:
+                    onStock = f"""{Style.BRIGHT}{Fore.RED}{document["onStock"]}{Style.RESET_ALL}"""
+                else:
+                    onStock = f"""{Style.BRIGHT}{Fore.GREEN}{document["onStock"]}{Style.RESET_ALL}"""
+
+                table.add_row([document['code'], document['title'], onStock, document['rented']])
+
+            if len(table.rows) == 0:
+                print()
+                print('Lista jest pusta')
+                return
+            else:
+                print(table)
+        else:
+            print(f"{Fore.RED}Books list doesn't work in local mode{Style.RESET_ALL}")
+
+        code = interactiveInput("Enter book's code that you want to delete: ")
+
+        bookTitle = booksListCollection.find_one({"code": code})
+        booksListCollection.delete_one({"code": code})
+        logging.info(f"""Deleted book: {bookTitle["title"]}""")
+        print(f'{Fore.LIGHTGREEN_EX}Deleted book{Style.RESET_ALL}')
+
+
+    def modifyBook(self):
+        table = prettytable.PrettyTable(["Code", "Title", "onStock", "rented"])
+        table.title = "Books list"
+
+        if not isJson:
+            documents = booksListCollection.find()
+            for document in documents:
+                if int(document["onStock"]) <= 0:
+                    onStock = f"""{Style.BRIGHT}{Fore.RED}{document["onStock"]}{Style.RESET_ALL}"""
+                else:
+                    onStock = f"""{Style.BRIGHT}{Fore.GREEN}{document["onStock"]}{Style.RESET_ALL}"""
+
+                table.add_row([document['code'], document['title'], onStock, document['rented']])
+
+            if len(table.rows) == 0:
+                print()
+                print('Lista jest pusta')
+                return
+            else:
+                print(table)
+        else:
+            print(f"{Fore.RED}Books list doesn't work in local mode{Style.RESET_ALL}")
+
+        code = interactiveInput("Enter book's code that you want to delete: ")
+        book = booksListCollection.find_one({"code": code})
+
+        newCode = interactiveInput("Enter new book code: ", book["code"])
+        title = interactiveInput("Enter book title: ", book["title"])
+        amount = interactiveInput("Enter how many books there are in total: ", str(int(book["onStock"] + book["rented"])))
+
+        updateData = {
+            "$set": {"code": newCode, "title": title, "onStock": (int(amount) - book["rented"])}
+        }
+
+        booksListCollection.update_one({"code": code}, update=updateData)
+
+        logging.info(f"""Modified book: {title}""")
+        print(f'{Fore.LIGHTGREEN_EX}Modified book{Style.RESET_ALL}')
+
+
+
 def profiles():
     # Konfiguracja klienta Keycloak
     keycloak_url = keycloakServerUrl
@@ -726,10 +818,12 @@ def mongoPreconfiguration():
             global activeCollection
             global historyCollection
             global mongoUsersCollection
+            global booksListCollection
             client = pymongo.MongoClient(connectionString)
             db = client[yamlFile['mongo_rents_db_name']]
             activeCollection = db[yamlFile['active_rents_collection_name']]
-            historyCollection = db['history_rents_collection_name']
+            historyCollection = db[yamlFile['history_rents_collection_name']]
+            booksListCollection = db[yamlFile['books_list_collection_name']]
             mongoUsersCollection = client[yamlFile['mongo_users_db']][yamlFile['mongo_users_collection']]
         except Exception as error:
             logging.error(f"mongoPreconfiguration: {error}")
@@ -791,7 +885,20 @@ def addHire():
 
     hireData["schoolClass"] = interactiveInput("Podaj klasę czytelnika (np. 2a): ")
 
-    hireData["bookTitle"] = interactiveInput("Wpisz tytuł wypożyczonej książki: ")
+    while True:
+        viewBooksList()
+        bookCode = interactiveInput("Wpisz kod wypożyczonej książki: ")
+        bookDocument = booksListCollection.find_one({"code": bookCode})
+        if bookDocument != None:
+            if int(bookDocument["onStock"]) > 0:
+                hireData["bookTitle"] = bookDocument["title"]
+                break
+            else:
+                print(f"{Fore.RED}Nie ma tych książek na stanie{Style.RESET_ALL}")
+                print()
+        else:
+            print(f"{Fore.RED}Nie ma takiego kodu{Style.RESET_ALL}")
+            print()
 
     print("Wpisz wartość kaucji (jeśli nie wpłacił kaucji kliknij ENTER): ", end='',
           flush=True)  # use print instead of input to avoid blocking
@@ -882,6 +989,10 @@ def addHire():
         if sure == 1:
             try:
                 activeCollection.insert_one(hireData)
+                updates = {
+                    "$set": {"onStock": int(bookDocument["onStock"] - 1), "rented": int(bookDocument["rented"] + 1)}
+                }
+                booksListCollection.update_one({"_id": bookDocument["_id"]}, update=updates)
             except Exception as error:
                 logging.error(error)
                 print(Fore.RED + str(error) + Style.RESET_ALL)
@@ -968,6 +1079,11 @@ def endHire():
             chosenDocument["returnDate"] = datetime.datetime.today().strftime(dateFormat)
             historyCollection.insert_one(chosenDocument)
             activeCollection.delete_one({'_id': chosenDocument['_id']})
+            bookDocument = booksListCollection.find_one({"title": chosenDocument["bookTitle"]})
+            updates = {
+                "$set": {"onStock": int(bookDocument["onStock"] + 1), "rented": int(bookDocument["rented"] - 1)}
+            }
+            booksListCollection.update_one({"_id": bookDocument["_id"]}, update=updates)
         except Exception as error:
             logging.error(error)
             print(Fore.RED + str(error) + Style.RESET_ALL)
@@ -975,6 +1091,28 @@ def endHire():
             logging.info(
                 f"{profileUsername} Finished hire in MongoDB: {chosenDocument['name']}, {chosenDocument['lastName']}, {chosenDocument['bookTitle']}")
             print(f'{Fore.GREEN}Zakończono wypożyczenie{Style.RESET_ALL}')
+
+
+def viewBooksList():
+    results = prettytable.PrettyTable(['Kod', 'Tytuł', 'Na stanie', 'Wypożyczone'])
+    results.title = 'Spis książek'
+
+    if not isJson:
+        documents = booksListCollection.find()
+        for document in documents:
+            if int(document["onStock"]) <= 0:
+                onStock = f"""{Style.BRIGHT}{Fore.RED}{document["onStock"]}{Style.RESET_ALL}"""
+            else:
+                onStock = f"""{Style.BRIGHT}{Fore.GREEN}{document["onStock"]}{Style.RESET_ALL}"""
+            results.add_row([document['code'], document['title'], onStock, document['rented']])
+
+        if len(results.rows) == 0:
+            print()
+            print('Lista jest pusta')
+        else:
+            print(results)
+    else:
+        print(f"{Fore.RED}Spis książek nie działa w trybie lokalnym{Style.RESET_ALL}")
 
 
 def viewActiveHires():
@@ -1779,7 +1917,7 @@ def modifying():
     if data_length <= 0:
         return
 
-    print("Wpisz ID wypożyczenia w którym chcesz dodać kaucję: ", end='',
+    print("Wpisz ID wypożyczenia które chcesz zmodyfikować: ", end='',
           flush=True)  # use print instead of input to avoid blocking
     documentChoice = ""
     while True:
@@ -1797,7 +1935,7 @@ def modifying():
             elif key == 8:  # backspace key
                 if len(documentChoice) > 0:
                     documentChoice = documentChoice[:-1]
-                    print(f"\rWpisz ID wypożyczenia w którym chcesz dodać kaucję: {documentChoice} {''}\b", end='',
+                    print(f"\rWpisz ID wypożyczenia które chcesz zmodyfikować: {documentChoice} {''}\b", end='',
                           flush=True)
             elif key == 224:  # special keys (arrows, function keys, etc.)
                 key = ord(msvcrt.getch())
@@ -1851,10 +1989,45 @@ def modifying():
 
             klasa = interactiveInput("Zmień klasę: ", chosenDocument["schoolClass"])
 
-            bookTitle = interactiveInput("Zmień tytuł książki: ", chosenDocument["bookTitle"])
+            while True:
+                viewBooksList()
+                bookCode = interactiveInput("Wpisz kod wypożyczonej książki (lub wciśnij enter aby nie zmieniać książki): ")
+                if bookCode == "":
+                    bookTitle = chosenDocument["bookTitle"]
+                    break
+                else:
+                    newBookDocument = booksListCollection.find_one({"code": bookCode})
+                    if newBookDocument != None:
+                        if int(newBookDocument["onStock"]) > 0:
+                            bookTitle = newBookDocument["title"]
+                            # New book update
+                            updateNewBookDocument = {
+                                "$set": {"onStock": int(newBookDocument["onStock"] - 1),
+                                         "rented": int(newBookDocument["rented"] + 1)}
+                            }
+                            booksListCollection.update_one({"_id": newBookDocument["_id"]},
+                                                           update=updateNewBookDocument)
+
+                            # Update previous book
+                            previousBook = booksListCollection.find_one({"title": chosenDocument["bookTitle"]})
+
+                            updatePreviousBookDocument = {
+                                "$set": {"onStock": int(previousBook["onStock"] + 1),
+                                         "rented": int(previousBook["rented"] - 1)}
+                            }
+
+                            booksListCollection.update_one({"_id": previousBook["_id"]},
+                                                           update=updatePreviousBookDocument)
+                            break
+                        else:
+                            print(f"{Fore.RED}Nie ma tych książek na stanie{Style.RESET_ALL}")
+                            print()
+                    else:
+                        print(f"{Fore.RED}Nie ma takiego kodu{Style.RESET_ALL}")
+                        print()
 
             updates = {
-                "$set": {"name": name, "lastName":lastName,"klasa":klasa, "bookTitle":bookTitle}
+                "$set": {"name": name, "lastName": lastName,"klasa": klasa, "bookTitle": bookTitle}
             }
             activeCollection.update_one({"_id": chosenDocument["_id"]}, update=updates)
         except Exception as error:
@@ -1924,8 +2097,9 @@ while True:
     elif choice == '3':
         print('[1] - Wyświetl trwające wypożyczenia')
         print('[2] - Wyświetl historię wypożyczeń')
-        print('[3] - Przeszukaj trwające wypożyczenia')
-        print('[4] - Przeszukaj historię wypożyczeń')
+        print('[3] - Wyświetl historię wypożyczeń')
+        print('[4] - Przeszukaj trwające wypożyczenia')
+        print('[5] - Przeszukaj historię wypożyczeń')
         choice = input("Wybierz z listy: ")
         print()
         if choice == '1':
@@ -1956,7 +2130,7 @@ while True:
             isTokenActive = keycloak_openid.introspect(token['access_token'])
             if isTokenActive['active']:
                 if adminTools.checkRole(roleName=viewerRole, username=profileUsername):
-                    activeSearch()
+                    viewBooksList()
                     token = keycloak_openid.refresh_token(token['refresh_token'])
                 else:
                     print(f'{Fore.RED}Nie masz uprawnień do tej funkcji{Style.RESET_ALL}')
@@ -1965,6 +2139,18 @@ while True:
                 print(f'{Fore.RED}Twoja sesja wygasła.{Style.RESET_ALL}')
                 profiles()
         elif choice == '4':
+            isTokenActive = keycloak_openid.introspect(token['access_token'])
+            if isTokenActive['active']:
+                if adminTools.checkRole(roleName=viewerRole, username=profileUsername):
+                    activeSearch()
+                    token = keycloak_openid.refresh_token(token['refresh_token'])
+                else:
+                    print(f'{Fore.RED}Nie masz uprawnień do tej funkcji{Style.RESET_ALL}')
+            else:
+                os.system('cls')
+                print(f'{Fore.RED}Twoja sesja wygasła.{Style.RESET_ALL}')
+                profiles()
+        elif choice == '5':
             isTokenActive = keycloak_openid.introspect(token['access_token'])
             if isTokenActive['active']:
                 if adminTools.checkRole(roleName=viewerRole, username=profileUsername):
@@ -2055,7 +2241,10 @@ while True:
                 print("[5] - Add profile")
                 print("[6] - Delete profile")
                 print("[7] - Modify profile")
-                print("[8] - Change admin password")
+                print("[8] - Add book")
+                print("[9] - Delete book")
+                print("[10] - Modify book")
+                print("[11] - Change admin password")
                 print('[quit] - Close admin menu')
                 choice = input("Wybierz z listy: ")
                 if choice == '1':
@@ -2073,6 +2262,12 @@ while True:
                 elif choice == '7':
                     adminTools.modifyProfile()
                 elif choice == '8':
+                    adminTools.addBook()
+                elif choice == '9':
+                    adminTools.deleteBook()
+                elif choice == '10':
+                    adminTools.modifyBook()
+                elif choice == '11':
                     adminTools.changeAdminPassword()
                 elif choice == 'quit':
                     os.system('cls')
