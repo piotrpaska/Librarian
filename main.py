@@ -714,6 +714,9 @@ class AdminTools:
 
         booksListCollection.update_one({"code": code}, update=updateData)
 
+        logging.info(f"""Modified book: {title}""")
+        print(f'{Fore.LIGHTGREEN_EX}Modified book{Style.RESET_ALL}')
+
 
 
 def profiles():
@@ -1914,7 +1917,7 @@ def modifying():
     if data_length <= 0:
         return
 
-    print("Wpisz ID wypożyczenia w którym chcesz dodać kaucję: ", end='',
+    print("Wpisz ID wypożyczenia które chcesz zmodyfikować: ", end='',
           flush=True)  # use print instead of input to avoid blocking
     documentChoice = ""
     while True:
@@ -1932,7 +1935,7 @@ def modifying():
             elif key == 8:  # backspace key
                 if len(documentChoice) > 0:
                     documentChoice = documentChoice[:-1]
-                    print(f"\rWpisz ID wypożyczenia w którym chcesz dodać kaucję: {documentChoice} {''}\b", end='',
+                    print(f"\rWpisz ID wypożyczenia które chcesz zmodyfikować: {documentChoice} {''}\b", end='',
                           flush=True)
             elif key == 224:  # special keys (arrows, function keys, etc.)
                 key = ord(msvcrt.getch())
