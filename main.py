@@ -18,6 +18,9 @@ import yaml
 import sqlite3
 from cryptography.fernet import Fernet
 import logging
+import cv2
+from pyzbar.pyzbar import decode
+import numpy as np
 
 # Mongo variables
 global isJson
@@ -873,6 +876,31 @@ def interactiveInput(message: str, startValue = "") -> str:
 
     return str(var)
 
+def qrScan():
+    cap = cv2.VideoCapture(0)
+    cap.set(3, 640)
+    cap.set(4, 480)
+
+    isQRcode = False
+
+    while cap.isOpened():
+        success, img = cap.read()
+
+        for barcode in decode(img):
+            print(barcode.data)
+            isQRcode = True
+            decodedCode = barcode.data.decode('utf-8')
+            pts = np.array([barcode.polygon], np.int32)
+            pts = pts.reshape((-1,1,2))
+            cv2.polylines(img, [pts], True, (3, 252, 227), 5)
+
+            if isQRcode:
+                cap.release()
+                cv2.destroyAllWindows()
+                return decodedCode
+
+        cv2.imshow('Kamera', img)
+        cv2.waitKey(1)
 
 def addHire():
     """Zapisywane dane to: imię, nazwisko, klasa, tytuł książki, data wypożyczenia, kaucja"""
