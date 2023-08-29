@@ -887,7 +887,6 @@ def qrScan():
         success, img = cap.read()
 
         for barcode in decode(img, symbols=[ZBarSymbol.QRCODE]):
-            print(barcode.data)
             isQRcode = True
             decodedCode = barcode.data.decode('utf-8')
             pts = np.array([barcode.polygon], np.int32)
@@ -936,6 +935,7 @@ def addHire():
                 continue
             else:
                 hireData["bookTitle"] = bookDocument["title"]
+                print(f'Tytuł książki to: {bookDocument["title"]}')
                 break
         elif bookChoiceWay == 1:
             while True:
