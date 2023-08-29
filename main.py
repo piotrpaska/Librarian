@@ -650,7 +650,6 @@ class AdminTools:
     def deleteBook(self):
         table = prettytable.PrettyTable(["Code", "Title", "onStock", "rented"])
         table.title = "Books list"
-        books = booksListCollection.find()
 
         if not isJson:
             documents = booksListCollection.find()
@@ -669,7 +668,7 @@ class AdminTools:
             else:
                 print(table)
         else:
-            print(f"{Fore.RED}Spis książek nie działa w trybie lokalnym{Style.RESET_ALL}")
+            print(f"{Fore.RED}Books list doesn't work in local mode{Style.RESET_ALL}")
 
         code = interactiveInput("Enter book's code that you want to delete: ")
 
@@ -677,6 +676,40 @@ class AdminTools:
         booksListCollection.delete_one({"code": code})
         logging.info(f"""Deleted book: {bookTitle["title"]}""")
         print(f'{Fore.LIGHTGREEN_EX}Deleted book{Style.RESET_ALL}')
+
+
+    def changeBooksAmount(self):
+        table = prettytable.PrettyTable(["Code", "Title", "onStock", "rented"])
+        table.title = "Books list"
+
+        if not isJson:
+            documents = booksListCollection.find()
+            for document in documents:
+                if int(document["onStock"]) <= 0:
+                    onStock = f"""{Style.BRIGHT}{Fore.RED}{document["onStock"]}{Style.RESET_ALL}"""
+                else:
+                    onStock = f"""{Style.BRIGHT}{Fore.GREEN}{document["onStock"]}{Style.RESET_ALL}"""
+
+                table.add_row([document['code'], document['title'], onStock, document['rented']])
+
+            if len(table.rows) == 0:
+                print()
+                print('Lista jest pusta')
+                return
+            else:
+                print(table)
+        else:
+            print(f"{Fore.RED}Books list doesn't work in local mode{Style.RESET_ALL}")
+
+        code = interactiveInput("Enter book's code that you want to delete: ")
+        book = booksListCollection.find_one({"code": code})
+        amount = interactiveInput("Enter how many books there are in total: ", str(int(book["onStock"] + book["rented"])))
+
+        updateData = {
+            "$set": {"onStock": (int(amount) - book["rented"])}
+        }
+
+        booksListCollection.update_one({"code": code}, update=updateData)
 
 
 
@@ -2204,7 +2237,8 @@ while True:
                 print("[7] - Modify profile")
                 print("[8] - Add book")
                 print("[9] - Delete book")
-                print("[10] - Change admin password")
+                print("[10] - Change books amount")
+                print("[11] - Change admin password")
                 print('[quit] - Close admin menu')
                 choice = input("Wybierz z listy: ")
                 if choice == '1':
@@ -2226,6 +2260,8 @@ while True:
                 elif choice == '9':
                     adminTools.deleteBook()
                 elif choice == '10':
+                    adminTools.changeBooksAmount()
+                elif choice == '11':
                     adminTools.changeAdminPassword()
                 elif choice == 'quit':
                     os.system('cls')
