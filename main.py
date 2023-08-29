@@ -678,7 +678,7 @@ class AdminTools:
         print(f'{Fore.LIGHTGREEN_EX}Deleted book{Style.RESET_ALL}')
 
 
-    def changeBooksAmount(self):
+    def modifyBook(self):
         table = prettytable.PrettyTable(["Code", "Title", "onStock", "rented"])
         table.title = "Books list"
 
@@ -703,10 +703,13 @@ class AdminTools:
 
         code = interactiveInput("Enter book's code that you want to delete: ")
         book = booksListCollection.find_one({"code": code})
+
+        newCode = interactiveInput("Enter new book code: ", book["code"])
+        title = interactiveInput("Enter book title: ", book["title"])
         amount = interactiveInput("Enter how many books there are in total: ", str(int(book["onStock"] + book["rented"])))
 
         updateData = {
-            "$set": {"onStock": (int(amount) - book["rented"])}
+            "$set": {"code": newCode, "title": title, "onStock": (int(amount) - book["rented"])}
         }
 
         booksListCollection.update_one({"code": code}, update=updateData)
@@ -2237,7 +2240,7 @@ while True:
                 print("[7] - Modify profile")
                 print("[8] - Add book")
                 print("[9] - Delete book")
-                print("[10] - Change books amount")
+                print("[10] - Modify book")
                 print("[11] - Change admin password")
                 print('[quit] - Close admin menu')
                 choice = input("Wybierz z listy: ")
@@ -2260,7 +2263,7 @@ while True:
                 elif choice == '9':
                     adminTools.deleteBook()
                 elif choice == '10':
-                    adminTools.changeBooksAmount()
+                    adminTools.modifyBook()
                 elif choice == '11':
                     adminTools.changeAdminPassword()
                 elif choice == 'quit':
