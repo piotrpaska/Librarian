@@ -634,7 +634,15 @@ class AdminTools:
     def addBook(self):
         print()
         print(f'{Fore.LIGHTWHITE_EX}Adding book{Style.RESET_ALL}')
-        bookCode = interactiveInput("Enter book's code: ")
+        while True:
+            bookCode = input("Enter book's code: ")
+            booksList = booksListCollection.find_one({"code": bookCode})
+            if booksList != None:
+                print(f'{Fore.LIGHTRED_EX}Another book already has this code{Style.RESET_ALL}')
+                continue
+            else:
+                break
+
         bookTitle = interactiveInput("Enter book's title: ")
         bookAmount = interactiveInput("Enter amount of books: ")
 
@@ -704,7 +712,7 @@ class AdminTools:
         else:
             print(f"{Fore.RED}Books list doesn't work in local mode{Style.RESET_ALL}")
 
-        code = interactiveInput("Enter book's code that you want to delete: ")
+        code = interactiveInput("Enter book's code that you want to modify: ")
         book = booksListCollection.find_one({"code": code})
 
         newCode = interactiveInput("Enter new book code: ", book["code"])
