@@ -18,6 +18,9 @@ import yaml
 import sqlite3
 from cryptography.fernet import Fernet
 import logging
+import cv2
+from pyzbar.pyzbar import decode, ZBarSymbol
+import numpy as np
 
 # Mongo variables
 global isJson
@@ -631,7 +634,15 @@ class AdminTools:
     def addBook(self):
         print()
         print(f'{Fore.LIGHTWHITE_EX}Adding book{Style.RESET_ALL}')
-        bookCode = interactiveInput("Enter book's code: ")
+        while True:
+            bookCode = input("Enter book's code: ")
+            booksList = booksListCollection.find_one({"code": bookCode})
+            if booksList != None:
+                print(f'{Fore.LIGHTRED_EX}Another book already has this code{Style.RESET_ALL}')
+                continue
+            else:
+                break
+
         bookTitle = interactiveInput("Enter book's title: ")
         bookAmount = interactiveInput("Enter amount of books: ")
 
@@ -701,7 +712,7 @@ class AdminTools:
         else:
             print(f"{Fore.RED}Books list doesn't work in local mode{Style.RESET_ALL}")
 
-        code = interactiveInput("Enter book's code that you want to delete: ")
+        code = interactiveInput("Enter book's code that you want to modify: ")
         book = booksListCollection.find_one({"code": code})
 
         newCode = interactiveInput("Enter new book code: ", book["code"])
@@ -873,6 +884,30 @@ def interactiveInput(message: str, startValue = "") -> str:
 
     return str(var)
 
+def qrScan():
+    cap = cv2.VideoCapture(0)
+    cap.set(3, 640)
+    cap.set(4, 480)
+
+    isQRcode = False
+
+    while cap.isOpened():
+        success, img = cap.read()
+
+        for barcode in decode(img, symbols=[ZBarSymbol.QRCODE]):
+            isQRcode = True
+            decodedCode = barcode.data.decode('utf-8')
+            pts = np.array([barcode.polygon], np.int32)
+            pts = pts.reshape((-1,1,2))
+            cv2.polylines(img, [pts], True, (3, 252, 227), 5)
+
+            if isQRcode:
+                cap.release()
+                cv2.destroyAllWindows()
+                return decodedCode
+
+        cv2.imshow('Kamera', img)
+        cv2.waitKey(1)
 
 def addHire():
     """Zapisywane dane to: imię, nazwisko, klasa, tytuł książki, data wypożyczenia, kaucja"""
@@ -886,19 +921,46 @@ def addHire():
     hireData["schoolClass"] = interactiveInput("Podaj klasę czytelnika (np. 2a): ")
 
     while True:
-        viewBooksList()
-        bookCode = interactiveInput("Wpisz kod wypożyczonej książki: ")
-        bookDocument = booksListCollection.find_one({"code": bookCode})
-        if bookDocument != None:
-            if int(bookDocument["onStock"]) > 0:
-                hireData["bookTitle"] = bookDocument["title"]
+        while True:
+            try:
+                print("[0] - Zeskanuj kod QR")
+                print("[1] - Wpisz kod ręcznie")
+
+                bookChoiceWay = int(input("Wybierz sposób wybrania książki: "))
+                if bookChoiceWay != 1 and bookChoiceWay != 0:
+                    raise Exception
                 break
-            else:
-                print(f"{Fore.RED}Nie ma tych książek na stanie{Style.RESET_ALL}")
+            except Exception:
+                print(f"{Fore.RED}Nie znaleziono takiej komendy. Spróbuj ponownie.{Style.RESET_ALL}")
+                continue
+
+        if bookChoiceWay == 0:
+            bookCode = qrScan()
+            bookDocument = booksListCollection.find_one({"code": bookCode})
+            if bookDocument == None:
+                print(f"{Fore.RED}Nie ma takiego kodu{Style.RESET_ALL}")
                 print()
-        else:
-            print(f"{Fore.RED}Nie ma takiego kodu{Style.RESET_ALL}")
-            print()
+                continue
+            else:
+                hireData["bookTitle"] = bookDocument["title"]
+                print(f'Tytuł książki to: {bookDocument["title"]}')
+                break
+        elif bookChoiceWay == 1:
+            while True:
+                viewBooksList()
+                bookCode = interactiveInput("Wpisz kod wypożyczonej książki: ")
+                bookDocument = booksListCollection.find_one({"code": bookCode})
+                if bookDocument != None:
+                    if int(bookDocument["onStock"]) > 0:
+                        hireData["bookTitle"] = bookDocument["title"]
+                        break
+                    else:
+                        print(f"{Fore.RED}Nie ma tych książek na stanie{Style.RESET_ALL}")
+                        print()
+                else:
+                    print(f"{Fore.RED}Nie ma takiego kodu{Style.RESET_ALL}")
+                    print()
+            break
 
     print("Wpisz wartość kaucji (jeśli nie wpłacił kaucji kliknij ENTER): ", end='',
           flush=True)  # use print instead of input to avoid blocking

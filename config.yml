@@ -16,6 +16,8 @@ mongo_users_collection: users
 active_rents_collection_name: activeRents
 # Nazwa kolekcji w której będziesz trzymać historię wypożyczeń
 history_rents_collection_name: historyRents
+# Nazwa kolekcji w której będziesz trzymać spis książek
+books_list_collection_name: booksList
 #Email, z którego będziesz wysyłać emaile z kodem potwierdzającym, zmianą hasła itp.
 sender_email:
 #Emaile administratorów
