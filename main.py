@@ -183,6 +183,7 @@ class AdminTools:
             self.QRcodeEmailSend(img)
         finally:
             os.system("del auth-qr.png")
+            logging.info("Reseted TOTP key")
 
     def checkRole(self, roleName: str, username: str) -> bool:
         # Pobranie ID użytkownika na podstawie jego nazwy użytkownika

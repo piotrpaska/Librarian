@@ -32,6 +32,11 @@ sender_password:
 viewer_role_name: viewer
 librarian_role_name: librarian
 admin_role_name: admin
+# Nazwa aplikacji która będzie wyświetlała się w aplikacji dla jednorazowych haseł (One Time Password)
+totp_app_name: Librarian
+# Nazwa użytkownika który będzie wyświetlał się w aplikacji dla jednorazowych haseł (One Time Password)
+# Zalecam zostawić Admin wtedy kod QR będzie taki sam dla wszystkich administratorów
+totp_user_name: Admin
 
 # Konfiguracja dostępu do bazy Keycloak
 keycloak:

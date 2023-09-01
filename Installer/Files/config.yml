@@ -16,6 +16,8 @@ mongo_users_collection: users
 active_rents_collection_name: activeRents
 # Nazwa kolekcji w której będziesz trzymać historię wypożyczeń
 history_rents_collection_name: historyRents
+# Nazwa kolekcji w której będziesz trzymać spis książek
+books_list_collection_name: booksList
 #Email, z którego będziesz wysyłać emaile z kodem potwierdzającym, zmianą hasła itp.
 sender_email:
 #Emaile administratorów
@@ -30,6 +32,11 @@ sender_password:
 viewer_role_name: viewer
 librarian_role_name: librarian
 admin_role_name: admin
+# Nazwa aplikacji która będzie wyświetlała się w aplikacji dla jednorazowych haseł (One Time Password)
+totp_app_name: Librarian
+# Nazwa użytkownika który będzie wyświetlał się w aplikacji dla jednorazowych haseł (One Time Password)
+# Zalecam zostawić Admin wtedy kod QR będzie taki sam dla wszystkich administratorów
+totp_user_name: Admin
 
 # Konfiguracja dostępu do bazy Keycloak
 keycloak:
