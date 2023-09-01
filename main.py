@@ -1,5 +1,7 @@
 import json
 import datetime
+
+import dotenv
 import prettytable
 import msvcrt
 import os
@@ -11,7 +13,7 @@ import random
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from inputimeout import inputimeout
+from email.mime.image import MIMEImage
 from keycloak import KeycloakOpenID, KeycloakAdmin
 import atexit
 import yaml
@@ -21,6 +23,11 @@ import logging
 import cv2
 from pyzbar.pyzbar import decode, ZBarSymbol
 import numpy as np
+import pyotp
+import qrcode
+import base64
+import string
+
 
 # Mongo variables
 global isJson
@@ -46,6 +53,8 @@ global keycloak_openid
 global cipher
 
 global adminPassword
+
+global totp
 
 with open('config.yml', 'r') as f:
     yamlFile = yaml.safe_load(f)
@@ -115,15 +124,21 @@ class AdminTools:
         self.receiveEmail = receiveEmail
         self.password = password
 
-    def emailCodeSend(self) -> bool:
+    def QRcodeEmailSend(self, qrCodeImg) -> bool:
         confirmCode = str(random.randint(100000, 999999))
         # Tworzenie wiadomości
         message = MIMEMultipart()
         message['From'] = self.senderEmail
         message['To'] = ', '.join(self.receiveEmail)
-        message['Subject'] = 'Librarian admin'
-        body = f"""<h1>There is your confirmation code for librarian</h1><font size:"16">Here is your confirmation code: <b>{confirmCode}</b></font>"""
+        message['Subject'] = 'Librarian new QR code'
+        body = f"""
+        <html>
+            <body>
+                <h1>Your new QR code for your Authentication App</h1>
+            </body>
+        </html>"""
         message.attach(MIMEText(body, 'html'))
+        message.attach(qrCodeImg)
 
         # Utworzenie sesji SMTP
         server = smtplib.SMTP('smtp.gmail.com', 587)
@@ -135,14 +150,6 @@ class AdminTools:
         text = message.as_string()
         server.sendmail(self.senderEmail, self.receiveEmail, text)
         server.quit()
-
-        try:
-            codeInput = inputimeout(prompt="Enter confirmation code from email: ", timeout=120)
-        except Exception:
-            print(f"{Fore.RED}Timeout{Style.RESET_ALL}")
-            return
-
-        return codeInput == confirmCode
     
    
     global keycloakAdmin
@@ -152,6 +159,37 @@ class AdminTools:
                                   realm_name=keycloakRealm,
                                   verify=True
                                   )
+
+    def genereteTOTP(self):
+        global totp
+
+        characters = string.digits + string.ascii_letters
+
+        key = ""
+
+        for i in range(16):
+            key += random.choice(characters)
+
+        totp = pyotp.TOTP(key)
+
+        set_key(find_dotenv(), "FIRST_LAUNCH", "False")
+
+        passwordsDBcursor.execute("UPDATE totp SET key=? WHERE type='totp'", (key,))
+        passwordsDBconnection.commit()
+
+        uri = pyotp.totp.TOTP(key).provisioning_uri(name="Librarian",
+                                                    issuer_name="Admin")
+
+        qr = qrcode.make(uri).save("auth-qr.png")
+
+        try:
+            with open("auth-qr.png", "rb") as attachment:
+                img = MIMEImage(attachment.read())
+                img.add_header("Content-Disposition", "attachment", filename="kod_qr.png")
+
+            self.QRcodeEmailSend(img)
+        finally:
+            os.system("del auth-qr.png")
 
     def checkRole(self, roleName: str, username: str) -> bool:
         # Pobranie ID użytkownika na podstawie jego nazwy użytkownika
@@ -2115,6 +2153,12 @@ adminTools = AdminTools(senderEmail, receiveEmail, senderPassword)
 mongoPreconfiguration()
 profiles()
 atexit.register(onExit)
+
+if get_key(find_dotenv(), "FIRST_LAUNCH") == 'True':
+    adminTools.genereteTOTP()
+else:
+    pass
+
 while True:
     choice = 0
     print()
