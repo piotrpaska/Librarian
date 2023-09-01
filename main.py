@@ -2340,6 +2340,9 @@ while True:
                     adminTools.modifyBook()
                 elif choice == '11':
                     adminTools.genereteTOTP()
+                    print(f"{Fore.LIGHTGREEN_EX}Zresetowano klucz kodu TOTP{Style.RESET_ALL}")
+                    print(f"{Fore.LIGHTGREEN_EX}Wszystkie aplikacje jak Google Authenticator\n"
+                          f"powinny zostać połączone z nowym kodem QR.{Style.RESET_ALL}")
                 elif choice == 'quit':
                     os.system('cls')
                     break
