@@ -25,6 +25,7 @@ from pyzbar.pyzbar import decode, ZBarSymbol
 import numpy as np
 import pyotp
 import qrcode
+from inputimeout import inputimeout
 import base64
 import string
 
@@ -155,7 +156,7 @@ class AdminTools:
     def genereteTOTP(self):
         global totp
 
-        characters = string.digits + string.ascii_letters
+        characters = string.ascii_letters
 
         key = ""
 
@@ -169,8 +170,8 @@ class AdminTools:
         passwordsDBcursor.execute("UPDATE pwds SET password=? WHERE type='totp'", (key,))
         passwordsDBconnection.commit()
 
-        uri = pyotp.totp.TOTP(key).provisioning_uri(name=yamlFile["totp_app_name"],
-                                                    issuer_name=yamlFile["totp_user_name"])
+        uri = pyotp.totp.TOTP(key).provisioning_uri(name=yamlFile["totp_user_name"],
+                                                    issuer_name=yamlFile["totp_app_name"])
 
         qr = qrcode.make(uri).save("auth-qr.png")
 
@@ -2311,7 +2312,7 @@ while True:
         mongoPreconfiguration()
     elif choice == 'cfg admin':
         os.system('cls')
-        if adminTools.emailCodeSend():
+        if totp.verify(inputimeout("Enter OTP code from your app: ", 120)):
             while True:
                 print()
                 print("----------------------------------------------------------------------------")
