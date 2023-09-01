@@ -560,7 +560,6 @@ class AdminTools:
 
 
     def changePassword(self, username):
-        # TODO: Change admin password to totp
         try:
             user_id = keycloakAdmin.get_user_id(username)
             keycloakAdmin.send_update_account(user_id=user_id, payload=['UPDATE_PASSWORD'])
@@ -573,32 +572,24 @@ class AdminTools:
             while isEnd == False:
                 adminEmailChoice = input(f'Jeśli jest obok ciebie administrator wpisz? (y/n): ')
                 if adminEmailChoice == 'y':
-                    i = 3
-                    while i > 0:
-                        adminPasswordInput = maskpass.askpass('Wpisz hasło administratora: ', '*')
-                        if adminPasswordInput == adminPassword:
-                            print()
-                            while True:
-                                newPassword = input('Wpisz nowe hasło: ')
-                                repeatNewPassword = maskpass.askpass('Powtórz nowe hasło: ', '*')
-                                if newPassword == repeatNewPassword:
-                                    keycloakAdmin.set_user_password(user_id=user_id, password=newPassword, temporary=False)
-                                    logging.info(f"{username} Changed profile password")
-                                    print(f'{Fore.GREEN}Pomyślnie zmieniono hasło{Style.RESET_ALL}')
-                                    isEnd = True
-                                    break
-                                else:
-                                    print(f'{Fore.RED}Hasła się różnią.{Style.RESET_ALL}')
-                                    print()
-                            break
-                        else:
-                            i = i - 1
-                            if i > 0:
-                                print(f'{Fore.RED}Pozostałe próby: {i}{Style.RESET_ALL}')
-                            else:
-                                print(f'{Fore.RED}Zmiana hasła została anulowana.{Style.RESET_ALL}')
+                    if totp.verify(input("Wpisz kod OTP administratora: ")):
+                        print()
+                        while True:
+                            newPassword = input('Wpisz nowe hasło: ')
+                            repeatNewPassword = maskpass.askpass('Powtórz nowe hasło: ', '*')
+                            if newPassword == repeatNewPassword:
+                                keycloakAdmin.set_user_password(user_id=user_id, password=newPassword, temporary=False)
+                                logging.info(f"{username} Changed profile password")
+                                print(f'{Fore.GREEN}Pomyślnie zmieniono hasło{Style.RESET_ALL}')
                                 isEnd = True
                                 break
+                            else:
+                                print(f'{Fore.RED}Hasła się różnią.{Style.RESET_ALL}')
+                                print()
+                        break
+                    else:
+                        print(f'{Fore.RED}Zmiana hasła została anulowana.{Style.RESET_ALL}')
+                        isEnd = True
                 elif adminEmailChoice == 'n':
                     print(f'{Fore.RED}Zmiana hasła została anulowana.{Style.RESET_ALL}')
                     break
@@ -2124,17 +2115,15 @@ def onExit():
 
 
 adminTools = AdminTools(senderEmail, receiveEmail, senderPassword)
-mongoPreconfiguration()
-profiles()
-atexit.register(onExit)
-
 if get_key(find_dotenv(), "FIRST_LAUNCH") == 'True':
     adminTools.genereteTOTP()
 else:
     passwordsDBcursor.execute("SELECT * FROM pwds WHERE type='totp'")
     totpKey = passwordsDBcursor.fetchone()
     totp = pyotp.TOTP(totpKey[1])
-
+mongoPreconfiguration()
+profiles()
+atexit.register(onExit)
 while True:
     choice = 0
     print()
