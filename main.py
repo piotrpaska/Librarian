@@ -1,5 +1,7 @@
 import json
 import datetime
+
+import dotenv
 import prettytable
 import msvcrt
 import os
@@ -11,7 +13,7 @@ import random
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from inputimeout import inputimeout
+from email.mime.image import MIMEImage
 from keycloak import KeycloakOpenID, KeycloakAdmin
 import atexit
 import yaml
@@ -21,6 +23,12 @@ import logging
 import cv2
 from pyzbar.pyzbar import decode, ZBarSymbol
 import numpy as np
+import pyotp
+import qrcode
+from inputimeout import inputimeout
+import base64
+import string
+
 
 # Mongo variables
 global isJson
@@ -46,6 +54,10 @@ global keycloak_openid
 global cipher
 
 global adminPassword
+
+global totp
+
+global yamlFile
 
 with open('config.yml', 'r') as f:
     yamlFile = yaml.safe_load(f)
@@ -89,23 +101,13 @@ if fernetKey == b'':
 
     cipher = Fernet(key)
     data = b'None'
-    adminData = b'admin'
     encryptedata = cipher.encrypt(data)
-    adminEncryptedata = cipher.encrypt(adminData)
     passwordsDBcursor.execute("UPDATE pwds SET username = ?, password=? WHERE type = 'mongo'",
                               (encryptedata, encryptedata,))
-    passwordsDBcursor.execute("UPDATE pwds SET password=? WHERE type = 'admin'",
-                              (adminEncryptedata,))
     passwordsDBconnection.commit()
 else:
     # If no create decrypt object
     cipher = Fernet(fernetKey)
-
-# Get encrypted admin password
-passwordsDBcursor.execute("""SELECT * from pwds WHERE type='admin'""")
-encryptedAdminPassword = passwordsDBcursor.fetchone()[1]
-# Decrypt admin password
-adminPassword = cipher.decrypt(encryptedAdminPassword).decode()
 
 logging.basicConfig(format="[%(asctime)s %(levelname)s]: %(message)s", datefmt="%d.%m.%Y %H:%M:%S", filename='log.log', filemode='a', level=logging.INFO)
 init()
@@ -115,15 +117,21 @@ class AdminTools:
         self.receiveEmail = receiveEmail
         self.password = password
 
-    def emailCodeSend(self) -> bool:
+    def QRcodeEmailSend(self, qrCodeImg) -> bool:
         confirmCode = str(random.randint(100000, 999999))
         # Tworzenie wiadomości
         message = MIMEMultipart()
         message['From'] = self.senderEmail
         message['To'] = ', '.join(self.receiveEmail)
-        message['Subject'] = 'Librarian admin'
-        body = f"""<h1>There is your confirmation code for librarian</h1><font size:"16">Here is your confirmation code: <b>{confirmCode}</b></font>"""
+        message['Subject'] = 'Librarian new QR code'
+        body = f"""
+        <html>
+            <body>
+                <h1>Your new QR code for your Authentication App</h1>
+            </body>
+        </html>"""
         message.attach(MIMEText(body, 'html'))
+        message.attach(qrCodeImg)
 
         # Utworzenie sesji SMTP
         server = smtplib.SMTP('smtp.gmail.com', 587)
@@ -135,14 +143,6 @@ class AdminTools:
         text = message.as_string()
         server.sendmail(self.senderEmail, self.receiveEmail, text)
         server.quit()
-
-        try:
-            codeInput = inputimeout(prompt="Enter confirmation code from email: ", timeout=120)
-        except Exception:
-            print(f"{Fore.RED}Timeout{Style.RESET_ALL}")
-            return
-
-        return codeInput == confirmCode
     
    
     global keycloakAdmin
@@ -152,6 +152,38 @@ class AdminTools:
                                   realm_name=keycloakRealm,
                                   verify=True
                                   )
+
+    def genereteTOTP(self):
+        global totp
+
+        characters = string.ascii_letters
+
+        key = ""
+
+        for i in range(16):
+            key += random.choice(characters)
+
+        totp = pyotp.TOTP(key)
+
+        set_key(find_dotenv(), "FIRST_LAUNCH", "False")
+
+        passwordsDBcursor.execute("UPDATE pwds SET password=? WHERE type='totp'", (key,))
+        passwordsDBconnection.commit()
+
+        uri = pyotp.totp.TOTP(key).provisioning_uri(name=yamlFile["totp_user_name"],
+                                                    issuer_name=yamlFile["totp_app_name"])
+
+        qr = qrcode.make(uri).save("auth-qr.png")
+
+        try:
+            with open("auth-qr.png", "rb") as attachment:
+                img = MIMEImage(attachment.read())
+                img.add_header("Content-Disposition", "attachment", filename="kod_qr.png")
+
+            self.QRcodeEmailSend(img)
+        finally:
+            os.system("del auth-qr.png")
+            logging.info("Reseted TOTP key")
 
     def checkRole(self, roleName: str, username: str) -> bool:
         # Pobranie ID użytkownika na podstawie jego nazwy użytkownika
@@ -541,57 +573,29 @@ class AdminTools:
             while isEnd == False:
                 adminEmailChoice = input(f'Jeśli jest obok ciebie administrator wpisz? (y/n): ')
                 if adminEmailChoice == 'y':
-                    i = 3
-                    while i > 0:
-                        adminPasswordInput = maskpass.askpass('Wpisz hasło administratora: ', '*')
-                        if adminPasswordInput == adminPassword:
-                            print()
-                            while True:
-                                newPassword = input('Wpisz nowe hasło: ')
-                                repeatNewPassword = maskpass.askpass('Powtórz nowe hasło: ', '*')
-                                if newPassword == repeatNewPassword:
-                                    keycloakAdmin.set_user_password(user_id=user_id, password=newPassword, temporary=False)
-                                    logging.info(f"{username} Changed profile password")
-                                    print(f'{Fore.GREEN}Pomyślnie zmieniono hasło{Style.RESET_ALL}')
-                                    isEnd = True
-                                    break
-                                else:
-                                    print(f'{Fore.RED}Hasła się różnią.{Style.RESET_ALL}')
-                                    print()
-                            break
-                        else:
-                            i = i - 1
-                            if i > 0:
-                                print(f'{Fore.RED}Pozostałe próby: {i}{Style.RESET_ALL}')
-                            else:
-                                print(f'{Fore.RED}Zmiana hasła została anulowana.{Style.RESET_ALL}')
+                    if totp.verify(input("Wpisz kod OTP administratora: ")):
+                        print()
+                        while True:
+                            newPassword = input('Wpisz nowe hasło: ')
+                            repeatNewPassword = maskpass.askpass('Powtórz nowe hasło: ', '*')
+                            if newPassword == repeatNewPassword:
+                                keycloakAdmin.set_user_password(user_id=user_id, password=newPassword, temporary=False)
+                                logging.info(f"{username} Changed profile password")
+                                print(f'{Fore.GREEN}Pomyślnie zmieniono hasło{Style.RESET_ALL}')
                                 isEnd = True
                                 break
+                            else:
+                                print(f'{Fore.RED}Hasła się różnią.{Style.RESET_ALL}')
+                                print()
+                        break
+                    else:
+                        print(f'{Fore.RED}Zmiana hasła została anulowana.{Style.RESET_ALL}')
+                        isEnd = True
                 elif adminEmailChoice == 'n':
                     print(f'{Fore.RED}Zmiana hasła została anulowana.{Style.RESET_ALL}')
                     break
                 else:
                     print(f'{Fore.RED}Niepoprawna komenda.{Style.RESET_ALL}')
-
-
-    def changeAdminPassword(self):
-        global adminPassword
-        confirmPassword = maskpass.askpass('Enter current admin password: ', '*')
-        if confirmPassword == adminPassword:
-            while True:
-                newPassword = maskpass.askpass('Enter new password: ', '*')
-                repeatPassword = maskpass.askpass('Repeat password: ', '*')
-
-                if newPassword == repeatPassword:
-                    encryptedPassword = cipher.encrypt(newPassword.encode())
-                    passwordsDBcursor.execute(f"UPDATE pwds SET password=? WHERE type = 'admin'", (encryptedPassword,))
-                    passwordsDBconnection.commit()
-                    adminPassword = newPassword
-                    break
-                else:
-                    print(f"""{Fore.RED}Passwords don't match{Style.RESET_ALL}""")
-        else:
-            print(f"""{Fore.RED}Incorrect password{Style.RESET_ALL}""")
 
 
     def changeMode(self):
@@ -2112,6 +2116,12 @@ def onExit():
 
 
 adminTools = AdminTools(senderEmail, receiveEmail, senderPassword)
+if get_key(find_dotenv(), "FIRST_LAUNCH") == 'True':
+    adminTools.genereteTOTP()
+else:
+    passwordsDBcursor.execute("SELECT * FROM pwds WHERE type='totp'")
+    totpKey = passwordsDBcursor.fetchone()
+    totp = pyotp.TOTP(totpKey[1])
 mongoPreconfiguration()
 profiles()
 atexit.register(onExit)
@@ -2292,7 +2302,7 @@ while True:
         mongoPreconfiguration()
     elif choice == 'cfg admin':
         os.system('cls')
-        if adminTools.emailCodeSend():
+        if totp.verify(inputimeout("Enter OTP code from your app: ", 120)):
             while True:
                 print()
                 print("----------------------------------------------------------------------------")
@@ -2306,7 +2316,7 @@ while True:
                 print("[8] - Add book")
                 print("[9] - Delete book")
                 print("[10] - Modify book")
-                print("[11] - Change admin password")
+                print("[11] - Reset totp code")
                 print('[quit] - Close admin menu')
                 choice = input("Wybierz z listy: ")
                 if choice == '1':
@@ -2330,7 +2340,10 @@ while True:
                 elif choice == '10':
                     adminTools.modifyBook()
                 elif choice == '11':
-                    adminTools.changeAdminPassword()
+                    adminTools.genereteTOTP()
+                    print(f"{Fore.LIGHTGREEN_EX}Zresetowano klucz kodu TOTP{Style.RESET_ALL}")
+                    print(f"{Fore.LIGHTGREEN_EX}Wszystkie aplikacje jak Google Authenticator\n"
+                          f"powinny zostać połączone z nowym kodem QR.{Style.RESET_ALL}")
                 elif choice == 'quit':
                     os.system('cls')
                     break
