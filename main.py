@@ -56,6 +56,8 @@ global adminPassword
 
 global totp
 
+global yamlFile
+
 with open('config.yml', 'r') as f:
     yamlFile = yaml.safe_load(f)
 
@@ -98,23 +100,13 @@ if fernetKey == b'':
 
     cipher = Fernet(key)
     data = b'None'
-    adminData = b'admin'
     encryptedata = cipher.encrypt(data)
-    adminEncryptedata = cipher.encrypt(adminData)
     passwordsDBcursor.execute("UPDATE pwds SET username = ?, password=? WHERE type = 'mongo'",
                               (encryptedata, encryptedata,))
-    passwordsDBcursor.execute("UPDATE pwds SET password=? WHERE type = 'admin'",
-                              (adminEncryptedata,))
     passwordsDBconnection.commit()
 else:
     # If no create decrypt object
     cipher = Fernet(fernetKey)
-
-# Get encrypted admin password
-passwordsDBcursor.execute("""SELECT * from pwds WHERE type='admin'""")
-encryptedAdminPassword = passwordsDBcursor.fetchone()[1]
-# Decrypt admin password
-adminPassword = cipher.decrypt(encryptedAdminPassword).decode()
 
 logging.basicConfig(format="[%(asctime)s %(levelname)s]: %(message)s", datefmt="%d.%m.%Y %H:%M:%S", filename='log.log', filemode='a', level=logging.INFO)
 init()
@@ -174,11 +166,11 @@ class AdminTools:
 
         set_key(find_dotenv(), "FIRST_LAUNCH", "False")
 
-        passwordsDBcursor.execute("UPDATE totp SET key=? WHERE type='totp'", (key,))
+        passwordsDBcursor.execute("UPDATE pwds SET password=? WHERE type='totp'", (key,))
         passwordsDBconnection.commit()
 
-        uri = pyotp.totp.TOTP(key).provisioning_uri(name="Librarian",
-                                                    issuer_name="Admin")
+        uri = pyotp.totp.TOTP(key).provisioning_uri(name=yamlFile["totp_app_name"],
+                                                    issuer_name=yamlFile["totp_user_name"])
 
         qr = qrcode.make(uri).save("auth-qr.png")
 
@@ -567,6 +559,7 @@ class AdminTools:
 
 
     def changePassword(self, username):
+        # TODO: Change admin password to totp
         try:
             user_id = keycloakAdmin.get_user_id(username)
             keycloakAdmin.send_update_account(user_id=user_id, payload=['UPDATE_PASSWORD'])
@@ -610,26 +603,6 @@ class AdminTools:
                     break
                 else:
                     print(f'{Fore.RED}Niepoprawna komenda.{Style.RESET_ALL}')
-
-
-    def changeAdminPassword(self):
-        global adminPassword
-        confirmPassword = maskpass.askpass('Enter current admin password: ', '*')
-        if confirmPassword == adminPassword:
-            while True:
-                newPassword = maskpass.askpass('Enter new password: ', '*')
-                repeatPassword = maskpass.askpass('Repeat password: ', '*')
-
-                if newPassword == repeatPassword:
-                    encryptedPassword = cipher.encrypt(newPassword.encode())
-                    passwordsDBcursor.execute(f"UPDATE pwds SET password=? WHERE type = 'admin'", (encryptedPassword,))
-                    passwordsDBconnection.commit()
-                    adminPassword = newPassword
-                    break
-                else:
-                    print(f"""{Fore.RED}Passwords don't match{Style.RESET_ALL}""")
-        else:
-            print(f"""{Fore.RED}Incorrect password{Style.RESET_ALL}""")
 
 
     def changeMode(self):
@@ -2157,7 +2130,9 @@ atexit.register(onExit)
 if get_key(find_dotenv(), "FIRST_LAUNCH") == 'True':
     adminTools.genereteTOTP()
 else:
-    pass
+    passwordsDBcursor.execute("SELECT * FROM pwds WHERE type='totp'")
+    totpKey = passwordsDBcursor.fetchone()
+    totp = pyotp.TOTP(totpKey[1])
 
 while True:
     choice = 0
@@ -2350,7 +2325,7 @@ while True:
                 print("[8] - Add book")
                 print("[9] - Delete book")
                 print("[10] - Modify book")
-                print("[11] - Change admin password")
+                print("[11] - Reset totp code")
                 print('[quit] - Close admin menu')
                 choice = input("Wybierz z listy: ")
                 if choice == '1':
@@ -2374,7 +2349,7 @@ while True:
                 elif choice == '10':
                     adminTools.modifyBook()
                 elif choice == '11':
-                    adminTools.changeAdminPassword()
+                    adminTools.genereteTOTP()
                 elif choice == 'quit':
                     os.system('cls')
                     break
