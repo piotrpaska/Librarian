@@ -4,7 +4,7 @@ active_hires_file_name: active.json
 history_file_name: history.json
 #Format w jakim zapisywana jest data wypożyczenia lub zwrotu książki itp.
 date_format: '%d.%m.%Y'
-# Adres
+# Adres bazy danych MongoDB
 mongodb_connection_string: mongodb+srv://<username>:<password>
 # Nazwa bazy danych w której będziesz trzymać wszytskie dane o wypożyczeniach
 mongo_rents_db_name:
