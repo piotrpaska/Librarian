@@ -1,8 +1,5 @@
 import json
 import datetime
-
-import dotenv
-import keycloak.exceptions
 import prettytable
 import msvcrt
 import os
@@ -27,7 +24,6 @@ import numpy as np
 import pyotp
 import qrcode
 from inputimeout import inputimeout
-import base64
 import string
 
 
