@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Librarian"
-#define MyAppVersion "1.7.0"
+#define MyAppVersion "1.8.0"
 #define MyAppPublisher "Codevision Studio"
 #define MyAppURL "https://github.com/Piciu19/Librarian/releases"
 #define MyAppExeName "Librarian.exe"
@@ -47,6 +47,8 @@ Source: "C:\Users\krzys\Desktop\It-Projects\Szkola\Biblioteka\Installer\Files\co
 Source: "C:\Users\krzys\Desktop\It-Projects\Szkola\Biblioteka\Installer\Files\db.db"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\krzys\Desktop\It-Projects\Szkola\Biblioteka\Installer\Files\fernet_key.txt"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\krzys\Desktop\It-Projects\Szkola\Biblioteka\Installer\Files\history.json"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Users\krzys\Desktop\It-Projects\Szkola\Biblioteka\Installer\Files\libzbar-64.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Users\krzys\Desktop\It-Projects\Szkola\Biblioteka\Installer\Files\libiconv.dll"; DestDir: "{app}"; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]

@@ -11,13 +11,21 @@ import random
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from inputimeout import inputimeout
+from email.mime.image import MIMEImage
 from keycloak import KeycloakOpenID, KeycloakAdmin
 import atexit
 import yaml
 import sqlite3
 from cryptography.fernet import Fernet
 import logging
+import cv2
+from pyzbar.pyzbar import decode, ZBarSymbol
+import numpy as np
+import pyotp
+import qrcode
+from inputimeout import inputimeout
+import string
+
 
 # Mongo variables
 global isJson
@@ -26,6 +34,7 @@ global db
 global activeCollection
 global historyCollection
 global mongoUsersCollection
+global booksListCollection
 
 global passwordsDBconnection
 global passwordsDBcursor
@@ -42,6 +51,10 @@ global keycloak_openid
 global cipher
 
 global adminPassword
+
+global totp
+
+global yamlFile
 
 with open('config.yml', 'r') as f:
     yamlFile = yaml.safe_load(f)
@@ -85,23 +98,13 @@ if fernetKey == b'':
 
     cipher = Fernet(key)
     data = b'None'
-    adminData = b'admin'
     encryptedata = cipher.encrypt(data)
-    adminEncryptedata = cipher.encrypt(adminData)
     passwordsDBcursor.execute("UPDATE pwds SET username = ?, password=? WHERE type = 'mongo'",
                               (encryptedata, encryptedata,))
-    passwordsDBcursor.execute("UPDATE pwds SET password=? WHERE type = 'admin'",
-                              (adminEncryptedata,))
     passwordsDBconnection.commit()
 else:
     # If no create decrypt object
     cipher = Fernet(fernetKey)
-
-# Get encrypted admin password
-passwordsDBcursor.execute("""SELECT * from pwds WHERE type='admin'""")
-encryptedAdminPassword = passwordsDBcursor.fetchone()[1]
-# Decrypt admin password
-adminPassword = cipher.decrypt(encryptedAdminPassword).decode()
 
 logging.basicConfig(format="[%(asctime)s %(levelname)s]: %(message)s", datefmt="%d.%m.%Y %H:%M:%S", filename='log.log', filemode='a', level=logging.INFO)
 init()
@@ -111,15 +114,21 @@ class AdminTools:
         self.receiveEmail = receiveEmail
         self.password = password
 
-    def emailCodeSend(self) -> bool:
+    def QRcodeEmailSend(self, qrCodeImg) -> bool:
         confirmCode = str(random.randint(100000, 999999))
         # Tworzenie wiadomości
         message = MIMEMultipart()
         message['From'] = self.senderEmail
         message['To'] = ', '.join(self.receiveEmail)
-        message['Subject'] = 'Librarian admin'
-        body = f"""<h1>There is your confirmation code for librarian</h1><font size:"16">Here is your confirmation code: <b>{confirmCode}</b></font>"""
+        message['Subject'] = 'Librarian new QR code'
+        body = f"""
+        <html>
+            <body>
+                <h1>Your new QR code for your Authentication App</h1>
+            </body>
+        </html>"""
         message.attach(MIMEText(body, 'html'))
+        message.attach(qrCodeImg)
 
         # Utworzenie sesji SMTP
         server = smtplib.SMTP('smtp.gmail.com', 587)
@@ -131,14 +140,6 @@ class AdminTools:
         text = message.as_string()
         server.sendmail(self.senderEmail, self.receiveEmail, text)
         server.quit()
-
-        try:
-            codeInput = inputimeout(prompt="Enter confirmation code from email: ", timeout=120)
-        except Exception:
-            print(f"{Fore.RED}Timeout{Style.RESET_ALL}")
-            return
-
-        return codeInput == confirmCode
     
    
     global keycloakAdmin
@@ -148,6 +149,38 @@ class AdminTools:
                                   realm_name=keycloakRealm,
                                   verify=True
                                   )
+
+    def genereteTOTP(self):
+        global totp
+
+        characters = string.ascii_letters
+
+        key = ""
+
+        for i in range(16):
+            key += random.choice(characters)
+
+        totp = pyotp.TOTP(key)
+
+        set_key(find_dotenv(), "FIRST_LAUNCH", "False")
+
+        passwordsDBcursor.execute("UPDATE pwds SET password=? WHERE type='totp'", (key,))
+        passwordsDBconnection.commit()
+
+        uri = pyotp.totp.TOTP(key).provisioning_uri(name=yamlFile["totp_user_name"],
+                                                    issuer_name=yamlFile["totp_app_name"])
+
+        qr = qrcode.make(uri).save("auth-qr.png")
+
+        try:
+            with open("auth-qr.png", "rb") as attachment:
+                img = MIMEImage(attachment.read())
+                img.add_header("Content-Disposition", "attachment", filename="kod_qr.png")
+
+            self.QRcodeEmailSend(img)
+        finally:
+            os.system("del auth-qr.png")
+            logging.info("Reseted TOTP key")
 
     def checkRole(self, roleName: str, username: str) -> bool:
         # Pobranie ID użytkownika na podstawie jego nazwy użytkownika
@@ -537,57 +570,29 @@ class AdminTools:
             while isEnd == False:
                 adminEmailChoice = input(f'Jeśli jest obok ciebie administrator wpisz? (y/n): ')
                 if adminEmailChoice == 'y':
-                    i = 3
-                    while i > 0:
-                        adminPasswordInput = maskpass.askpass('Wpisz hasło administratora: ', '*')
-                        if adminPasswordInput == adminPassword:
-                            print()
-                            while True:
-                                newPassword = input('Wpisz nowe hasło: ')
-                                repeatNewPassword = maskpass.askpass('Powtórz nowe hasło: ', '*')
-                                if newPassword == repeatNewPassword:
-                                    keycloakAdmin.set_user_password(user_id=user_id, password=newPassword, temporary=False)
-                                    logging.info(f"{username} Changed profile password")
-                                    print(f'{Fore.GREEN}Pomyślnie zmieniono hasło{Style.RESET_ALL}')
-                                    isEnd = True
-                                    break
-                                else:
-                                    print(f'{Fore.RED}Hasła się różnią.{Style.RESET_ALL}')
-                                    print()
-                            break
-                        else:
-                            i = i - 1
-                            if i > 0:
-                                print(f'{Fore.RED}Pozostałe próby: {i}{Style.RESET_ALL}')
-                            else:
-                                print(f'{Fore.RED}Zmiana hasła została anulowana.{Style.RESET_ALL}')
+                    if totp.verify(input("Wpisz kod OTP administratora: ")):
+                        print()
+                        while True:
+                            newPassword = input('Wpisz nowe hasło: ')
+                            repeatNewPassword = maskpass.askpass('Powtórz nowe hasło: ', '*')
+                            if newPassword == repeatNewPassword:
+                                keycloakAdmin.set_user_password(user_id=user_id, password=newPassword, temporary=False)
+                                logging.info(f"{username} Changed profile password")
+                                print(f'{Fore.GREEN}Pomyślnie zmieniono hasło{Style.RESET_ALL}')
                                 isEnd = True
                                 break
+                            else:
+                                print(f'{Fore.RED}Hasła się różnią.{Style.RESET_ALL}')
+                                print()
+                        break
+                    else:
+                        print(f'{Fore.RED}Zmiana hasła została anulowana.{Style.RESET_ALL}')
+                        isEnd = True
                 elif adminEmailChoice == 'n':
                     print(f'{Fore.RED}Zmiana hasła została anulowana.{Style.RESET_ALL}')
                     break
                 else:
                     print(f'{Fore.RED}Niepoprawna komenda.{Style.RESET_ALL}')
-
-
-    def changeAdminPassword(self):
-        global adminPassword
-        confirmPassword = maskpass.askpass('Enter current admin password: ', '*')
-        if confirmPassword == adminPassword:
-            while True:
-                newPassword = maskpass.askpass('Enter new password: ', '*')
-                repeatPassword = maskpass.askpass('Repeat password: ', '*')
-
-                if newPassword == repeatPassword:
-                    encryptedPassword = cipher.encrypt(newPassword.encode())
-                    passwordsDBcursor.execute(f"UPDATE pwds SET password=? WHERE type = 'admin'", (encryptedPassword,))
-                    passwordsDBconnection.commit()
-                    adminPassword = newPassword
-                    break
-                else:
-                    print(f"""{Fore.RED}Passwords don't match{Style.RESET_ALL}""")
-        else:
-            print(f"""{Fore.RED}Incorrect password{Style.RESET_ALL}""")
 
 
     def changeMode(self):
@@ -626,6 +631,105 @@ class AdminTools:
             print(f'{Fore.GREEN}Database is fully reset{Style.RESET_ALL}')
         else:
             print(f"{Fore.RED}You aren't in MongoDB mode{Style.RESET_ALL}")
+
+    def addBook(self):
+        print()
+        print(f'{Fore.LIGHTWHITE_EX}Adding book{Style.RESET_ALL}')
+        while True:
+            bookCode = input("Enter book's code: ")
+            booksList = booksListCollection.find_one({"code": bookCode})
+            if booksList != None:
+                print(f'{Fore.LIGHTRED_EX}Another book already has this code{Style.RESET_ALL}')
+                continue
+            else:
+                break
+
+        bookTitle = interactiveInput("Enter book's title: ")
+        bookAmount = interactiveInput("Enter amount of books: ")
+
+        data = {
+            "code": bookCode,
+            "title": bookTitle,
+            "onStock": int(bookAmount),
+            "rented": 0
+        }
+
+        booksListCollection.insert_one(data)
+        logging.info(f"Created book: {bookTitle}")
+        print(f'{Fore.LIGHTGREEN_EX}Added book{Style.RESET_ALL}')
+
+
+    def deleteBook(self):
+        table = prettytable.PrettyTable(["Code", "Title", "onStock", "rented"])
+        table.title = "Books list"
+
+        if not isJson:
+            documents = booksListCollection.find()
+            for document in documents:
+                if int(document["onStock"]) <= 0:
+                    onStock = f"""{Style.BRIGHT}{Fore.RED}{document["onStock"]}{Style.RESET_ALL}"""
+                else:
+                    onStock = f"""{Style.BRIGHT}{Fore.GREEN}{document["onStock"]}{Style.RESET_ALL}"""
+
+                table.add_row([document['code'], document['title'], onStock, document['rented']])
+
+            if len(table.rows) == 0:
+                print()
+                print('Lista jest pusta')
+                return
+            else:
+                print(table)
+        else:
+            print(f"{Fore.RED}Books list doesn't work in local mode{Style.RESET_ALL}")
+
+        code = interactiveInput("Enter book's code that you want to delete: ")
+
+        bookTitle = booksListCollection.find_one({"code": code})
+        booksListCollection.delete_one({"code": code})
+        logging.info(f"""Deleted book: {bookTitle["title"]}""")
+        print(f'{Fore.LIGHTGREEN_EX}Deleted book{Style.RESET_ALL}')
+
+
+    def modifyBook(self):
+        table = prettytable.PrettyTable(["Code", "Title", "onStock", "rented"])
+        table.title = "Books list"
+
+        if not isJson:
+            documents = booksListCollection.find()
+            for document in documents:
+                if int(document["onStock"]) <= 0:
+                    onStock = f"""{Style.BRIGHT}{Fore.RED}{document["onStock"]}{Style.RESET_ALL}"""
+                else:
+                    onStock = f"""{Style.BRIGHT}{Fore.GREEN}{document["onStock"]}{Style.RESET_ALL}"""
+
+                table.add_row([document['code'], document['title'], onStock, document['rented']])
+
+            if len(table.rows) == 0:
+                print()
+                print('Lista jest pusta')
+                return
+            else:
+                print(table)
+        else:
+            print(f"{Fore.RED}Books list doesn't work in local mode{Style.RESET_ALL}")
+
+        code = interactiveInput("Enter book's code that you want to modify: ")
+        book = booksListCollection.find_one({"code": code})
+
+        newCode = interactiveInput("Enter new book code: ", book["code"])
+        title = interactiveInput("Enter book title: ", book["title"])
+        amount = interactiveInput("Enter how many books there are in total: ", str(int(book["onStock"] + book["rented"])))
+
+        updateData = {
+            "$set": {"code": newCode, "title": title, "onStock": (int(amount) - book["rented"])}
+        }
+
+        booksListCollection.update_one({"code": code}, update=updateData)
+
+        logging.info(f"""Modified book: {title}""")
+        print(f'{Fore.LIGHTGREEN_EX}Modified book{Style.RESET_ALL}')
+
+
 
 def profiles():
     # Konfiguracja klienta Keycloak
@@ -726,10 +830,12 @@ def mongoPreconfiguration():
             global activeCollection
             global historyCollection
             global mongoUsersCollection
+            global booksListCollection
             client = pymongo.MongoClient(connectionString)
             db = client[yamlFile['mongo_rents_db_name']]
             activeCollection = db[yamlFile['active_rents_collection_name']]
-            historyCollection = db['history_rents_collection_name']
+            historyCollection = db[yamlFile['history_rents_collection_name']]
+            booksListCollection = db[yamlFile['books_list_collection_name']]
             mongoUsersCollection = client[yamlFile['mongo_users_db']][yamlFile['mongo_users_collection']]
         except Exception as error:
             logging.error(f"mongoPreconfiguration: {error}")
@@ -779,6 +885,30 @@ def interactiveInput(message: str, startValue = "") -> str:
 
     return str(var)
 
+def qrScan():
+    cap = cv2.VideoCapture(0)
+    cap.set(3, 640)
+    cap.set(4, 480)
+
+    isQRcode = False
+
+    while cap.isOpened():
+        success, img = cap.read()
+
+        for barcode in decode(img, symbols=[ZBarSymbol.QRCODE]):
+            isQRcode = True
+            decodedCode = barcode.data.decode('utf-8')
+            pts = np.array([barcode.polygon], np.int32)
+            pts = pts.reshape((-1,1,2))
+            cv2.polylines(img, [pts], True, (3, 252, 227), 5)
+
+            if isQRcode:
+                cap.release()
+                cv2.destroyAllWindows()
+                return decodedCode
+
+        cv2.imshow('Kamera', img)
+        cv2.waitKey(1)
 
 def addHire():
     """Zapisywane dane to: imię, nazwisko, klasa, tytuł książki, data wypożyczenia, kaucja"""
@@ -791,7 +921,47 @@ def addHire():
 
     hireData["schoolClass"] = interactiveInput("Podaj klasę czytelnika (np. 2a): ")
 
-    hireData["bookTitle"] = interactiveInput("Wpisz tytuł wypożyczonej książki: ")
+    while True:
+        while True:
+            try:
+                print("[0] - Zeskanuj kod QR")
+                print("[1] - Wpisz kod ręcznie")
+
+                bookChoiceWay = int(input("Wybierz sposób wybrania książki: "))
+                if bookChoiceWay != 1 and bookChoiceWay != 0:
+                    raise Exception
+                break
+            except Exception:
+                print(f"{Fore.RED}Nie znaleziono takiej komendy. Spróbuj ponownie.{Style.RESET_ALL}")
+                continue
+
+        if bookChoiceWay == 0:
+            bookCode = qrScan()
+            bookDocument = booksListCollection.find_one({"code": bookCode})
+            if bookDocument == None:
+                print(f"{Fore.RED}Nie ma takiego kodu{Style.RESET_ALL}")
+                print()
+                continue
+            else:
+                hireData["bookTitle"] = bookDocument["title"]
+                print(f'Tytuł książki to: {bookDocument["title"]}')
+                break
+        elif bookChoiceWay == 1:
+            while True:
+                viewBooksList()
+                bookCode = interactiveInput("Wpisz kod wypożyczonej książki: ")
+                bookDocument = booksListCollection.find_one({"code": bookCode})
+                if bookDocument != None:
+                    if int(bookDocument["onStock"]) > 0:
+                        hireData["bookTitle"] = bookDocument["title"]
+                        break
+                    else:
+                        print(f"{Fore.RED}Nie ma tych książek na stanie{Style.RESET_ALL}")
+                        print()
+                else:
+                    print(f"{Fore.RED}Nie ma takiego kodu{Style.RESET_ALL}")
+                    print()
+            break
 
     print("Wpisz wartość kaucji (jeśli nie wpłacił kaucji kliknij ENTER): ", end='',
           flush=True)  # use print instead of input to avoid blocking
@@ -882,6 +1052,10 @@ def addHire():
         if sure == 1:
             try:
                 activeCollection.insert_one(hireData)
+                updates = {
+                    "$set": {"onStock": int(bookDocument["onStock"] - 1), "rented": int(bookDocument["rented"] + 1)}
+                }
+                booksListCollection.update_one({"_id": bookDocument["_id"]}, update=updates)
             except Exception as error:
                 logging.error(error)
                 print(Fore.RED + str(error) + Style.RESET_ALL)
@@ -968,6 +1142,11 @@ def endHire():
             chosenDocument["returnDate"] = datetime.datetime.today().strftime(dateFormat)
             historyCollection.insert_one(chosenDocument)
             activeCollection.delete_one({'_id': chosenDocument['_id']})
+            bookDocument = booksListCollection.find_one({"title": chosenDocument["bookTitle"]})
+            updates = {
+                "$set": {"onStock": int(bookDocument["onStock"] + 1), "rented": int(bookDocument["rented"] - 1)}
+            }
+            booksListCollection.update_one({"_id": bookDocument["_id"]}, update=updates)
         except Exception as error:
             logging.error(error)
             print(Fore.RED + str(error) + Style.RESET_ALL)
@@ -975,6 +1154,28 @@ def endHire():
             logging.info(
                 f"{profileUsername} Finished hire in MongoDB: {chosenDocument['name']}, {chosenDocument['lastName']}, {chosenDocument['bookTitle']}")
             print(f'{Fore.GREEN}Zakończono wypożyczenie{Style.RESET_ALL}')
+
+
+def viewBooksList():
+    results = prettytable.PrettyTable(['Kod', 'Tytuł', 'Na stanie', 'Wypożyczone'])
+    results.title = 'Spis książek'
+
+    if not isJson:
+        documents = booksListCollection.find()
+        for document in documents:
+            if int(document["onStock"]) <= 0:
+                onStock = f"""{Style.BRIGHT}{Fore.RED}{document["onStock"]}{Style.RESET_ALL}"""
+            else:
+                onStock = f"""{Style.BRIGHT}{Fore.GREEN}{document["onStock"]}{Style.RESET_ALL}"""
+            results.add_row([document['code'], document['title'], onStock, document['rented']])
+
+        if len(results.rows) == 0:
+            print()
+            print('Lista jest pusta')
+        else:
+            print(results)
+    else:
+        print(f"{Fore.RED}Spis książek nie działa w trybie lokalnym{Style.RESET_ALL}")
 
 
 def viewActiveHires():
@@ -1779,7 +1980,7 @@ def modifying():
     if data_length <= 0:
         return
 
-    print("Wpisz ID wypożyczenia w którym chcesz dodać kaucję: ", end='',
+    print("Wpisz ID wypożyczenia które chcesz zmodyfikować: ", end='',
           flush=True)  # use print instead of input to avoid blocking
     documentChoice = ""
     while True:
@@ -1797,7 +1998,7 @@ def modifying():
             elif key == 8:  # backspace key
                 if len(documentChoice) > 0:
                     documentChoice = documentChoice[:-1]
-                    print(f"\rWpisz ID wypożyczenia w którym chcesz dodać kaucję: {documentChoice} {''}\b", end='',
+                    print(f"\rWpisz ID wypożyczenia które chcesz zmodyfikować: {documentChoice} {''}\b", end='',
                           flush=True)
             elif key == 224:  # special keys (arrows, function keys, etc.)
                 key = ord(msvcrt.getch())
@@ -1851,10 +2052,45 @@ def modifying():
 
             klasa = interactiveInput("Zmień klasę: ", chosenDocument["schoolClass"])
 
-            bookTitle = interactiveInput("Zmień tytuł książki: ", chosenDocument["bookTitle"])
+            while True:
+                viewBooksList()
+                bookCode = interactiveInput("Wpisz kod wypożyczonej książki (lub wciśnij enter aby nie zmieniać książki): ")
+                if bookCode == "":
+                    bookTitle = chosenDocument["bookTitle"]
+                    break
+                else:
+                    newBookDocument = booksListCollection.find_one({"code": bookCode})
+                    if newBookDocument != None:
+                        if int(newBookDocument["onStock"]) > 0:
+                            bookTitle = newBookDocument["title"]
+                            # New book update
+                            updateNewBookDocument = {
+                                "$set": {"onStock": int(newBookDocument["onStock"] - 1),
+                                         "rented": int(newBookDocument["rented"] + 1)}
+                            }
+                            booksListCollection.update_one({"_id": newBookDocument["_id"]},
+                                                           update=updateNewBookDocument)
+
+                            # Update previous book
+                            previousBook = booksListCollection.find_one({"title": chosenDocument["bookTitle"]})
+
+                            updatePreviousBookDocument = {
+                                "$set": {"onStock": int(previousBook["onStock"] + 1),
+                                         "rented": int(previousBook["rented"] - 1)}
+                            }
+
+                            booksListCollection.update_one({"_id": previousBook["_id"]},
+                                                           update=updatePreviousBookDocument)
+                            break
+                        else:
+                            print(f"{Fore.RED}Nie ma tych książek na stanie{Style.RESET_ALL}")
+                            print()
+                    else:
+                        print(f"{Fore.RED}Nie ma takiego kodu{Style.RESET_ALL}")
+                        print()
 
             updates = {
-                "$set": {"name": name, "lastName":lastName,"klasa":klasa, "bookTitle":bookTitle}
+                "$set": {"name": name, "lastName": lastName,"klasa": klasa, "bookTitle": bookTitle}
             }
             activeCollection.update_one({"_id": chosenDocument["_id"]}, update=updates)
         except Exception as error:
@@ -1877,6 +2113,12 @@ def onExit():
 
 
 adminTools = AdminTools(senderEmail, receiveEmail, senderPassword)
+if get_key(find_dotenv(), "FIRST_LAUNCH") == 'True':
+    adminTools.genereteTOTP()
+else:
+    passwordsDBcursor.execute("SELECT * FROM pwds WHERE type='totp'")
+    totpKey = passwordsDBcursor.fetchone()
+    totp = pyotp.TOTP(totpKey[1])
 mongoPreconfiguration()
 profiles()
 atexit.register(onExit)
@@ -1902,7 +2144,13 @@ while True:
         if isTokenActive['active']:
             if adminTools.checkRole(roleName=librarianRole, username=profileUsername):
                 addHire()
-                token = keycloak_openid.refresh_token(token['refresh_token'])
+                try:
+                    token = keycloak_openid.refresh_token(token['refresh_token'])
+                except Exception:
+                    os.system("cls")
+                    print(f'{Fore.LIGHTGREEN_EX}Poprzednia akcja została wykonana.{Style.RESET_ALL}')
+                    print(f'{Fore.RED}Twoja sesja wygasła.{Style.RESET_ALL}')
+                    profiles()
             else:
                 print(f'{Fore.RED}Nie masz uprawnień do tej funkcji{Style.RESET_ALL}')
         else:
@@ -1914,7 +2162,13 @@ while True:
         if isTokenActive['active']:
             if adminTools.checkRole(roleName=librarianRole, username=profileUsername):
                 endHire()
-                token = keycloak_openid.refresh_token(token['refresh_token'])
+                try:
+                    token = keycloak_openid.refresh_token(token['refresh_token'])
+                except Exception:
+                    os.system("cls")
+                    print(f'{Fore.LIGHTGREEN_EX}Poprzednia akcja została wykonana.{Style.RESET_ALL}')
+                    print(f'{Fore.RED}Twoja sesja wygasła.{Style.RESET_ALL}')
+                    profiles()
             else:
                 print(f'{Fore.RED}Nie masz uprawnień do tej funkcji{Style.RESET_ALL}')
         else:
@@ -1924,8 +2178,9 @@ while True:
     elif choice == '3':
         print('[1] - Wyświetl trwające wypożyczenia')
         print('[2] - Wyświetl historię wypożyczeń')
-        print('[3] - Przeszukaj trwające wypożyczenia')
-        print('[4] - Przeszukaj historię wypożyczeń')
+        print('[3] - Wyświetl historię wypożyczeń')
+        print('[4] - Przeszukaj trwające wypożyczenia')
+        print('[5] - Przeszukaj historię wypożyczeń')
         choice = input("Wybierz z listy: ")
         print()
         if choice == '1':
@@ -1933,7 +2188,13 @@ while True:
             if isTokenActive['active']:
                 if adminTools.checkRole(roleName=viewerRole, username=profileUsername):
                     viewActiveHires()
-                    token = keycloak_openid.refresh_token(token['refresh_token'])
+                    try:
+                        token = keycloak_openid.refresh_token(token['refresh_token'])
+                    except Exception:
+                        os.system("cls")
+                        print(f'{Fore.LIGHTGREEN_EX}Poprzednia akcja została wykonana.{Style.RESET_ALL}')
+                        print(f'{Fore.RED}Twoja sesja wygasła.{Style.RESET_ALL}')
+                        profiles()
                 else:
                     print(f'{Fore.RED}Nie masz uprawnień do tej funkcji{Style.RESET_ALL}')
             else:
@@ -1945,7 +2206,13 @@ while True:
             if isTokenActive['active']:
                 if adminTools.checkRole(roleName=viewerRole, username=profileUsername):
                     viewHistoryHires()
-                    token = keycloak_openid.refresh_token(token['refresh_token'])
+                    try:
+                        token = keycloak_openid.refresh_token(token['refresh_token'])
+                    except Exception:
+                        os.system("cls")
+                        print(f'{Fore.LIGHTGREEN_EX}Poprzednia akcja została wykonana.{Style.RESET_ALL}')
+                        print(f'{Fore.RED}Twoja sesja wygasła.{Style.RESET_ALL}')
+                        profiles()
                 else:
                     print(f'{Fore.RED}Nie masz uprawnień do tej funkcji{Style.RESET_ALL}')
             else:
@@ -1956,8 +2223,14 @@ while True:
             isTokenActive = keycloak_openid.introspect(token['access_token'])
             if isTokenActive['active']:
                 if adminTools.checkRole(roleName=viewerRole, username=profileUsername):
-                    activeSearch()
-                    token = keycloak_openid.refresh_token(token['refresh_token'])
+                    viewBooksList()
+                    try:
+                        token = keycloak_openid.refresh_token(token['refresh_token'])
+                    except Exception:
+                        os.system("cls")
+                        print(f'{Fore.LIGHTGREEN_EX}Poprzednia akcja została wykonana.{Style.RESET_ALL}')
+                        print(f'{Fore.RED}Twoja sesja wygasła.{Style.RESET_ALL}')
+                        profiles()
                 else:
                     print(f'{Fore.RED}Nie masz uprawnień do tej funkcji{Style.RESET_ALL}')
             else:
@@ -1968,8 +2241,32 @@ while True:
             isTokenActive = keycloak_openid.introspect(token['access_token'])
             if isTokenActive['active']:
                 if adminTools.checkRole(roleName=viewerRole, username=profileUsername):
+                    activeSearch()
+                    try:
+                        token = keycloak_openid.refresh_token(token['refresh_token'])
+                    except Exception:
+                        os.system("cls")
+                        print(f'{Fore.LIGHTGREEN_EX}Poprzednia akcja została wykonana.{Style.RESET_ALL}')
+                        print(f'{Fore.RED}Twoja sesja wygasła.{Style.RESET_ALL}')
+                        profiles()
+                else:
+                    print(f'{Fore.RED}Nie masz uprawnień do tej funkcji{Style.RESET_ALL}')
+            else:
+                os.system('cls')
+                print(f'{Fore.RED}Twoja sesja wygasła.{Style.RESET_ALL}')
+                profiles()
+        elif choice == '5':
+            isTokenActive = keycloak_openid.introspect(token['access_token'])
+            if isTokenActive['active']:
+                if adminTools.checkRole(roleName=viewerRole, username=profileUsername):
                     historySearch()
-                    token = keycloak_openid.refresh_token(token['refresh_token'])
+                    try:
+                        token = keycloak_openid.refresh_token(token['refresh_token'])
+                    except Exception:
+                        os.system("cls")
+                        print(f'{Fore.LIGHTGREEN_EX}Poprzednia akcja została wykonana.{Style.RESET_ALL}')
+                        print(f'{Fore.RED}Twoja sesja wygasła.{Style.RESET_ALL}')
+                        profiles()
                 else:
                     print(f'{Fore.RED}Nie masz uprawnień do tej funkcji{Style.RESET_ALL}')
             else:
@@ -1989,7 +2286,13 @@ while True:
             if isTokenActive['active']:
                 if adminTools.checkRole(roleName=librarianRole, username=profileUsername):
                     addDeposit()
-                    token = keycloak_openid.refresh_token(token['refresh_token'])
+                    try:
+                        token = keycloak_openid.refresh_token(token['refresh_token'])
+                    except Exception:
+                        os.system("cls")
+                        print(f'{Fore.LIGHTGREEN_EX}Poprzednia akcja została wykonana.{Style.RESET_ALL}')
+                        print(f'{Fore.RED}Twoja sesja wygasła.{Style.RESET_ALL}')
+                        profiles()
                 else:
                     print(f'{Fore.RED}Nie masz uprawnień do tej funkcji{Style.RESET_ALL}')
             else:
@@ -2001,7 +2304,13 @@ while True:
             if isTokenActive['active']:
                 if adminTools.checkRole(roleName=librarianRole, username=profileUsername):
                     extension()
-                    token = keycloak_openid.refresh_token(token['refresh_token'])
+                    try:
+                        token = keycloak_openid.refresh_token(token['refresh_token'])
+                    except Exception:
+                        os.system("cls")
+                        print(f'{Fore.LIGHTGREEN_EX}Poprzednia akcja została wykonana.{Style.RESET_ALL}')
+                        print(f'{Fore.RED}Twoja sesja wygasła.{Style.RESET_ALL}')
+                        profiles()
                 else:
                     print(f'{Fore.RED}Nie masz uprawnień do tej funkcji{Style.RESET_ALL}')
             else:
@@ -2013,7 +2322,13 @@ while True:
             if isTokenActive['active']:
                 if adminTools.checkRole(roleName=librarianRole, username=profileUsername):
                     modifying()
-                    token = keycloak_openid.refresh_token(token['refresh_token'])
+                    try:
+                        token = keycloak_openid.refresh_token(token['refresh_token'])
+                    except Exception:
+                        os.system("cls")
+                        print(f'{Fore.LIGHTGREEN_EX}Poprzednia akcja została wykonana.{Style.RESET_ALL}')
+                        print(f'{Fore.RED}Twoja sesja wygasła.{Style.RESET_ALL}')
+                        profiles()
                 else:
                     print(f'{Fore.RED}Nie masz uprawnień do tej funkcji{Style.RESET_ALL}')
             else:
@@ -2027,7 +2342,13 @@ while True:
         if isTokenActive['active']:
             if adminTools.checkRole(roleName=librarianRole, username=profileUsername):
                 viewTodayReturns()
-                token = keycloak_openid.refresh_token(token['refresh_token'])
+                try:
+                    token = keycloak_openid.refresh_token(token['refresh_token'])
+                except Exception:
+                    os.system("cls")
+                    print(f'{Fore.LIGHTGREEN_EX}Poprzednia akcja została wykonana.{Style.RESET_ALL}')
+                    print(f'{Fore.RED}Twoja sesja wygasła.{Style.RESET_ALL}')
+                    profiles()
             else:
                 print(f'{Fore.RED}Nie masz uprawnień do tej funkcji{Style.RESET_ALL}')
         else:
@@ -2044,7 +2365,7 @@ while True:
         mongoPreconfiguration()
     elif choice == 'cfg admin':
         os.system('cls')
-        if adminTools.emailCodeSend():
+        if totp.verify(inputimeout("Enter OTP code from your app: ", 120)):
             while True:
                 print()
                 print("----------------------------------------------------------------------------")
@@ -2055,7 +2376,10 @@ while True:
                 print("[5] - Add profile")
                 print("[6] - Delete profile")
                 print("[7] - Modify profile")
-                print("[8] - Change admin password")
+                print("[8] - Add book")
+                print("[9] - Delete book")
+                print("[10] - Modify book")
+                print("[11] - Reset totp code")
                 print('[quit] - Close admin menu')
                 choice = input("Wybierz z listy: ")
                 if choice == '1':
@@ -2073,7 +2397,16 @@ while True:
                 elif choice == '7':
                     adminTools.modifyProfile()
                 elif choice == '8':
-                    adminTools.changeAdminPassword()
+                    adminTools.addBook()
+                elif choice == '9':
+                    adminTools.deleteBook()
+                elif choice == '10':
+                    adminTools.modifyBook()
+                elif choice == '11':
+                    adminTools.genereteTOTP()
+                    print(f"{Fore.LIGHTGREEN_EX}Zresetowano klucz kodu TOTP{Style.RESET_ALL}")
+                    print(f"{Fore.LIGHTGREEN_EX}Wszystkie aplikacje jak Google Authenticator\n"
+                          f"powinny zostać połączone z nowym kodem QR.{Style.RESET_ALL}")
                 elif choice == 'quit':
                     os.system('cls')
                     break
