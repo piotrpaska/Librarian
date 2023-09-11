@@ -25,7 +25,7 @@ import pyotp
 import qrcode
 from inputimeout import inputimeout
 import string
-
+import keyboard
 
 # Mongo variables
 global isJson
@@ -895,6 +895,11 @@ def qrScan():
     while cap.isOpened():
         success, img = cap.read()
 
+        if keyboard.is_pressed("esc"):
+            cap.release()
+            cv2.destroyAllWindows()
+            return False
+
         for barcode in decode(img, symbols=[ZBarSymbol.QRCODE]):
             isQRcode = True
             decodedCode = barcode.data.decode('utf-8')
@@ -937,15 +942,19 @@ def addHire():
 
         if bookChoiceWay == 0:
             bookCode = qrScan()
-            bookDocument = booksListCollection.find_one({"code": bookCode})
-            if bookDocument == None:
-                print(f"{Fore.RED}Nie ma takiego kodu{Style.RESET_ALL}")
-                print()
-                continue
+            if bookCode != False:
+                bookDocument = booksListCollection.find_one({"code": bookCode})
+                if bookDocument == None:
+                    print(f"{Fore.RED}Nie ma takiego kodu{Style.RESET_ALL}")
+                    print()
+                    continue
+                else:
+                    hireData["bookTitle"] = bookDocument["title"]
+                    print(f'Tytuł książki to: {bookDocument["title"]}')
+                    break
             else:
-                hireData["bookTitle"] = bookDocument["title"]
-                print(f'Tytuł książki to: {bookDocument["title"]}')
-                break
+                print(f"{Fore.RED}Anulowano skanowanie kodu{Style.RESET_ALL}")
+                print()
         elif bookChoiceWay == 1:
             while True:
                 viewBooksList()
