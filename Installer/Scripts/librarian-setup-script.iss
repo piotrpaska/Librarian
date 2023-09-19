@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Librarian"
-#define MyAppVersion "1.8.1"
+#define MyAppVersion "1.8.2"
 #define MyAppPublisher "Codevision Studio"
 #define MyAppURL "https://github.com/Piciu19/Librarian/releases"
 #define MyAppExeName "Librarian.exe"
@@ -20,14 +20,14 @@ AppSupportURL={#MyAppURL}
 AppUpdatesURL={#MyAppURL}
 DefaultDirName={autopf}\{#MyAppName}
 DisableProgramGroupPage=yes
-LicenseFile=C:\Users\krzys\Desktop\It-Projects\Szkola\Biblioteka\Installer\License_files\license_file.txt
-InfoBeforeFile=C:\Users\krzys\Desktop\It-Projects\Szkola\Biblioteka\Installer\License_files\info_before_installation.txt
-InfoAfterFile=C:\Users\krzys\Desktop\It-Projects\Szkola\Biblioteka\Installer\License_files\info_after_installation.txt
+LicenseFile=E:\It-Projects\Szkola\Librarian\Installer\License_files\license_file.txt
+InfoBeforeFile=E:\It-Projects\Szkola\Librarian\Installer\License_files\info_before_installation.txt
+InfoAfterFile=E:\It-Projects\Szkola\Librarian\Installer\License_files\info_after_installation.txt
 ; Remove the following line to run in administrative install mode (install for all users.)
 PrivilegesRequired=lowest
-OutputDir=C:\Users\krzys\Desktop\It-Projects\Szkola\Biblioteka\Installer\Installer
+OutputDir=E:\It-Projects\Szkola\Librarian\Installer\Installer
 OutputBaseFilename=librarian-setup
-SetupIconFile=C:\Users\krzys\Desktop\It-Projects\Szkola\Biblioteka\Installer\Icons\installer.ico
+SetupIconFile=E:\It-Projects\Szkola\Librarian\Installer\Icons\installer.ico
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
@@ -40,15 +40,15 @@ Name: "polish"; MessagesFile: "compiler:Languages\Polish.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "C:\Users\krzys\Desktop\It-Projects\Szkola\Biblioteka\Installer\Files\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Users\krzys\Desktop\It-Projects\Szkola\Biblioteka\Installer\Files\.env"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Users\krzys\Desktop\It-Projects\Szkola\Biblioteka\Installer\Files\active.json"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Users\krzys\Desktop\It-Projects\Szkola\Biblioteka\Installer\Files\config.yml"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Users\krzys\Desktop\It-Projects\Szkola\Biblioteka\Installer\Files\db.db"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Users\krzys\Desktop\It-Projects\Szkola\Biblioteka\Installer\Files\fernet_key.txt"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Users\krzys\Desktop\It-Projects\Szkola\Biblioteka\Installer\Files\history.json"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Users\krzys\Desktop\It-Projects\Szkola\Biblioteka\Installer\Files\libzbar-64.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Users\krzys\Desktop\It-Projects\Szkola\Biblioteka\Installer\Files\libiconv.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "E:\It-Projects\Szkola\Librarian\Installer\Files\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "E:\It-Projects\Szkola\Librarian\Installer\Files\.env"; DestDir: "{app}"; Flags: ignoreversion
+Source: "E:\It-Projects\Szkola\Librarian\Installer\Files\active.json"; DestDir: "{app}"; Flags: ignoreversion
+Source: "E:\It-Projects\Szkola\Librarian\Installer\Files\config.yml"; DestDir: "{app}"; Flags: ignoreversion
+Source: "E:\It-Projects\Szkola\Librarian\Installer\Files\db.db"; DestDir: "{app}"; Flags: ignoreversion
+Source: "E:\It-Projects\Szkola\Librarian\Installer\Files\fernet_key.txt"; DestDir: "{app}"; Flags: ignoreversion
+Source: "E:\It-Projects\Szkola\Librarian\Installer\Files\history.json"; DestDir: "{app}"; Flags: ignoreversion
+Source: "E:\It-Projects\Szkola\Librarian\Installer\Files\libzbar-64.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "E:\It-Projects\Szkola\Librarian\Installer\Files\libiconv.dll"; DestDir: "{app}"; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
