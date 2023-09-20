@@ -2187,7 +2187,7 @@ while True:
     elif choice == '3':
         print('[1] - Wyświetl trwające wypożyczenia')
         print('[2] - Wyświetl historię wypożyczeń')
-        print('[3] - Wyświetl historię wypożyczeń')
+        print('[3] - Wyświetl spis książek')
         print('[4] - Przeszukaj trwające wypożyczenia')
         print('[5] - Przeszukaj historię wypożyczeń')
         choice = input("Wybierz z listy: ")
