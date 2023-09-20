@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Librarian"
-#define MyAppVersion "1.8.2"
+#define MyAppVersion "1.8.3"
 #define MyAppPublisher "Codevision Studio"
 #define MyAppURL "https://github.com/Piciu19/Librarian/releases"
 #define MyAppExeName "Librarian.exe"
